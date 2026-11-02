@@ -3,8 +3,9 @@
 const crypto = require("crypto");
 
 const env = (k, d = "") => (process.env[k] == null ? d : String(process.env[k]));
-const SB_URL = () => env("SUPABASE_URL").replace(/\/$/, "");
-const SB_ANON = () => env("SUPABASE_ANON_KEY");
+// A Vercel Supabase-integrációja előtaggal (NEXT_PUBLIC_) is beállítja a nyilvános változókat — mindkettőt elfogadjuk.
+const SB_URL = () => (env("SUPABASE_URL") || env("NEXT_PUBLIC_SUPABASE_URL")).replace(/\/$/, "");
+const SB_ANON = () => env("SUPABASE_ANON_KEY") || env("NEXT_PUBLIC_SUPABASE_ANON_KEY");
 const SB_SERVICE = () => env("SUPABASE_SERVICE_ROLE_KEY");
 const isProd = () => env("VERCEL_ENV") === "production";
 const supabaseReady = () => !!(SB_URL() && SB_ANON());
