@@ -1,0 +1,11 @@
+{
+  "plan": "whitelabel",
+  "productName": "Minta Sikerműhely",
+  "tagline": "A csapatom napi tervezője",
+  "ownerName": "Minta Márta",
+  "colors": { "accent": "#0F766E", "highlight": "#F2B84B", "sidebar": "accent", "background": "#F3F1EC" },
+  "fonts": "elegans",
+  "founder": { "enabled": true, "perk": "Minta: örökre a mostani áron használod a tervezőt." },
+  "quotes": [],
+  "upsell": true
+}
