@@ -21,7 +21,7 @@ module.exports = async function handler(req, res) {
         line_items: { 0: { price: L.env("STRIPE_PRICE_ID"), quantity: 1 } },
         subscription_data: { metadata: { user_id: user.id } }, metadata: { user_id: user.id },
         customer: customer || undefined, customer_email: customer ? undefined : user.email,
-        success_url: app + "/?fizetes=ok#beallitasok", cancel_url: app + "/?fizetes=megszakitva#beallitasok",
+        success_url: app + "/app?fizetes=ok#beallitasok", cancel_url: app + "/app?fizetes=megszakitva#beallitasok",
       });
       return L.send(res, 200, { ok: true, url: s.url });
     }

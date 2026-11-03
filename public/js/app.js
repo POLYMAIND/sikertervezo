@@ -1634,7 +1634,7 @@ function mzApply(){
 }
 /* ---------- Márkám (white label partner: a saját márkája, a saját felhasználói) ---------- */
 const MARKAM=BR.plan==="whitelabel"&&(ctx.brandAdmin||DEMO);
-function inviteUrl(){return location.origin+"/?"+(BR.slug&&BR.slug!=="alap"?"brand="+encodeURIComponent(BR.slug)+"&":"")+"regisztracio"}
+function inviteUrl(){return location.origin+"/app?"+(BR.slug&&BR.slug!=="alap"?"brand="+encodeURIComponent(BR.slug)+"&":"")+"regisztracio"}
 const DEMO_MEMBERS=[["Minta Kata","kata@pelda.hu",-40,0],["Minta Éva","eva@pelda.hu",-21,-1],["Minta Zsófi","zsofi@pelda.hu",-9,-6],["Minta Réka","reka@pelda.hu",-3,-3]];
 function vMarkam(){
   activeBoard=null;

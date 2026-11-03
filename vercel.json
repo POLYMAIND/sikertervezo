@@ -37,5 +37,22 @@
       "source": "/naptar/:name.ics",
       "destination": "/api/ical"
     }
+  ],
+  "redirects": [
+    {
+      "source": "/start",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/index",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/app.html",
+      "destination": "/app",
+      "permanent": true
+    }
   ]
 }

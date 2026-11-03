@@ -12,15 +12,15 @@ function back(res, path, result) {
 }
 
 module.exports = async function handler(req, res) {
-  if (!P.realReady()) return back(res, "/", "nincs-beallitva");
+  if (!P.realReady()) return back(res, "/app", "nincs-beallitva");
   const q = new URL(req.url, "http://x").searchParams;
   const code = q.get("code") || "", state = q.get("state") || "";
-  if (!/^[A-Za-z0-9_-]{16,100}$/.test(state)) return back(res, "/", "hiba");
+  if (!/^[A-Za-z0-9_-]{16,100}$/.test(state)) return back(res, "/app", "hiba");
   try {
     // a nonce kiolvasása ÉS törlése (egyszer használatos)
     const rows = await L.sb(`sikertervezo_polyos_nonces?nonce=eq.${encodeURIComponent(state)}`, { method: "DELETE", headers: { Prefer: "return=representation" } });
     const n = rows && rows[0];
-    if (!n || Date.now() - Date.parse(n.created_at) > 10 * 60 * 1000) return back(res, "/", "lejart");
+    if (!n || Date.now() - Date.parse(n.created_at) > 10 * 60 * 1000) return back(res, "/app", "lejart");
     const ret = P.safeReturn(n.return_to);
     if (q.get("error") || !code) return back(res, ret, "megszakitva");
 
@@ -41,6 +41,6 @@ module.exports = async function handler(req, res) {
     });
     return back(res, ret, "ok");
   } catch (e) {
-    return back(res, "/", "hiba");
+    return back(res, "/app", "hiba");
   }
 };

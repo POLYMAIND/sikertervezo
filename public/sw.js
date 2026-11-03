@@ -1,11 +1,11 @@
 /* Sikermaker — service worker.
  * Cél: telepített appként azonnal és offline is induljon. Stratégia:
  *   - saját statikus fájlok: hálózat előbb (mindig a friss verzió), hiba esetén a tárolt példány;
- *   - navigáció (oldalbetöltés) offline: a tárolt kezdőoldal;
+ *   - navigáció offline: az app (/app) a tárolt példányból indul; a landing (/) csak hálózatról jön;
  *   - /api/* és minden idegen domain: NEM nyúlunk hozzá (adat sosem kerül a gyorsítótárba).
  * Új kiadásnál a VERSION emelése törli a régi gyorsítótárat. */
-const VERSION = "st-v2";
-const SHELL = ["/", "/css/app.css", "/js/theme.js", "/js/polyos.js", "/js/store.js", "/js/app.js", "/js/boot.js", "/favicon.svg", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png"];
+const VERSION = "st-v3";
+const SHELL = ["/app", "/css/app.css", "/js/theme.js", "/js/polyos.js", "/js/store.js", "/js/app.js", "/js/boot.js", "/favicon.svg", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -21,9 +21,9 @@ self.addEventListener("fetch", (e) => {
   e.respondWith(
     fetch(req)
       .then((res) => {
-        if (res.ok && res.type === "basic" && (req.mode !== "navigate" || url.pathname === "/")) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req.mode === "navigate" ? "/" : req, copy)); }
+        if (res.ok && res.type === "basic" && (req.mode !== "navigate" || url.pathname === "/app")) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req.mode === "navigate" ? "/app" : req, copy)); }
         return res;
       })
-      .catch(() => caches.match(req.mode === "navigate" ? "/" : req).then((hit) => hit || caches.match("/")))
+      .catch(() => req.mode === "navigate" ? (url.pathname === "/app" ? caches.match("/app") : Promise.reject(new Error("offline"))) : caches.match(req))
   );
 });

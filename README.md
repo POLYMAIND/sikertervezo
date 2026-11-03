@@ -27,7 +27,8 @@ meg, a szerveren semmit nem enged. Kitalált white label minta: `?brand=minta-ma
 
 ```
 public/                 statikus frontend (build nélkül, vanilla JS)
-  index.html
+  index.html            landing (főoldal, /); js/route.js az appnak szóló régi címeket a /app-ra továbbítja
+  app.html              az app (/app)
   css/app.css           minden szín/betű/háttér CSS-változó (tokenek) — konkrét színkód NEM kerülhet bele
   js/theme.js           csomag-szabály + tokenek + paletta (matricák, érmek, oklevél is ebből színeződik)
   js/store.js           Supabase Auth + terv-mentés (verzió-ellenőrzéssel), bemutató módban localStorage
@@ -50,7 +51,7 @@ tests/                  egységtesztek, böngészős füstteszt, helyi fejleszt�
 ```bash
 POLYOS_MOCK=1 node tests/devserver.mjs 3000
 ```
-Megnyitás: http://localhost:3000. Környezeti változók nélkül **bemutató módban** fut (mintaadatok, a böngészőben marad);
+Megnyitás: http://localhost:3000 (landing) és http://localhost:3000/app (app). Környezeti változók nélkül **bemutató módban** fut (mintaadatok, a böngészőben marad);
 `POLYOS_MOCK=1`-gyel a PolyOS-átküldés szimulálva kipróbálható. Vercel CLI-vel: `vercel dev`.
 
 ```bash

@@ -24,7 +24,7 @@ module.exports = async function handler(req, res) {
   const manifest = {
     id: "/" + q, name, short_name: name.length > 12 ? name.split(/\s+/)[0].slice(0, 12) : name,
     description: (wl && b.tagline) || "Napi tervező a vállalkozásodhoz",
-    lang: "hu", dir: "ltr", start_url: "/" + q + (q ? "&" : "?") + "forras=app", scope: "/",
+    lang: "hu", dir: "ltr", start_url: "/app" + q + (q ? "&" : "?") + "forras=app", scope: "/",
     display: "standalone", display_override: ["standalone", "minimal-ui"], orientation: "portrait",
     background_color: hex(c.background, "#F4F4F1"), theme_color: theme, categories: ["productivity", "business"],
     icons,
