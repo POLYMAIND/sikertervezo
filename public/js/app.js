@@ -363,7 +363,7 @@ function dayPanels(sel){
   </div>`;
 }
 function vNaptar(){
-  extLoad();
+  extLoad(false);
   const mode=ui.calMode;
   const ctrls=`<button class="btn small" data-act="qadd">+ Gyors hozzáadás</button><div class="tabs">${MODES.map(([k,l])=>`<button data-act="calmode" data-k="${k}" aria-pressed="${mode===k}">${l}</button>`).join("")}</div><span class="row" style="gap:6px"><button class="iconbtn" data-act="calnav" data-d="-1" aria-label="Előző">‹</button><button class="btn ghost small" data-act="caltoday">Ma</button><button class="iconbtn" data-act="calnav" data-d="1" aria-label="Következő">›</button></span>`;
   let title,body;
@@ -405,7 +405,7 @@ function vNaptar(){
     const hoursHTML=HOURS.map(h=>{const v=(dd.hours||{})[h]||"",loc=locOf(sel,h);return `<div class="hr ${sel===T&&h===nowH?"now":""}"><label class="hh num" for="hr-${sel}-${h}">${pad(h)}:00</label><input type="text" id="hr-${sel}-${h}" data-hour="${h}" data-day="${sel}" value="${esc(v)}" aria-label="${pad(h)}:00 időpont"><input type="text" class="locin" id="loc-${sel}-${h}" data-loc="${h}" data-day="${sel}" value="${esc(loc)}" aria-label="${pad(h)}:00 helyszín" placeholder="${v?"Helyszín":""}"><span class="hacts" id="hacts-${sel}-${h}">${v?apptLinks(sel,h,v,loc):""}</span></div>`}).join("");
     body=`<div class="card page daypage"><div class="row between dp-top"><div class="row" style="gap:10px"><div class="eyebrow">Időbeosztás</div>${pointsChip(sel)}</div><button class="btn gold small" data-act="tray">Matrica a lapra</button></div><div class="dp-cols"><div>${extOf(sel).length?`<div class="extlist"><div class="eyebrow" style="margin-bottom:6px">Más naptárakból</div>${extOf(sel).map(e=>`<div class="li"><span class="dot" style="background:${esc(e.color)}"></span><span class="num tm">${extLabel(e)}</span><div class="grow"><div class="t">${esc(e.title)}</div><div class="s">${esc(e.calName)}${e.location?" · "+esc(e.location):""}</div></div></div>`).join("")}</div>`:""}<div class="hours">${hoursHTML}</div><p class="muted" style="font-size:12px;margin:10px 0 0">Írd be az időpontot, mellé a helyszínt: azonnal a tervezőbe mentődik. A Térkép a Google Térképet nyitja meg. A Google Naptárral és a telefonod naptárával a <a href="#beallitasok" data-act="tosync">Beállítások → Naptár-szinkron</a> alatt kötheted össze.</p></div>${dayPanels(sel)}</div>${board(activeBoard)}</div>`;
   }
-  return head(title,mode==="nap"?"Napi nézet":mode==="het"?"Heti nézet":"Havi nézet",ctrls)+body;
+  return head(title,mode==="nap"?"Napi nézet":mode==="het"?"Heti nézet":"Havi nézet",ctrls)+extStatus()+body;
 }
 
 function vKapcsolatok(){
@@ -1436,10 +1436,19 @@ function extRange(){
   if(ui.calMode==="het"){const m=mondayOf(ui.selDay);return [iso(m),iso(addDays(m,6))]}
   return [ui.selDay,ui.selDay];
 }
-function extLoad(){
+// újralekérés: új időszaknál, a nézet megnyitásakor (ha 60 mp-nél régebbi), 5 percenként, és a Frissítés gombra
+function extLoad(force){
   if(!PRO||DEMO)return;const[from,to]=extRange(),key=from+"|"+to;const e=ui.ext||(ui.ext={});
-  if(e.key===key||e.loading===key)return;e.loading=key;
-  ctx.calendar("events",{from,to}).then(r=>{ui.ext={key,events:r.events||[],errors:r.errors||[]};if(route==="naptar"||route==="ma")render()},()=>{ui.ext={key,events:[],errors:[]}});
+  if(e.loading===key)return;
+  if(!force&&e.key===key&&Date.now()-(e.at||0)<60000)return;
+  e.loading=key;
+  ctx.calendar("events",{from,to,fresh:!!force}).then(r=>{ui.ext={key,at:Date.now(),events:r.events||[],errors:r.errors||[],meta:r.meta||[]};if(route==="naptar"||route==="ma")render()},()=>{ui.ext={key,at:Date.now(),events:[],errors:[{name:"",error:"network"}],meta:[]};if(route==="naptar")render()});
+}
+setInterval(()=>{if(route==="naptar"||route==="ma")extLoad(true)},5*60*1000);
+function extStatus(){
+  const e=ui.ext;if(!PRO||DEMO||!e||!e.meta||!e.meta.length)return "";
+  const hhmm=iso=>{const d=new Date(iso);return pad(d.getHours())+":"+pad(d.getMinutes())};
+  return `<div class="extstatus">${e.meta.map(m=>`<span class="chip"><span class="dot" style="background:${esc(m.color)};width:8px;height:8px"></span>${esc(m.name)}: ${m.error?'<span style="color:var(--warn)">nem sikerült frissíteni</span>':`${m.count} esemény ebben az időszakban · frissítve ${hhmm(m.fetched_at)}`}</span>`).join("")}<button class="chip" data-act="extrefresh">↻ Frissítés</button></div>`;
 }
 const extOf=k=>((ui.ext&&ui.ext.events)||[]).filter(e=>e.date===k);
 function extLabel(e){return `${e.allDay?"Egész nap":e.start}${e.allDay?"":"–"+e.end}`}
@@ -1804,6 +1813,7 @@ document.addEventListener("click",e=>{
     case"revprev":ui.rev.step--;render();window.scrollTo(0,0);break;
     case"revsave":revSave();break;
     case"revpanel":revOpenPanel=!revOpenPanel;drawer();break;
+    case"extrefresh":ui.ext=Object.assign({},ui.ext,{at:0});extLoad(true);toast("Frissítem a behúzott naptárakat…");break;
     case"impdelask":ui.impDel=id;render();break;
     case"impdelno":ui.impDel=null;render();break;
     case"impdel":ui.impDel=null;ctx.calendar("import.remove",{id}).then(()=>{ui.imports=null;ui.ext=null;toast("Naptár leválasztva.");render()},()=>toast("Nem sikerült. Próbáld újra."));break;

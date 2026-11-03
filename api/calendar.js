@@ -15,13 +15,15 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 const DAYRE = /^\d{4}-\d{2}-\d{2}$/;
 // letöltött külső naptárak rövid gyorsítótára (példányonként), hogy egy hónap lapozgatása ne töltse le újra és újra
 const CACHE = new Map();
-async function icsText(row) {
+// gyorsítótár: 3 perc; „Frissítés"-re (fresh) is legfeljebb 30 mp-enként töltjük le újra, hogy ne terheljük a naptárszolgáltatót
+async function icsText(row, fresh) {
   const hit = CACHE.get(row.id);
-  if (hit && Date.now() - hit.at < 10 * 60 * 1000) return hit.text;
+  if (hit && Date.now() - hit.at < (fresh ? 30 * 1000 : 3 * 60 * 1000)) return hit;
   const text = await ICSP.safeFetch(L.decrypt(row.url_enc));
-  CACHE.set(row.id, { at: Date.now(), text });
+  const v = { at: Date.now(), text };
+  CACHE.set(row.id, v);
   if (CACHE.size > 300) CACHE.clear();
-  return text;
+  return v;
 }
 const hash = (t) => crypto.createHash("sha256").update(t).digest("hex");
 
@@ -75,18 +77,21 @@ module.exports = async function handler(req, res) {
     if (b.action === "events") {
       if (!DAYRE.test(b.from || "") || !DAYRE.test(b.to || "") || b.from > b.to) return L.send(res, 400, { error: "bad_range" });
       const rows = await L.sb(`sikertervezo_cal_imports?user_id=eq.${user.id}&select=id,name,color,url_enc`);
-      const out = [], errors = [];
+      const out = [], errors = [], meta = [];
       await Promise.all((rows || []).map(async (r) => {
         try {
-          const text = await icsText(r);
-          ICSP.eventsInRange(text, b.from, b.to, 400).forEach((e) => out.push(Object.assign(e, { cal: r.id, calName: r.name, color: r.color })));
+          const got = await icsText(r, !!b.fresh);
+          const evs = ICSP.eventsInRange(got.text, b.from, b.to, 400);
+          evs.forEach((e) => out.push(Object.assign(e, { cal: r.id, calName: r.name, color: r.color })));
+          meta.push({ cal: r.id, name: r.name, color: r.color, count: evs.length, total: (got.text.match(/BEGIN:VEVENT/g) || []).length, fetched_at: new Date(got.at).toISOString() });
           L.sb(`sikertervezo_cal_imports?id=eq.${r.id}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ last_ok_at: new Date().toISOString(), last_error: null }) }).catch(() => {});
         } catch (e) {
           errors.push({ cal: r.id, name: r.name, error: e.code || "fetch_failed" });
+          meta.push({ cal: r.id, name: r.name, color: r.color, error: e.code || "fetch_failed" });
           L.sb(`sikertervezo_cal_imports?id=eq.${r.id}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ last_error: String(e.code || "fetch_failed") }) }).catch(() => {});
         }
       }));
-      return L.send(res, 200, { ok: true, events: out, errors });
+      return L.send(res, 200, { ok: true, events: out, errors, meta });
     }
     if (b.action === "revoke") {
       await L.sb(`sikertervezo_ical_feeds?user_id=eq.${user.id}`, { method: "DELETE" });

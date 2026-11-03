@@ -682,3 +682,5 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:4px 0;width:100%}
 .mapzoom{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .mapzoom #mapzoomlbl{min-width:46px;text-align:center;font-size:13px;font-weight:600;color:var(--muted)}
 .mapcanvas{will-change:transform}
+.extstatus{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.extstatus .chip{font-weight:500;gap:6px}
