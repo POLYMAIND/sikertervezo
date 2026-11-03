@@ -1154,10 +1154,33 @@ async function pxPush(b){
 /* ---------- arculat ---------- */
 function bgPrefs(){S.prefs=S.prefs||{};return Object.assign({},TH.DEFAULT_PREFS,BR.defaultBg?{bgColor:BR.defaultBg}:{},S.prefs.bg||{})}
 function repaint(){TH.apply(ui.brand||ctx.brandRaw,bgPrefs());if(ctx.paintChrome)ctx.paintChrome(ui.brand||ctx.brandRaw)}
+/* design system importálása: javaslat a névre, színekre, betűkre és logóra; csak „Átveszem” után kerül a vázlatba */
+function dsImportBlock(){
+  const r=ui.dsImport;
+  const head=`<div class="dsimp"><div class="row between" style="gap:10px;flex-wrap:wrap"><div><b>Design system importálása</b><div class="muted" style="font-size:12.5px">Töltsd fel a Claude design system ZIP-jét (vagy a tokens.json fájlt), és kitöltjük belőle a nevet, a színeket, a betűpárt és a logót.</div></div>
+    <label class="btn ghost small" for="brand-ds" style="cursor:pointer">Fájl kiválasztása</label><input type="file" id="brand-ds" accept=".zip,.json,application/zip,application/json" hidden></div>`;
+  if(!r)return head+"</div>";
+  if(r.loading)return head+`<div class="muted" style="margin-top:8px">Beolvasás…</div></div>`;
+  if(r.err)return head+`<div class="status" style="margin-top:8px">${esc(r.err)}</div></div>`;
+  const sw=c=>c?`<span class="dssw" style="background:${esc(c)}"></span>${esc(c)}`:"–";
+  const F=TH.FONTS||{};
+  return head+`<div class="stack" style="gap:10px;margin-top:10px">
+    <div class="muted" style="font-size:12.5px">Megtaláltuk: ${esc(r.found.join(", ")||"semmit")}. Nézd át, és vedd át, ami tetszik; a mentés gombbal élesíted.</div>
+    <div class="dsgrid">
+      <div><span class="lab2">Név</span>${esc(r.name||"–")}</div>
+      <div><span class="lab2">Kiemelőszín</span>${sw(r.colors.accent)}</div>
+      <div><span class="lab2">Kiemelés</span>${sw(r.colors.highlight)}</div>
+      <div><span class="lab2">Háttér</span>${sw(r.colors.background)}</div>
+      <div><span class="lab2">Betűpár</span>${esc(r.fonts&&F[r.fonts]?F[r.fonts].label:"–")}</div>
+    </div>
+    ${r.logos.length?`<div><span class="lab2">Logó (válassz egyet)</span><div class="row" style="gap:8px;flex-wrap:wrap">${r.logos.map((l,i)=>`<button type="button" class="dslogo" data-act="dslogo" data-i="${i}" aria-pressed="${r.logo===i}" title="${esc(l.name)}"><img src="${l.url}" alt="${esc(l.name)}"></button>`).join("")}</div></div>`:""}
+    <div class="row" style="gap:8px"><button class="btn small" data-act="dsapply">Átveszem</button><button class="nc-skip" data-act="dsclose">Mégse</button></div></div></div>`;
+}
 function brandEditor(d,o){
   d.colors=d.colors||{};const e=TH.effectiveBrand(d);
   return `<div class="card stack" id="${o.id}" style="gap:14px"><div class="row between"><h3 style="margin:0">${o.title}</h3><span class="chip on">${o.badge}</span></div>
       <p class="muted" style="margin:0;font-size:12.5px">${o.note}</p>
+      ${dsImportBlock()}
       <div class="grid g2"><label class="f">A tervező neve<input type="text" data-brand="productName" value="${esc(d.productName||"")}" placeholder="Sikermaker" maxlength="40"></label><label class="f">Alcím<input type="text" data-brand="tagline" value="${esc(d.tagline||"")}" maxlength="60"></label>
       <label class="f full">A márka gazdája (oklevél aláírása, idézetek szerzője)<input type="text" data-brand="ownerName" value="${esc(d.ownerName||"")}" maxlength="40"></label></div>
       <div class="row" style="gap:14px"><span class="logoprev">${e.logo?`<img src="${esc(e.logo)}" alt="Logó">`:TH.svg(MARK_SVG)}</span><div class="stack" style="gap:6px"><label class="btn ghost small" for="brand-logo" style="cursor:pointer;align-self:flex-start">Logó feltöltése</label><input type="file" id="brand-logo" accept="image/png,image/svg+xml,image/webp,image/jpeg" hidden>${e.logo?'<button class="chip" data-act="brandlogodel" style="align-self:flex-start">Logó törlése</button>':""}<span class="muted" style="font-size:12px">Átlátszó hátterű PNG vagy SVG, legfeljebb 300 KB.</span></div></div>
@@ -1894,6 +1917,14 @@ document.addEventListener("click",e=>{
     case"pxdisconnect":ui.pxdel=false;ctx.polyosDisconnect().then(()=>{toast("Leválasztva a PolyOS-ről.");render()},()=>toast("Nem sikerült. Próbáld újra."));break;
     case"uphide":S.prefs=S.prefs||{};S.prefs.upHide=Object.assign({},S.prefs.upHide,{[b.dataset.k]:true});save();render();break;
     case"stepedit":if(ui.stepEdit){S.settings.steps=S.settings.steps.map((x,i)=>String(x).trim()||["Poszt","Sztori","Új kapcsolat","Utánkövetés","Tanulás"][i]);save()}ui.stepEdit=!ui.stepEdit;render();break;
+    case"dslogo":if(ui.dsImport){ui.dsImport.logo=+b.dataset.i;render()}break;
+    case"dsclose":ui.dsImport=null;render();break;
+    case"dsapply":{const r=ui.dsImport;if(!r||!ui.brand)break;const d=ui.brand;d.colors=d.colors||{};
+      if(r.name&&!d.productName)d.productName=r.name;
+      ["accent","highlight","background"].forEach(k=>{if(r.colors[k])d.colors[k]=r.colors[k]});
+      if(r.fonts)d.fonts=r.fonts;
+      if(r.logos.length)d.logo=r.logos[r.logo!=null?r.logo:0].url;
+      ui.dsImport=null;repaint();render();toast("Átvettük a design systemből. Nézd meg az előnézetet, és mentsd el.");break}
     case"qedit":ui.qEdit=!ui.qEdit;render();break;
     case"qadd":{const q=(S.settings.questions||Q_DEFAULT).slice();if(q.length<5){q.push("");S.settings.questions=q;save();render();setTimeout(()=>{const el=document.querySelector(`[data-qset="${q.length-1}"]`);el&&el.focus()},30)}break}
     case"qdel":{const q=(S.settings.questions||Q_DEFAULT).slice();q.splice(+b.dataset.i,1);S.settings.questions=q;save();render();break}
@@ -2098,6 +2129,8 @@ document.addEventListener("change",e=>{
   if(t.id==="qa-when"){const w=$("#qa-datewrap");if(w)w.hidden=t.value!=="nap";return}
   if(t.dataset.dsize){const d=dashPrefs(),v=+t.value;if([2,3,4,6].includes(v)){d.size[t.dataset.dsize]=v;save();render()}return}
   if(t.dataset.bp||t.dataset.per){render();return}
+  if(t.id==="brand-ds"&&t.files&&t.files[0]){const f=t.files[0];ui.dsImport={loading:true};render();
+    ST.dsimport.read(f).then(r=>{ui.dsImport=Object.assign(r,{logo:r.logos.length?0:null});render()},e=>{ui.dsImport={err:e.message==="too_large"?"A fájl túl nagy (legfeljebb 15 MB).":e.message==="not_zip"?"Ez nem ZIP-fájl. Töltsd fel a design system ZIP-jét vagy a tokens.json fájlt.":"Nem sikerült beolvasni a fájlt."};render()});return}
   if(t.id==="brand-logo"&&t.files&&t.files[0]){const f=t.files[0];if(f.size>300*1024){toast("A logó legfeljebb 300 KB lehet.");return}const r=new FileReader();r.onload=()=>{ui.brand.logo=String(r.result);repaint();render()};r.readAsDataURL(f);return}
   if(t.id==="mk-file"&&t.files&&t.files[0]){const f=t.files[0];const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const mx=360,sc=Math.min(1,mx/Math.max(img.width,img.height));const cv=document.createElement("canvas");cv.width=Math.round(img.width*sc);cv.height=Math.round(img.height*sc);cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);const src=cv.toDataURL(f.type==="image/jpeg"?"image/jpeg":"image/png",.9);S.custom.push({id:uid(),type:"img",src});if(save()){toast("Kép hozzáadva a saját matricáidhoz.")}else{S.custom.pop();toast("Ez a kép túl nagy a prototípusnak. Próbálj kisebbet.")}render()};img.onerror=()=>toast("Ezt a képet nem tudtam megnyitni.");img.src=r.result};r.readAsDataURL(f);return}
   if(t.dataset.goal){S.goals[m][t.dataset.goal].cel=+t.value||0;save();render()}

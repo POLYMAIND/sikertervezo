@@ -750,3 +750,12 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:4px 0;width:100%}
   .dashbar{top:calc(var(--tabbar-h,64px) * 0 + 8px)}
 }
 @media (max-width:860px){.dtools .dsel{display:none}.dashbar .muted{font-size:12px!important}}
+
+/* design system importálás */
+.dsimp{border:1.5px dashed color-mix(in srgb,var(--accent) 40%,transparent);border-radius:14px;padding:12px 14px;background:color-mix(in srgb,var(--accent-tint) 40%,transparent)}
+.dsgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px 14px;font-size:13.5px}
+.dsgrid .lab2{display:block;margin-bottom:2px}
+.dssw{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.dslogo{width:72px;height:56px;border-radius:10px;border:1.5px solid var(--line);background:repeating-conic-gradient(#eee 0 25%,#fff 0 50%) 50%/12px 12px;padding:6px;cursor:pointer}
+.dslogo img{width:100%;height:100%;object-fit:contain}
+.dslogo[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint)}
