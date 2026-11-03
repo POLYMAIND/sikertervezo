@@ -59,6 +59,13 @@
 
   /* ---------- belépés / regisztráció ---------- */
   let wlDone = "";
+  // Zárt regisztrációnál a belépés rejtve van; a meglévő fiókok (Polymaind, tesztelők) a /app?belepes címen lépnek be.
+  const LOGIN_KEY = "sikertervezo:login";
+  const signupOpenNow = () => !!(config.signup && config.signup.open);
+  function loginAllowed() {
+    if (new URLSearchParams(location.search).has("belepes")) { try { sessionStorage.setItem(LOGIN_KEY, "1"); } catch (e) {} return true; }
+    try { return sessionStorage.getItem(LOGIN_KEY) === "1"; } catch (e) { return false; }
+  }
   // „Nyitás: november 7., szombat 10:00 (még 3 nap 18 óra)" — a nyitás időpontját az Adminban lehet állítani
   function launchLine() {
     const at = config.signup && config.signup.launchAt, t = at ? Date.parse(at) : 0;
@@ -69,6 +76,8 @@
   }
   function authScreen(tab, msg) {
     tab = tab || "belepes";
+    const hideLogin = !signupOpenNow() && !loginAllowed();
+    if (hideLogin && tab === "belepes") tab = "regisztracio";
     const eb = TH.effectiveBrand(brandRaw), legal = config.legal || {};
     const link = (u, t) => (u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${t}</a>` : t);
     const open = !!(config.signup && config.signup.open);
@@ -102,7 +111,7 @@
     $("#boot").innerHTML = `<div class="sheet" style="width:min(440px,100%)">
       ${eb.logo ? `<img class="logo-lg" src="${esc(eb.logo)}" alt="">` : `<span class="logo-lg">${TH.svg(TH.MARK)}</span>`}
       <div><h1 style="font-size:30px">${esc(eb.productName)}</h1><p class="sub">${esc(eb.tagline)}</p></div>
-      ${tab === "ujjelszo" || tab === "elfelejtett" ? "" : tabs}
+      ${tab === "ujjelszo" || tab === "elfelejtett" || hideLogin ? "" : tabs}
       ${msg ? `<div class="status" role="status">${esc(msg)}</div>` : ""}
       ${body}
       ${tab === "ujjelszo" ? "" : `<div class="sep">vagy</div><button type="button" class="btn ghost" data-auth-act="demo">Kipróbálom belépés nélkül</button>`}
@@ -204,7 +213,8 @@
       billingReady: !!(config.billing && config.billing.enabled),
       calendar: async (action, payload) => api("/api/calendar", { method: "POST", body: JSON.stringify(Object.assign({ action }, payload || {})) }),
       admin: async (action, payload) => api("/api/admin", { method: "POST", body: JSON.stringify(Object.assign({ action }, payload || {})) }),
-      showAuth: (tab) => { sessionStorage.removeItem(DEMO_CHOSEN); authScreen(tab === "belepes" ? "belepes" : "regisztracio"); },
+      // zárt regisztrációnál a bemutató gombjai a landing várólistájára visznek (nem a belépőképernyőre)
+      showAuth: (tab) => { if (!signupOpenNow() && !loginAllowed()) { location.href = "/#varolista"; return; } sessionStorage.removeItem(DEMO_CHOSEN); authScreen(tab === "belepes" ? "belepes" : "regisztracio"); },
       logout: async () => { await store.signOut(); sessionStorage.removeItem(DEMO_CHOSEN); location.hash = ""; location.reload(); },
       // bemutató módban a csomag kézzel váltható: ingyenes / pro / white label (csak a kinézet és a zárolások; a szerver semmit nem enged ezzel)
       setDemoPlan: (p) => { ls.set(DEMO_PLAN_KEY, ["ingyenes", "pro", "whitelabel"].includes(p) ? p : "pro"); location.reload(); },

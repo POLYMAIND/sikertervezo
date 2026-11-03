@@ -1127,7 +1127,7 @@ function accountCard(){
 /* ---------- bemutató mód: regisztrációs felhívás minden oldal tetején ---------- */
 function demoCta(){
   if(!DEMO||!ctx.cloud)return "";
-  return `<div class="card democta" role="region" aria-label="Regisztráció"><div class="grow"><span class="t">${ctx.signupOpen?"Tetszik? Kezdd el a saját tervedet.":"Tetszik? Hamarosan nyitunk!"}</span><span class="s">${ctx.signupOpen?"Most mintaadatokkal nézelődsz. Regisztrálj ingyen, és a saját terved minden eszközödön ott lesz.":"Most mintaadatokkal nézelődsz. Iratkozz fel a várólistára: elsőként szólunk, és ajándékba letöltheted a Káoszmanagert."}</span></div><div class="row" style="gap:10px"><button class="btn democta-btn" data-act="signup">${SIGNUP_CTA}</button><button class="nc-skip" data-act="authshow">Már van fiókom</button></div></div>`;
+  return `<div class="card democta" role="region" aria-label="Regisztráció"><div class="grow"><span class="t">${ctx.signupOpen?"Tetszik? Kezdd el a saját tervedet.":"Tetszik? Hamarosan nyitunk!"}</span><span class="s">${ctx.signupOpen?"Most mintaadatokkal nézelődsz. Regisztrálj ingyen, és a saját terved minden eszközödön ott lesz.":"Most mintaadatokkal nézelődsz. Iratkozz fel a várólistára: elsőként szólunk, és ajándékba letöltheted a Káoszmanagert."}</span></div><div class="row" style="gap:10px"><button class="btn democta-btn" data-act="signup">${SIGNUP_CTA}</button>${ctx.signupOpen?'<button class="nc-skip" data-act="authshow">Már van fiókom</button>':""}</div></div>`;
 }
 /* ---------- telepítés a kezdőképernyőre ---------- */
 function installCard(where){
