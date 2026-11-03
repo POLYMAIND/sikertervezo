@@ -376,10 +376,10 @@ function vMa(){
     const sz=dashSize(k);
     const tools=ed?`<div class="dtools" role="group" aria-label="${esc(name)}"><span class="dgrip" data-grip="${k}" title="Húzd az áthelyezéshez" aria-hidden="true">⠿</span><b>${esc(name)}</b>
       <span class="row" style="gap:4px;flex-wrap:nowrap"><button class="dbtn" data-act="dmove" data-k="${k}" data-d="-1" aria-label="Feljebb">↑</button><button class="dbtn" data-act="dmove" data-k="${k}" data-d="1" aria-label="Lejjebb">↓</button>
-      <button class="dbtn" data-act="dsize" data-k="${k}" title="Méret">${(DASH_SIZES.find(x=>x[0]===sz)||[0,""])[1]}</button><button class="dbtn" data-act="dhide" data-k="${k}" aria-label="Elrejtés">Elrejt</button></span></div>`:"";
+      <label class="dsel"><span class="sr">Méret</span><select data-dsize="${k}" aria-label="${esc(name)}: méret">${DASH_SIZES.map(([v,l])=>`<option value="${v}" ${v===sz?"selected":""}>${l}</option>`).join("")}</select></label><button class="dbtn" data-act="dhide" data-k="${k}" aria-label="Elrejtés">Elrejt</button></span></div>`:"";
     return `<div class="dblock" data-dk="${k}" style="--span:${sz}">${tools}<div class="dinner">${html}</div></div>`}).join("");
   const hiddenList=ed?DASH_DEF.filter(x=>d.hidden.includes(x[0])):[];
-  const bar=ed?`<div class="card dashbar"><div class="grow"><b>A Vezérlőpult szerkesztése</b><div class="muted" style="font-size:12.5px">Fogd meg a ⠿ jelet, és húzd a blokkot a helyére (vagy használd a ↑ ↓ gombokat). A méret gomb a szélességet váltja.</div>
+  const bar=ed?`<div class="card dashbar"><div class="grow"><b>A Vezérlőpult szerkesztése</b><div class="muted" style="font-size:12.5px">Fogd meg a ⠿ jelet, és húzd a blokkot a helyére (vagy használd a ↑ ↓ gombokat). A legördülő menüben a blokk szélességét állíthatod.</div>
       ${hiddenList.length?`<div class="row" style="gap:6px;margin-top:8px"><span class="muted" style="font-size:12.5px">Elrejtve:</span>${hiddenList.map(x=>`<button class="chip" data-act="dshow" data-k="${x[0]}">＋ ${esc(x[1])}</button>`).join("")}</div>`:""}</div>
       <div class="row" style="gap:8px"><button class="nc-skip" data-act="dreset">Alaphelyzet</button><button class="btn" data-act="dedit">Kész</button></div></div>`
     :`<div class="dashedit-row"><button class="chip" data-act="dedit">✎ Vezérlőpult szerkesztése</button></div>`;
@@ -2076,6 +2076,7 @@ document.addEventListener("input",e=>{
 document.addEventListener("change",e=>{
   const t=e.target,m=ym(TODAY);
   if(t.id==="qa-when"){const w=$("#qa-datewrap");if(w)w.hidden=t.value!=="nap";return}
+  if(t.dataset.dsize){const d=dashPrefs(),v=+t.value;if([2,3,4,6].includes(v)){d.size[t.dataset.dsize]=v;save();render()}return}
   if(t.dataset.bp||t.dataset.per){render();return}
   if(t.id==="brand-logo"&&t.files&&t.files[0]){const f=t.files[0];if(f.size>300*1024){toast("A logó legfeljebb 300 KB lehet.");return}const r=new FileReader();r.onload=()=>{ui.brand.logo=String(r.result);repaint();render()};r.readAsDataURL(f);return}
   if(t.id==="mk-file"&&t.files&&t.files[0]){const f=t.files[0];const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const mx=360,sc=Math.min(1,mx/Math.max(img.width,img.height));const cv=document.createElement("canvas");cv.width=Math.round(img.width*sc);cv.height=Math.round(img.height*sc);cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);const src=cv.toDataURL(f.type==="image/jpeg"?"image/jpeg":"image/png",.9);S.custom.push({id:uid(),type:"img",src});if(save()){toast("Kép hozzáadva a saját matricáidhoz.")}else{S.custom.pop();toast("Ez a kép túl nagy a prototípusnak. Próbálj kisebbet.")}render()};img.onerror=()=>toast("Ezt a képet nem tudtam megnyitni.");img.src=r.result};r.readAsDataURL(f);return}
