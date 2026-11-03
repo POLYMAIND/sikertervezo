@@ -1,4 +1,4 @@
-/* Sikertervező — tárolás és belépés.
+/* Sikermaker — tárolás és belépés.
  *
  * Két mód:
  *   cloud — Supabase Auth (e-mailes belépő link) + a terv a `sikertervezo_state` táblában, RLS mögött

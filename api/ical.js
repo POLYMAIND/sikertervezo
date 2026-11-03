@@ -19,7 +19,7 @@ module.exports = async function handler(req, res) {
     const plan = au ? await PL.userPlan({ id: au.id, email: (au.email || "").toLowerCase(), confirmed: !!(au.email_confirmed_at || au.confirmed_at) }, f.brand_slug) : { plan: "ingyenes" };
     const rows = plan.plan !== "pro" ? [] : await L.sb(`sikertervezo_state?user_id=eq.${f.user_id}&brand_slug=eq.${encodeURIComponent(f.brand_slug)}&select=data&limit=1`);
     const brand = B.publicBrand(await B.loadBrand(f.brand_slug), await B.loadPlatform());
-    const body = ICS.build(rows && rows[0] ? rows[0].data : {}, { name: brand.productName || "Sikertervező" });
+    const body = ICS.build(rows && rows[0] ? rows[0].data : {}, { name: brand.productName || "Sikermaker" });
     L.sb(`sikertervezo_ical_feeds?token_hash=eq.${h}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ last_fetch_at: new Date().toISOString() }) }).catch(() => {});
     res.statusCode = 200;
     res.setHeader("Content-Type", "text/calendar; charset=utf-8");

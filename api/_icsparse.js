@@ -1,4 +1,4 @@
-// Sikertervező — külső naptárak (iCal/ICS) olvasása (a _ prefix miatt nem route).
+// Sikermaker — külső naptárak (iCal/ICS) olvasása (a _ prefix miatt nem route).
 // Google „titkos cím iCal formátumban", iCloud megosztott naptár, Outlook közzétett naptár.
 // Ismétlődés: DAILY / WEEKLY (BYDAY) / MONTHLY / YEARLY, INTERVAL, COUNT, UNTIL, EXDATE. Az időket Europe/Budapest szerint adjuk vissza.
 const dns = require("dns").promises;
@@ -150,7 +150,7 @@ async function safeFetch(u, maxBytes = 3_000_000) {
     const addrs = await dns.lookup(host, { all: true }).catch(() => []);
     if (!addrs.length || addrs.some((a) => privateIp(a.address))) throw Object.assign(new Error("blocked_host"), { code: "bad_url" });
     const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 9000);
-    let r; try { r = await fetch(url, { redirect: "manual", signal: ctl.signal, headers: { "User-Agent": "Sikertervezo-Naptar/1.0", Accept: "text/calendar, text/plain;q=0.8" } }); } finally { clearTimeout(tm); }
+    let r; try { r = await fetch(url, { redirect: "manual", signal: ctl.signal, headers: { "User-Agent": "Sikermaker-Naptar/1.0", Accept: "text/calendar, text/plain;q=0.8" } }); } finally { clearTimeout(tm); }
     if (r.status >= 300 && r.status < 400 && r.headers.get("location")) { url = normalizeUrl(new URL(r.headers.get("location"), url).toString()); if (!url) throw Object.assign(new Error("bad_redirect"), { code: "bad_url" }); continue; }
     if (!r.ok) throw Object.assign(new Error("http_" + r.status), { code: "fetch_failed" });
     const buf = Buffer.from(await r.arrayBuffer());

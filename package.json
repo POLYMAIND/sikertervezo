@@ -2,7 +2,7 @@
   "name": "sikertervezo",
   "version": "0.1.0",
   "private": true,
-  "description": "Sikertervező — napi tervező vállalkozóknak, a PolyOS alapmodulja. Alap és white label csomag.",
+  "description": "Sikermaker — napi tervező vállalkozóknak, a PolyOS alapmodulja. Alap és white label csomag.",
   "scripts": {
     "dev": "vercel dev",
     "test": "node --test tests/*.test.mjs",

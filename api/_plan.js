@@ -1,4 +1,4 @@
-// Sikertervező — csomag-jogosultság (a _ prefix miatt nem route).
+// Sikermaker — csomag-jogosultság (a _ prefix miatt nem route).
 //   ingyenes — Vezérlőpult, Naptár, Szokások, Gondolattérkép, Olvasás, Csapat, Matricák, Értékelések
 //   pro      — minden, kivéve a white labelt (3 999 Ft/hó): + Tartalom, Kapcsolatok, Ügyfelek, Számok,
 //              naptár-szinkron és -bekötés, e-mail

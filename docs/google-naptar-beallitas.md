@@ -1,6 +1,6 @@
 # Kétirányú Google Naptár-szinkron – mit kell beállítani
 
-Ehhez egy saját **Google Cloud alkalmazás** kell. Ezzel kér engedélyt a Sikertervező a felhasználótól, hogy olvashassa
+Ehhez egy saját **Google Cloud alkalmazás** kell. Ezzel kér engedélyt a Sikermaker a felhasználótól, hogy olvashassa
 és írhassa a Google Naptárát. Ezt a Polymaind nevében egyszer kell létrehozni. Utána én bekötöm a kódba.
 
 Idő: a beállítás kb. 30–45 perc. A Google **ellenőrzése** (verification) a naptár-hozzáféréshez **1–6 hét**.
@@ -14,7 +14,7 @@ Amíg ez fut, legfeljebb 100 tesztfelhasználóval (akiket név szerint felvesze
 
 ## 1. Projekt létrehozása
 1. Nyisd meg: https://console.cloud.google.com/ és lépj be a Polymaind-fiókkal.
-2. Fent a projektválasztóban: **New Project** → név: `Sikertervezo` → **Create**.
+2. Fent a projektválasztóban: **New Project** → név: `Sikermaker` → **Create**.
 
 ## 2. A Google Calendar API bekapcsolása
 1. Bal menü: **APIs & Services → Library**.
@@ -24,9 +24,9 @@ Amíg ez fut, legfeljebb 100 tesztfelhasználóval (akiket név szerint felvesze
 1. **APIs & Services → OAuth consent screen** (újabb felületen: **Google Auth Platform → Branding**).
 2. User type: **External** → Create.
 3. Kitöltendő:
-   - App name: `Sikertervező`
+   - App name: `Sikermaker`
    - User support email: `hello@polymaind.hu`
-   - App logo: a Sikertervező ikonja (120×120 px PNG)
+   - App logo: a Sikermaker ikonja (120×120 px PNG)
    - App home page: `https://<a-végleges-domain>/`
    - Privacy policy: `https://<a-végleges-domain>/adatkezeles`
    - Terms of service: `https://<a-végleges-domain>/aszf`
@@ -40,7 +40,7 @@ Amíg ez fut, legfeljebb 100 tesztfelhasználóval (akiket név szerint felvesze
 
 ## 4. Az OAuth kliens létrehozása
 1. **APIs & Services → Credentials → Create credentials → OAuth client ID**.
-2. Application type: **Web application**, név: `Sikertervező web`.
+2. Application type: **Web application**, név: `Sikermaker web`.
 3. **Authorized JavaScript origins**: `https://<a-végleges-domain>` (és átmenetileg `https://sikertervezo.vercel.app`)
 4. **Authorized redirect URIs**: `https://<a-végleges-domain>/api/google-callback`
    (és átmenetileg `https://sikertervezo.vercel.app/api/google-callback`)

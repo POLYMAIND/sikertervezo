@@ -1,4 +1,4 @@
--- Sikertervező — bekötött külső naptárak (Google / iCloud / Outlook iCal-link). A link titkosítva (a privát link jelszóként működik).
+-- Sikermaker — bekötött külső naptárak (Google / iCloud / Outlook iCal-link). A link titkosítva (a privát link jelszóként működik).
 -- Böngészőből nem érhető el (RLS, policy nélkül).
 create table if not exists public.sikertervezo_cal_imports (
   id          uuid primary key default gen_random_uuid(),

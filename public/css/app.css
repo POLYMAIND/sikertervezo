@@ -1,4 +1,4 @@
-/* Sikertervező — alapstílus.
+/* Sikermaker — alapstílus.
  * Minden szín, betű és háttér CSS-változó. Az alapértékek itt a SEMLEGES alaparculat;
  * a theme.js a csomag (alap / white label) és a márka beállításai szerint felülírja őket.
  * Új komponensben NE írj be konkrét színkódot: mindig tokent használj. */

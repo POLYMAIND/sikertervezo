@@ -1,4 +1,4 @@
-/* Sikertervező — PolyOS-híd (kliens oldal).
+/* Sikermaker — PolyOS-híd (kliens oldal).
  *
  * A böngésző SOSEM beszél közvetlenül a PolyOS API-val, és nem lát PolyOS-tokent: minden hívás a
  * saját /api/polyos végpontunkon megy át, ami szerver-oldalon, a felhasználó SAJÁT összekapcsolt
@@ -54,7 +54,7 @@
   // „Kipróbálom": a PolyOS modul-oldala (www.polyos.hu/modulok/<oldal>); ahol nincs külön oldal, a modul-áttekintő.
   // A white label csomagról a kapcsolatfelvételi oldalon lehet érdeklődni.
   const upsellUrl = (key, brandSlug) => {
-    const ref = "ref=sikertervezo" + (brandSlug && brandSlug !== "alap" ? "&partner=" + encodeURIComponent(brandSlug) : "");
+    const ref = "ref=sikermaker" + (brandSlug && brandSlug !== "alap" ? "&partner=" + encodeURIComponent(brandSlug) : "");
     if (key === "whitelabel") return `${cfg.publicUrl || cfg.baseUrl}/kapcsolat?${ref}&tema=whitelabel`;
     const m = byKey(key);
     return `${cfg.publicUrl || cfg.baseUrl}/modulok${m && m.page ? "/" + m.page : ""}?${ref}`;

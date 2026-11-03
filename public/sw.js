@@ -1,4 +1,4 @@
-/* Sikertervező — service worker.
+/* Sikermaker — service worker.
  * Cél: telepített appként azonnal és offline is induljon. Stratégia:
  *   - saját statikus fájlok: hálózat előbb (mindig a friss verzió), hiba esetén a tárolt példány;
  *   - navigáció (oldalbetöltés) offline: a tárolt kezdőoldal;

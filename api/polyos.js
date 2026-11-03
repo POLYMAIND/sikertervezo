@@ -45,12 +45,12 @@ module.exports = async function handler(req, res) {
       const state = P.newNonce();
       await L.sb("sikertervezo_polyos_nonces", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ nonce: state, user_id: user.id, return_to: P.safeReturn(b.return_to) }) });
       const q = new URLSearchParams({ client_id: L.env("POLYOS_CLIENT_ID"), redirect_uri: L.appUrl(req) + "/api/polyos-callback", state, scope: P.SCOPES, login_hint: user.email || "" });
-      return L.send(res, 200, { ok: true, url: P.publicUrl() + "/connect/sikertervezo?" + q.toString() });
+      return L.send(res, 200, { ok: true, url: P.publicUrl() + "/connect/sikermaker?" + q.toString() });
     }
     if (action === "disconnect") {
       const link = await P.getLink(user.id);
       if (link) {
-        await P.polyosFetch(link, "POST", "/api/v1/sikertervezo/revoke").catch(() => null); // a PolyOS-oldali visszavonás nem blokkolhatja a leválasztást
+        await P.polyosFetch(link, "POST", "/api/v1/sikermaker/revoke").catch(() => null); // a PolyOS-oldali visszavonás nem blokkolhatja a leválasztást
         await L.sb(`sikertervezo_polyos_links?user_id=eq.${encodeURIComponent(user.id)}`, { method: "DELETE" });
       }
       return L.send(res, 200, { ok: true });
@@ -63,7 +63,7 @@ module.exports = async function handler(req, res) {
       if (!link) return L.send(res, 409, { error: "not_linked" });
       const mod = P.KIND_MODULE[b.kind];
       if (!(link.modules || []).includes(mod)) return L.send(res, 403, { error: "module_forbidden" });
-      const r = await P.polyosFetch(link, "POST", "/api/v1/sikertervezo/items", { kind: b.kind, module: mod, external_id: c.external_id, data: c.data });
+      const r = await P.polyosFetch(link, "POST", "/api/v1/sikermaker/items", { kind: b.kind, module: mod, external_id: c.external_id, data: c.data });
       if (r.status === 401) { await L.sb(`sikertervezo_polyos_links?user_id=eq.${encodeURIComponent(user.id)}`, { method: "DELETE" }); return L.send(res, 409, { error: "not_linked" }); }
       if (r.status === 403) return L.send(res, 403, { error: "module_forbidden" });
       if (!r.ok) return L.send(res, 502, { error: "polyos_error" });

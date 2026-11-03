@@ -1,4 +1,4 @@
-/* Sikertervező — arculat (theme).
+/* Sikermaker — arculat (theme).
  *
  * Két csomag:
  *   alap       — semleges alaparculat. A felhasználó csak a hátteret választhatja meg (minta + szín).
@@ -94,7 +94,7 @@
     return {
       plan: wl0 ? "whitelabel" : "alap",
       slug: b.slug || "alap",
-      productName: (wl && b.productName) || "Sikertervező",
+      productName: (wl && b.productName) || "Sikermaker",
       tagline: (wl && b.tagline) || "Napi tervező a vállalkozásodhoz",
       ownerName: (wl && b.ownerName) || "",
       logo: (wl && b.logo) || "",

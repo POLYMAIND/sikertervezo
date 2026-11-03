@@ -1,4 +1,4 @@
-# Sikertervező
+# Sikermaker
 
 Napi tervező vállalkozóknak (lépések, kapcsolatok, ügyfelek, tartalom, csapat, célok, szokások, olvasás, gondolattérkép,
 matricák), a **PolyOS alapmodulja**: innen vezetjük tovább a felhasználót a PolyOS Naptár, Foglalás, CRM,

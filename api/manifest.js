@@ -11,7 +11,7 @@ module.exports = async function handler(req, res) {
   const c = (wl && b.colors) || {};
   const accent = hex(c.accent, "#6D4AFF");
   const theme = c.sidebar === "accent" ? accent : c.sidebar === "light" ? "#FFFFFF" : "#1F2024";
-  const name = (wl && b.productName) || "Sikertervező";
+  const name = (wl && b.productName) || "Sikermaker";
   const q = slug !== "alap" ? "?brand=" + encodeURIComponent(slug) : "";
   const icons = wl && b.logo
     ? [192, 512].map((s) => ({ src: `/api/icon?size=${s}${q ? "&" + q.slice(1) : ""}`, sizes: `${s}x${s}`, type: "image/png", purpose: "any" }))

@@ -1,4 +1,4 @@
-/* Sikertervező — indítás.
+/* Sikermaker — indítás.
  * 1) /api/config: márka + csomag + Supabase + PolyOS-beállítás (a szerver dönti el, mi jár)
  * 2) arculat felrakása  3) belépés / regisztráció / bemutató mód  4) a terv betöltése  5) a tervező indítása
  */

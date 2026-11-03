@@ -1,4 +1,4 @@
--- Sikertervező — naptár-feliratkozó linkek (Google Naptár, iPhone Naptár). A linkből csak a SHA-256 hash-t tároljuk.
+-- Sikermaker — naptár-feliratkozó linkek (Google Naptár, iPhone Naptár). A linkből csak a SHA-256 hash-t tároljuk.
 -- Böngészőből nem érhető el (RLS, policy nélkül).
 create table if not exists public.sikertervezo_ical_feeds (
   token_hash    text primary key,

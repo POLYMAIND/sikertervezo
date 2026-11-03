@@ -1,4 +1,4 @@
-// Sikertervező — közös szerver-segédek (a _ prefix miatt nem route).
+// Sikermaker — közös szerver-segédek (a _ prefix miatt nem route).
 // Titkos kulcs (service role, PolyOS client secret, link-titkosító kulcs) CSAK itt, szerver-oldalon él.
 const crypto = require("crypto");
 

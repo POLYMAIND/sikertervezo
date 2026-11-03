@@ -1,4 +1,4 @@
-// Sikertervező — PolyOS-híd, szerver oldal (a _ prefix miatt nem route).
+// Sikermaker — PolyOS-híd, szerver oldal (a _ prefix miatt nem route).
 //
 // Modell: minden felhasználó a SAJÁT PolyOS-fiókját köti össze (engedélykérés a PolyOS-ben → code → token).
 // A token titkosítva, a felhasználóhoz kötve él a `sikertervezo_polyos_links` táblában; a böngésző sosem látja.
@@ -55,7 +55,7 @@ async function getLink(userId) {
 }
 async function polyosFetch(link, method, p, payload) {
   const r = await fetch(apiBase() + p, {
-    method, headers: { Authorization: "Bearer " + L.decrypt(link.access_token_enc), "Content-Type": "application/json", "X-Polyos-Client": "sikertervezo" },
+    method, headers: { Authorization: "Bearer " + L.decrypt(link.access_token_enc), "Content-Type": "application/json", "X-Polyos-Client": "sikermaker" },
     body: payload ? JSON.stringify(payload) : undefined,
   });
   const j = await r.json().catch(() => ({}));
@@ -64,7 +64,7 @@ async function polyosFetch(link, method, p, payload) {
 async function refreshModules(link) {
   const fresh = link.modules_checked_at && Date.now() - Date.parse(link.modules_checked_at) < 10 * 60 * 1000;
   if (fresh) return link;
-  const r = await polyosFetch(link, "GET", "/api/v1/sikertervezo/me").catch(() => null);
+  const r = await polyosFetch(link, "GET", "/api/v1/sikermaker/me").catch(() => null);
   if (!r) return link;
   if (r.status === 401) { await L.sb(`sikertervezo_polyos_links?user_id=eq.${encodeURIComponent(link.user_id)}`, { method: "DELETE" }); return null; } // visszavonták a PolyOS-ben
   if (!r.ok) return link;

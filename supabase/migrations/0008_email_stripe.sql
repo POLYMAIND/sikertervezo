@@ -1,4 +1,4 @@
--- Sikertervező — Pro e-mail napló (napi limit) + Stripe-azonosítók az előfizetéshez.
+-- Sikermaker — Pro e-mail napló (napi limit) + Stripe-azonosítók az előfizetéshez.
 create table if not exists public.sikertervezo_email_log (
   id         bigint generated always as identity primary key,
   user_id    uuid not null references auth.users(id) on delete cascade,

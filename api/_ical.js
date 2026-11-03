@@ -1,4 +1,4 @@
-// Sikertervező — iCal (ICS) naptár-feliratkozás építője (a _ prefix miatt nem route).
+// Sikermaker — iCal (ICS) naptár-feliratkozás építője (a _ prefix miatt nem route).
 // A tervező időpontjai, betervezett tartalmai és utánkövetései egy feliratkozható naptárként:
 // Google Naptár, iPhone/Mac Naptár, Outlook mind tudja olvasni (egyirányú: tervező → naptár).
 const TZ = "Europe/Budapest";
@@ -25,7 +25,7 @@ const stamp = () => new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+
 const isDay = (k) => /^\d{4}-\d{2}-\d{2}$/.test(k);
 
 function build(state, opts) {
-  const o = Object.assign({ name: "Sikertervező", domain: "sikertervezo", from: addDay(new Date().toISOString().slice(0, 10), -60), to: addDay(new Date().toISOString().slice(0, 10), 400) }, opts || {});
+  const o = Object.assign({ name: "Sikermaker", domain: "sikertervezo", from: addDay(new Date().toISOString().slice(0, 10), -60), to: addDay(new Date().toISOString().slice(0, 10), 400) }, opts || {});
   const S = state || {}, ds = stamp(), ev = [];
   const inRange = (k) => isDay(k) && k >= o.from && k <= o.to;
   // időpontok (a napi nézet órái)

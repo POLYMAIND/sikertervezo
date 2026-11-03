@@ -1,6 +1,6 @@
-# Sikertervező ↔ PolyOS integráció
+# Sikermaker ↔ PolyOS integráció
 
-A Sikertervező önálló app (saját Vercel-projekt, saját Supabase), ami a PolyOS **alapmodulja**: innen vezetjük
+A Sikermaker önálló app (saját Vercel-projekt, saját Supabase), ami a PolyOS **alapmodulja**: innen vezetjük
 tovább a felhasználót a PolyOS Naptár, Foglalás, CRM, Feladatkezelő, Cashflow és Kampánytervező moduljába.
 
 Ez a dokumentum a **PolyOS-oldali szerződés**: mit kell a PolyOS-ben megépíteni, hogy a tervező oldala (ez a repó,
@@ -25,20 +25,20 @@ Tervező (böngésző)          Tervező szerver (/api)                    PolyO
 ──────────────────          ──────────────────────                    ──────
 „Összekapcsolás"  ──POST /api/polyos {connect}──▶ nonce (10 perc, a userhez kötve)
                   ◀── url ─────────────────────
-böngésző ───────────────────────────────────────────────────────────▶ GET /connect/sikertervezo?client_id&redirect_uri&state&scope&login_hint
+böngésző ───────────────────────────────────────────────────────────▶ GET /connect/sikermaker?client_id&redirect_uri&state&scope&login_hint
                                                                          (belépés, tenant/egység választás, jóváhagyás)
                             GET /api/polyos-callback?code&state ◀──── 302 redirect_uri?code&state
-                            POST /api/v1/sikertervezo/token ─────────▶ code → access_token (+ tenant, modules)
+                            POST /api/v1/sikermaker/token ─────────▶ code → access_token (+ tenant, modules)
                             token titkosítva a sikertervezo_polyos_links-be
 böngésző ◀── 302 /?polyos=ok#bovitesek
-„↗ Küldés"        ──POST /api/polyos {push}────▶ POST /api/v1/sikertervezo/items ─▶ upsert a megfelelő modulba
+„↗ Küldés"        ──POST /api/polyos {push}────▶ POST /api/v1/sikermaker/items ─▶ upsert a megfelelő modulba
 ```
 
 ## A PolyOS-ben megépítendő végpontok
 
 Minden végpont serverless (Vercel), a meglévő `_access.js` / `_audit.js` / `_tenant.js` segédekkel.
 
-### 1. `GET /connect/sikertervezo` — engedélykérő oldal (UI)
+### 1. `GET /connect/sikermaker` — engedélykérő oldal (UI)
 
 Paraméterek: `client_id`, `redirect_uri`, `state`, `scope` (`items:write profile:read`), `login_hint` (e-mail, előtöltéshez).
 
@@ -47,7 +47,7 @@ Paraméterek: `client_id`, `redirect_uri`, `state`, `scope` (`items:write profil
 - A `redirect_uri` **pontosan egyezzen** a klienshez regisztrált címmel (nyílt átirányítás ellen).
 - Egyszer használatos, ~5 percig élő `code`-ot ad, 302 → `redirect_uri?code=…&state=…`. Elutasításnál `?error=access_denied&state=…`.
 
-### 2. `POST /api/v1/sikertervezo/token`
+### 2. `POST /api/v1/sikermaker/token`
 
 ```json
 { "grant_type": "authorization_code", "code": "…", "client_id": "…", "client_secret": "…", "redirect_uri": "…" }
@@ -61,12 +61,12 @@ Válasz:
 - `modules`: a tenant **csomagja ÉS a user jogosultsága** szerint ténylegesen használható modulok (ugyanaz a metszet,
   amit az `_access.js` `modulesFor` ad), az `api/_modules.js` kulcsaival: `crm`, `calendar`, `bookings`, `projects`, `cashflow`, `campaign`.
 
-### 3. `GET /api/v1/sikertervezo/me` (Bearer)
+### 3. `GET /api/v1/sikermaker/me` (Bearer)
 
 `{ "tenant": { "id": "…", "name": "…" }, "modules": [ … ] }` — a tervező 10 percenként frissíti vele a modul-listát.
 Visszavont tokenre **401** (a tervező ekkor törli a kapcsolatot).
 
-### 4. `POST /api/v1/sikertervezo/items` (Bearer) — átküldés
+### 4. `POST /api/v1/sikermaker/items` (Bearer) — átküldés
 
 ```json
 { "kind": "contact", "module": "crm", "external_id": "k3x9a2b", "data": { "name": "Minta Anna", "stage": "Beszélgetés" } }
@@ -90,7 +90,7 @@ Válasz: `{ "id": "<a PolyOS-rekord azonosítója>", "url": "https://www.polyos.
 
 `*` = kötelező. A dátum `ÉÉÉÉ-HH-NN`.
 
-### 5. `POST /api/v1/sikertervezo/revoke` (Bearer)
+### 5. `POST /api/v1/sikermaker/revoke` (Bearer)
 
 A token érvénytelenítése (a tervező „Leválasztás" gombja hívja). A PolyOS-ben a felhasználónak is legyen
 „Összekapcsolt alkalmazások" listája, ahonnan maga is visszavonhatja.
@@ -108,11 +108,11 @@ A token érvénytelenítése (a tervező „Leválasztás" gombja hívja). A Pol
 ## Upsell-linkek
 
 Ha a felhasználónál nincs meg egy modul, a „Kipróbálom” gomb a PolyOS modul-oldalára visz:
-`https://www.polyos.hu/modulok/<oldal>?ref=sikertervezo&partner=<márka-slug>`
+`https://www.polyos.hu/modulok/<oldal>?ref=sikermaker&partner=<márka-slug>`
 (crm → `crm`, calendar → `naptar`, bookings → `foglalas`, projects → `feladatkezelo`, campaign → `kampanytervezes`;
 a cashflow-nak nincs külön oldala, az a `/modulok` áttekintőre visz). A `partner` a white label márkát azonosítja.
-A white label csomag iránti érdeklődés: `https://www.polyos.hu/kapcsolat?ref=sikertervezo&tema=whitelabel`.
+A white label csomag iránti érdeklődés: `https://www.polyos.hu/kapcsolat?ref=sikermaker&tema=whitelabel`.
 
-**Fontos:** a PolyOS árazási dokumentációja jelenleg azt írja, hogy *„nincs white-label"*. Ez a sikertervezőre
+**Fontos:** a PolyOS árazási dokumentációja jelenleg azt írja, hogy *„nincs white-label"*. Ez a Sikermakerre
 nem igaz: ott a white label külön értékesített csomag. A PolyOS-oldali árazó oldalra és a `modular-pricing` doksiba
 ezt fel kell venni.

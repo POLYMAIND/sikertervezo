@@ -1,4 +1,4 @@
--- Sikertervező — alapséma. Külön (saját) Supabase-projektbe való; minden tábla `sikertervezo_` előtagú,
+-- Sikermaker — alapséma. Külön (saját) Supabase-projektbe való; minden tábla `sikertervezo_` előtagú,
 -- így közös projektben is ütközésmentes. Futtatás: Supabase SQL Editor, vagy `supabase db push`.
 --
 -- Hozzáférési elv:

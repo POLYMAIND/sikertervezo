@@ -7,7 +7,7 @@ const dir = path.dirname(new URL(import.meta.url).pathname);
 
 const ACCENT = "#6D4AFF", INK = "#1F2024", MUTED = "#62646B", BG = "#F4F4F1";
 const LOGO = "https://sikertervezo.vercel.app/icons/icon-192.png";
-const POLYOS = "https://www.polyos.hu/?ref=sikertervezo-email";
+const POLYOS = "https://www.polyos.hu/?ref=sikermaker-email";
 const HELLO = `{{ if .Data.full_name }}Szia {{ .Data.full_name }}!{{ else }}Szia!{{ end }}`;
 
 function layout({ preheader, title, intro, button, link = "{{ .ConfirmationURL }}", after, code }) {
@@ -25,7 +25,7 @@ function layout({ preheader, title, intro, button, link = "{{ .ConfirmationURL }
     <tr><td style="padding:0 4px 18px">
       <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr>
         <td style="vertical-align:middle"><img src="${LOGO}" width="40" height="40" alt="" style="display:block;border:0;border-radius:11px"></td>
-        <td style="vertical-align:middle;padding-left:12px;font-size:19px;font-weight:700;color:${INK}">Sikertervező</td>
+        <td style="vertical-align:middle;padding-left:12px;font-size:19px;font-weight:700;color:${INK}">Sikermaker</td>
       </tr></table>
     </td></tr>
     <tr><td style="background:#ffffff;border-radius:22px;padding:34px 30px;box-shadow:0 8px 24px rgba(31,32,36,.06)">
@@ -37,7 +37,7 @@ function layout({ preheader, title, intro, button, link = "{{ .ConfirmationURL }
     </td></tr>
     <tr><td style="padding:18px 0 0">
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:${INK};border-radius:18px"><tr><td style="padding:22px 24px">
-        <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:#B9A8FF">A Sikertervező a PolyOS része</div>
+        <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:#B9A8FF">A Sikermaker a PolyOS része</div>
         <div style="margin:6px 0 14px;font-size:15px;line-height:1.5;color:#FFFFFF">Ha a vállalkozásod kinövi a tervezőt: CRM, naptár és foglalás, feladatkezelő, cashflow és kampánytervező egy helyen.</div>
         <a href="${POLYOS}" style="display:inline-block;padding:11px 20px;border-radius:999px;background:#FFFFFF;color:${INK};font-size:14px;font-weight:700;text-decoration:none">Megnézem a PolyOS-t</a>
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:18px;font-size:13px;line-height:1.7;color:#C9CBD0">
@@ -48,8 +48,8 @@ function layout({ preheader, title, intro, button, link = "{{ .ConfirmationURL }
       </td></tr></table>
     </td></tr>
     <tr><td style="padding:20px 8px 0;font-size:12px;line-height:1.55;color:${MUTED};text-align:center">
-      Ezt a levelet azért kaptad, mert ezzel az e-mail-címmel ({{ .Email }}) műveletet indítottak a Sikertervezőben.<br>
-      Ha nem te voltál, nyugodtan hagyd figyelmen kívül: semmi nem változik.<br>A Sikertervezőt a Polymaind üzemelteti.
+      Ezt a levelet azért kaptad, mert ezzel az e-mail-címmel ({{ .Email }}) műveletet indítottak a Sikermakerben.<br>
+      Ha nem te voltál, nyugodtan hagyd figyelmen kívül: semmi nem változik.<br>A Sikermakert a Polymaind üzemelteti.
     </td></tr>
   </table>
 </td></tr></table>
@@ -59,39 +59,39 @@ function layout({ preheader, title, intro, button, link = "{{ .ConfirmationURL }
 
 const T = {
   "1-regisztracio-megerositese": {
-    subject: "Még egy kattintás, és indulhatsz – Sikertervező",
-    html: layout({ preheader: "Erősítsd meg az e-mail-címed, és kezdheted a saját tervedet.", title: "Üdv a Sikertervezőben!",
+    subject: "Még egy kattintás, és indulhatsz – Sikermaker",
+    html: layout({ preheader: "Erősítsd meg az e-mail-címed, és kezdheted a saját tervedet.", title: "Üdv a Sikermakerben!",
       intro: "Örülünk, hogy itt vagy. Már csak egy lépés van hátra: erősítsd meg az e-mail-címed, és máris kezdheted a saját tervedet. Minden eszközödön ugyanazt fogod látni.",
       button: "Megerősítem és kezdem",
       after: "Tipp: a telefonodon tedd ki a tervezőt a kezdőképernyőre, és appként indul, egy koppintással." }),
   },
   "2-belepo-link": {
-    subject: "A belépő linked – Sikertervező",
+    subject: "A belépő linked – Sikermaker",
     html: layout({ preheader: "Egy kattintás, és már bent is vagy.", title: "Itt a belépő linked",
       intro: "Kattints a gombra, és jelszó nélkül beléptetünk. A link rövid ideig érvényes, és csak egyszer használható.",
       button: "Belépek" }),
   },
   "3-uj-jelszo": {
-    subject: "Új jelszó beállítása – Sikertervező",
+    subject: "Új jelszó beállítása – Sikermaker",
     html: layout({ preheader: "Állíts be új jelszót a fiókodhoz.", title: "Új jelszó beállítása",
       intro: "Kérést kaptunk, hogy új jelszót állíts be a fiókodhoz. A gombra kattintva megadhatod az újat. A link rövid ideig érvényes.",
       button: "Új jelszót állítok be" }),
   },
   "4-email-cim-modositas": {
-    subject: "Erősítsd meg az új e-mail-címed – Sikertervező",
+    subject: "Erősítsd meg az új e-mail-címed – Sikermaker",
     html: layout({ preheader: "Az e-mail-címed módosításának megerősítése.", title: "Új e-mail-cím megerősítése",
       intro: "A fiókodhoz új e-mail-címet adtál meg: {{ .NewEmail }}. A módosítás a gombra kattintva lép életbe.",
       button: "Megerősítem az új címet" }),
   },
   "5-meghivo": {
-    subject: "Meghívót kaptál a Sikertervezőbe",
-    html: layout({ preheader: "Fogadd el a meghívást, és kezdd el a saját tervedet.", title: "Meghívtak a Sikertervezőbe",
-      intro: "Meghívót kaptál a Sikertervezőbe: egy napi tervezőbe, ahol a lépéseid, kapcsolataid, ügyfeleid és céljaid egy helyen vannak. Fogadd el, és állítsd be a fiókodat.",
+    subject: "Meghívót kaptál a Sikermakerbe",
+    html: layout({ preheader: "Fogadd el a meghívást, és kezdd el a saját tervedet.", title: "Meghívtak a Sikermakerbe",
+      intro: "Meghívót kaptál a Sikermakerbe: egy napi tervezőbe, ahol a lépéseid, kapcsolataid, ügyfeleid és céljaid egy helyen vannak. Fogadd el, és állítsd be a fiókodat.",
       button: "Elfogadom a meghívást" }),
   },
   "6-megerosito-kod": {
-    subject: "A megerősítő kódod – Sikertervező",
-    html: layout({ preheader: "A megerősítő kódod a Sikertervezőhöz.", title: "Megerősítő kód",
+    subject: "A megerősítő kódod – Sikermaker",
+    html: layout({ preheader: "A megerősítő kódod a Sikermakerhez.", title: "Megerősítő kód",
       intro: "Egy érzékeny művelethez szükség van a megerősítésedre. Ezt a kódot írd be a tervezőben:", code: true }),
   },
 };
@@ -102,6 +102,6 @@ for (const [k, v] of Object.entries(T)) {
   fs.writeFileSync(path.join(dir, k + ".html"), v.html);
   md += `| ${NAMES[k]} | \`${k}.html\` | ${v.subject} |\n`;
 }
-md += "\nA feladó neve és címe (most: „Supabase Auth <noreply@mail.app.supabase.io>”) csak saját SMTP-vel cserélhető: Authentication → Emails → SMTP Settings.\n";
+md += "\nA feladó neve és címe (most: „Supabase Auth <noreply@mail.app.supabase.io>”) csak saját SMTP-vel cserélhető: Authentication → Emails → SMTP Settings. Brevóval: host `smtp-relay.brevo.com`, port `587`, felhasználó a Brevo SMTP-loginja, jelszó a Brevo **SMTP-kulcsa** (nem az API-kulcs), feladó a Brevóban hitelesített cím, név: Sikermaker.\n";
 fs.writeFileSync(path.join(dir, "README.md"), md);
 console.log("ok");

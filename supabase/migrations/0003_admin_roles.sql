@@ -1,4 +1,4 @@
--- Sikertervező — superadmin jog kiosztása a felületről (a SUPERADMIN_EMAILS-ben lévő fő admin(ok) mellé).
+-- Sikermaker — superadmin jog kiosztása a felületről (a SUPERADMIN_EMAILS-ben lévő fő admin(ok) mellé).
 -- Futtatás: Supabase SQL Editor (a 0002 után). Böngészőből nem érhető el (RLS, policy nélkül).
 create table if not exists public.sikertervezo_superadmins (
   user_id    uuid primary key references auth.users(id) on delete cascade,

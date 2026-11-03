@@ -45,7 +45,7 @@ module.exports = async function handler(req, res) {
       await L.sb("sikertervezo_ical_feeds", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ token_hash: hash(token), user_id: user.id, brand_slug: B.resolveSlug(req) }) });
       // a link a naptár nevére végződik: ha egy naptárprogram a címből vesz nevet, akkor is szép legyen
       const brand = B.publicBrand(await B.loadBrand(B.resolveSlug(req)), await B.loadPlatform());
-      const file = String(brand.productName || "Sikertervező").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "") || "Sikertervezo";
+      const file = String(brand.productName || "Sikermaker").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "") || "Sikermaker";
       return L.send(res, 200, { ok: true, url: L.appUrl(req) + "/naptar/" + file + ".ics?t=" + token });
     }
     // ---- külső naptárak bekötése (Pro) ----

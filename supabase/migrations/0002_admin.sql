@@ -1,4 +1,4 @@
--- Sikertervező — superadmin: előfizetések + megmásíthatatlan admin-napló.
+-- Sikermaker — superadmin: előfizetések + megmásíthatatlan admin-napló.
 -- Futtatás: Supabase SQL Editor (a 0001 után). Böngészőből egyik tábla sem érhető el (RLS, policy nélkül);
 -- csak a szerver-oldali /api/admin végpont írja-olvassa service kulccsal, superadmin-ellenőrzés után.
 

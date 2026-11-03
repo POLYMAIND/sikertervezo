@@ -22,4 +22,4 @@ http.createServer(async (req, res) => {
   if (!fs.existsSync(f)) f = path.join(root, "public", "index.html");
   res.setHeader("Content-Type", TYPES[path.extname(f)] || "application/octet-stream");
   fs.createReadStream(f).pipe(res);
-}).listen(port, () => console.log(`Sikertervező: http://localhost:${port}`));
+}).listen(port, () => console.log(`Sikermaker: http://localhost:${port}`));

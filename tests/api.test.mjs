@@ -118,7 +118,7 @@ test("/api/manifest: alap csomagnál semleges, white labelnél a márka neve és
   const handler = fresh("../api/manifest.js");
   const r1 = fakeRes(); await handler({ method: "GET", url: "/api/manifest", headers: {} }, r1);
   const m1 = JSON.parse(r1.body);
-  assert.equal(m1.name, "Sikertervező"); assert.equal(m1.display, "standalone");
+  assert.equal(m1.name, "Sikermaker"); assert.equal(m1.display, "standalone");
   assert.ok(m1.icons.some((i) => i.purpose === "maskable"));
   const r2 = fakeRes(); await handler({ method: "GET", url: "/api/manifest?brand=minta-marka", headers: {} }, r2);
   const m2 = JSON.parse(r2.body);

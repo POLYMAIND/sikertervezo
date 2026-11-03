@@ -24,7 +24,7 @@ module.exports = async function handler(req, res) {
     const ret = P.safeReturn(n.return_to);
     if (q.get("error") || !code) return back(res, ret, "megszakitva");
 
-    const r = await fetch(P.apiBase() + "/api/v1/sikertervezo/token", {
+    const r = await fetch(P.apiBase() + "/api/v1/sikermaker/token", {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ grant_type: "authorization_code", code, client_id: L.env("POLYOS_CLIENT_ID"), client_secret: L.env("POLYOS_CLIENT_SECRET"), redirect_uri: L.appUrl(req) + "/api/polyos-callback" }),
     });

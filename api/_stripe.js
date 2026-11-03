@@ -1,4 +1,4 @@
-// Sikertervező — Stripe segédek (a _ prefix miatt nem route). Függőség nélkül: REST + kézi webhook-aláírás-ellenőrzés.
+// Sikermaker — Stripe segédek (a _ prefix miatt nem route). Függőség nélkül: REST + kézi webhook-aláírás-ellenőrzés.
 const crypto = require("crypto");
 const L = require("./_lib");
 

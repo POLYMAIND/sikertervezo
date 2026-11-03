@@ -1,4 +1,4 @@
-// Sikertervező — márkák és csomagok (a _ prefix miatt nem route).
+// Sikermaker — márkák és csomagok (a _ prefix miatt nem route).
 //
 // CSOMAG-SZABÁLY (a szerver érvényesíti, nem a kliens):
 //   alap       — a válaszban CSAK { slug, plan:"alap", upsell } van; szín, logó, név, betű nem jut ki.
@@ -50,7 +50,7 @@ function sanitize(input) {
 }
 
 // Amit a böngésző megkap.
-//   - Az app ALAP-arculata (a superadmin „Sikertervező-arculat" beállítása) minden márkára érvényes.
+//   - Az app ALAP-arculata (a superadmin „Sikermaker-arculat" beállítása) minden márkára érvényes.
 //   - Alap csomagú márka: CSAK az alap-arculatot kapja (a saját white label mezői nem jutnak ki).
 //   - White label márka: az alap-arculatra ráépül a saját beállítása (ami ki van töltve, az felülír).
 function hasTheme(c) {
