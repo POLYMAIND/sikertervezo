@@ -1,6 +1,6 @@
 // Sikermaker — csomag-jogosultság (a _ prefix miatt nem route).
 //   ingyenes — Vezérlőpult, Naptár, Szokások, Gondolattérkép, Olvasás, Csapat, Matricák, Értékelések
-//   pro      — minden, kivéve a white labelt (3 999 Ft/hó): + Tartalom, Kapcsolatok, Ügyfelek, Számok,
+//   pro      — minden, kivéve a white labelt (1 990 Ft/hó): + Tartalom, Kapcsolatok, Ügyfelek, Számok,
 //              naptár-szinkron és -bekötés, e-mail
 // Pro jár: aktív / próbaidős (lejárat előtt) / ajándék Pro előfizetésnek, white label márka felhasználóinak,
 // és a superadminoknak. Minden más: ingyenes (fail-closed: hiba esetén is ingyenes).

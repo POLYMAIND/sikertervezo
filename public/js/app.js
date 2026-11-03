@@ -14,7 +14,7 @@ const FEAT=k=>!!(BR.features&&BR.features[k]);
 // bemutatóban a Pro funkciókat egy kis „PRO” címke jelöli, hogy egyértelmű legyen, mi tartozik a Pro csomaghoz
 const SHOWPRO=DEMO&&PRO;
 const proTag=(cls)=>SHOWPRO?`<span class="protag${cls?" "+cls:""}" title="A Pro csomag része">PRO</span>`:"";
-const PRO_PRICE="3 999 Ft / hó";
+const PRO_PRICE="1 990 Ft / hó";
 /* ---------- utils ---------- */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));

@@ -1,5 +1,5 @@
 // POST /api/billing — Pro előfizetés Stripe-on.
-//   { action:"checkout" } -> { ok, url }   Stripe Checkout (havi 3 999 Ft, STRIPE_PRICE_ID)
+//   { action:"checkout" } -> { ok, url }   Stripe Checkout (havi 1 990 Ft, STRIPE_PRICE_ID)
 //   { action:"portal" }   -> { ok, url }   Stripe ügyfélportál (kártya, számlák, lemondás)
 // Az előfizetés állapotát a Stripe webhook írja (api/stripe-webhook.js), nem a böngésző.
 const L = require("./_lib");
