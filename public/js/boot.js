@@ -93,7 +93,7 @@
     const f = $("#boot input"); if (f) f.focus();
   }
   const HU_ERR = { "Invalid login credentials": "Hibás e-mail-cím vagy jelszó.", "Email not confirmed": "Még nem erősítetted meg az e-mail-címed. Nézd meg a postafiókodat.", "User already registered": "Ezzel az e-mail-címmel már van fiók. Lépj be, vagy kérj új jelszót." };
-  const errText = (e) => HU_ERR[e && e.message] || (e && /rate|seconds/i.test(e.message) ? "Túl sok próbálkozás. Várj egy percet, és próbáld újra." : "Valami nem sikerült. Próbáld újra.");
+  const errText = (e) => HU_ERR[e && e.message] || (e && /rate|seconds/i.test(e.message) ? "Túl sok próbálkozás. Várj egy percet, és próbáld újra." : e && /sending|email/i.test(e.message) ? "Most nem sikerült elküldeni a levelet. Próbáld újra néhány perc múlva, vagy írj nekünk: hello@polymaind.hu." : "Valami nem sikerült. Próbáld újra.");
 
   document.addEventListener("click", async (e) => {
     const t = e.target.closest("[data-tab]"); if (t && $("#boot") && !$("#boot").hidden) { authScreen(t.dataset.tab); return; }
