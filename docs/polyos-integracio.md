@@ -107,10 +107,11 @@ A token érvénytelenítése (a tervező „Leválasztás" gombja hívja). A Pol
 
 ## Upsell-linkek
 
-Ha a felhasználónál nincs meg egy modul, a tervező ide visz:
-`https://www.polyos.hu/arazas?ref=sikertervezo&modul=<kulcs>&partner=<márka-slug>` — a `partner` a white label
-márkát azonosítja, így a PolyOS-oldalon a partnerhez (pl. affiliate-program) köthető a konverzió. A white label
-csomag érdeklődő-linkje ugyanez, `modul=whitelabel` értékkel.
+Ha a felhasználónál nincs meg egy modul, a „Kipróbálom” gomb a PolyOS modul-oldalára visz:
+`https://www.polyos.hu/modulok/<oldal>?ref=sikertervezo&partner=<márka-slug>`
+(crm → `crm`, calendar → `naptar`, bookings → `foglalas`, projects → `feladatkezelo`, campaign → `kampanytervezes`;
+a cashflow-nak nincs külön oldala, az a `/modulok` áttekintőre visz). A `partner` a white label márkát azonosítja.
+A white label csomag iránti érdeklődés: `https://www.polyos.hu/kapcsolat?ref=sikertervezo&tema=whitelabel`.
 
 **Fontos:** a PolyOS árazási dokumentációja jelenleg azt írja, hogy *„nincs white-label"*. Ez a sikertervezőre
 nem igaz: ott a white label külön értékesített csomag. A PolyOS-oldali árazó oldalra és a `modular-pricing` doksiba

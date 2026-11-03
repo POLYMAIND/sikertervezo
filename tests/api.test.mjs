@@ -125,3 +125,41 @@ test("/api/manifest: alap csomagnál semleges, white labelnél a márka neve és
   assert.equal(m2.name, "Minta Sikerműhely"); assert.equal(m2.theme_color, "#0F766E");
   assert.match(m2.start_url, /brand=minta-marka/);
 });
+
+// superadmin: a szerver a Supabase-től kapott, MEGERŐSÍTETT e-mailt veti össze a SUPERADMIN_EMAILS listával
+async function adminCall(action, authUser, envList) {
+  Object.assign(process.env, { SUPABASE_URL: "https://pelda.supabase.co", SUPABASE_ANON_KEY: "anon", SUPABASE_SERVICE_ROLE_KEY: "svc" });
+  if (envList == null) delete process.env.SUPERADMIN_EMAILS; else process.env.SUPERADMIN_EMAILS = envList;
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = async (url) => {
+    if (String(url).endsWith("/auth/v1/user")) return new Response(JSON.stringify(authUser), { status: authUser ? 200 : 401 });
+    if (String(url).includes("/rest/v1/")) return new Response("[]", { status: 200 });
+    return new Response(JSON.stringify({ users: [] }), { status: 200 });
+  };
+  try {
+    fresh("../api/_lib.js");
+    const handler = fresh("../api/admin.js");
+    const res = fakeRes();
+    await handler({ method: "POST", url: "/api/admin", headers: { authorization: "Bearer t-" + Math.random() }, body: { action } }, res);
+    return { status: res.statusCode, body: JSON.parse(res.body || "{}") };
+  } finally {
+    globalThis.fetch = realFetch;
+    ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY", "SUPERADMIN_EMAILS"].forEach((k) => delete process.env[k]);
+  }
+}
+const ADMIN = { id: "a1", email: "web@polymaind.hu", email_confirmed_at: "2026-11-03T08:00:00Z" };
+
+test("superadmin: a listán lévő, megerősített fiók admin", async () => {
+  const r = await adminCall("whoami", ADMIN, "web@polymaind.hu");
+  assert.equal(r.body.superadmin, true);
+  assert.equal((await adminCall("overview", ADMIN, "web@polymaind.hu")).status, 200);
+});
+test("superadmin: üres lista esetén senki (fail-closed)", async () => {
+  assert.equal((await adminCall("whoami", ADMIN, null)).body.superadmin, false);
+  assert.equal((await adminCall("users", ADMIN, null)).status, 403);
+});
+test("superadmin: megerősítetlen e-mail és más fiók nem admin", async () => {
+  assert.equal((await adminCall("users", { id: "a1", email: "web@polymaind.hu" }, "web@polymaind.hu")).status, 403);
+  assert.equal((await adminCall("users", { id: "x", email: "hello@pelda.hu", email_confirmed_at: "2026-11-01" }, "web@polymaind.hu")).status, 403);
+  assert.equal((await adminCall("users", null, "web@polymaind.hu")).status, 401);
+});

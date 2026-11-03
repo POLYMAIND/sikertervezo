@@ -223,6 +223,7 @@ function bindBoards(){
 
 /* ---------- nav ---------- */
 const VIEWS=[["ma","Ma"],["naptar","Naptár"],["szokasok","Szokások"],["terkep","Gondolattérkép"],["olvasas","Olvasás"],["kapcsolatok","Kapcsolatok"],["ugyfelek","Ügyfelek"],["tartalom","Tartalom"],["csapat","Csapat"],["szamok","Számok"],["matricak","Matricák"],["bovitesek","Bővítések"],["beallitasok","Beállítások"]];
+if(ctx.superadmin)VIEWS.push(["admin","Admin"]);
 let route="ma";
 let ui={calMonth:ym(TODAY),selDay:T,calMode:"honap",ccMonth:ym(TODAY),cTab:"naptar",kFilter:"all",pFilter:-1,sel:null,mq:{t:"",a:"",editId:null},mqdel:null,skip:[],hdel:null,mapId:null,mapSel:null,mk:{type:"pill",text:"Bemutató 18:00",color:0,editId:null},cdel:null};
 
@@ -246,6 +247,7 @@ const NICON={
   csapat:'<circle cx="12" cy="7.5" r="3"/><circle cx="5.5" cy="10" r="2.2"/><circle cx="18.5" cy="10" r="2.2"/><path d="M7 19c.5-3 2.5-4.6 5-4.6s4.5 1.6 5 4.6M2.5 18c.3-2 1.5-3.2 3-3.4M21.5 18c-.3-2-1.5-3.2-3-3.4"/>',
   szamok:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',matricak:'<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
   bovitesek:'<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><path d="M16.5 13v7M13 16.5h7"/>',
+  admin:'<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
   beallitasok:'<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>'
 };
 const nicon=k=>`<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${NICON[k]||""}</svg>`;
@@ -1155,8 +1157,64 @@ function checklistCard(){
   <div class="prog" style="margin:10px 0 6px"><i style="width:${done/items.length*100}%"></i></div>
   <div class="list">${items.map(([l,ok,act])=>`<div class="li ${ok?"done":""}"><span class="cbx" aria-hidden="true" ${ok?'aria-pressed="true"':""}>${ok?"✓":""}</span><div class="grow t">${l}</div>${ok?"":act}</div>`).join("")}</div></div>`;
 }
+/* ---------- superadmin (Polymaind) ---------- */
+const ADM_TABS=[["attekintes","Áttekintés"],["felhasznalok","Regisztrálók"],["markak","Márkák"],["naplo","Napló"]];
+const SUB_PLANS=[["ingyenes","Ingyenes"],["alap","Alap"],["whitelabel","White label"]];
+const SUB_STATUS=[["probaido","Próbaidő"],["aktiv","Aktív"],["lejart","Lejárt"],["lemondva","Lemondva"],["ajandek","Ajándék"]];
+const lbl=(arr,k)=>(arr.find(x=>x[0]===k)||[k,k])[1];
+const dt=s=>s?fmtDate(String(s).slice(0,10))+" "+String(s).slice(0,4):"–";
+async function admLoad(what){
+  ui.adm=ui.adm||{};ui.adm.loading=what;ui.adm.err="";render();
+  try{
+    if(what==="attekintes")ui.adm.overview=(await ctx.admin("overview")).overview;
+    if(what==="felhasznalok")ui.adm.users=(await ctx.admin("users")).users;
+    if(what==="markak")ui.adm.brands=(await ctx.admin("brands")).brands;
+    if(what==="naplo"){const r=await ctx.admin("audit");ui.adm.audit=r.audit;ui.adm.auditMissing=r.missing}
+  }catch(e){ui.adm.err=e.status===403?"Ehhez nincs jogosultságod.":"Nem sikerült betölteni. Próbáld újra."}
+  ui.adm.loading="";render();
+}
+function vAdmin(){
+  activeBoard=null;
+  if(!ctx.superadmin)return head("Admin","Nincs hozzáférés")+'<div class="card empty">Ez az oldal csak a superadminnak érhető el.</div>';
+  const a=ui.adm=ui.adm||{},tab=ui.admTab||"attekintes";
+  const need={attekintes:"overview",felhasznalok:"users",markak:"brands",naplo:"audit"}[tab];
+  if(!a[need]&&a.loading!==tab&&!a.err)setTimeout(()=>admLoad(tab),0);
+  const tabs=`<div class="tabs">${ADM_TABS.map(([k,l])=>`<button data-act="admtab" data-k="${k}" aria-pressed="${tab===k}">${l}</button>`).join("")}<button data-act="admreload" data-k="${tab}">↻ Frissítés</button></div>`;
+  let body="";
+  if(a.err)body=`<div class="card"><p style="margin:0">${esc(a.err)}</p></div>`;
+  else if(!a[need])body=`<div class="card"><div class="spinner" role="status" aria-label="Betöltés"></div></div>`;
+  else if(tab==="attekintes"){const o=a.overview;
+    body=`<div class="grid g4">${[["Regisztrált",o.users],["Megerősített e-mail",o.confirmed],["Új az elmúlt 7 napban",o.new7],["Aktív az elmúlt 7 napban",o.active7]].map(([l,v])=>`<div class="card kpi"><div class="v num">${v}</div><div class="l">${l}</div></div>`).join("")}</div>
+    <div class="grid g2"><div class="card"><h3>Előfizetések állapota</h3>${Object.keys(o.byStatus).length?`<div class="list">${Object.entries(o.byStatus).map(([k,v])=>`<div class="li"><div class="grow t">${lbl(SUB_STATUS,k)}</div><b class="num">${v}</b></div>`).join("")}</div>`:'<div class="empty">Még senkinek nincs beállított előfizetése (mindenki ingyenes).</div>'}</div>
+    <div class="card"><h3>Felhasználók márkánként</h3>${Object.keys(o.byBrand).length?`<div class="list">${Object.entries(o.byBrand).map(([k,v])=>`<div class="li"><div class="grow t">${esc(k)}</div><b class="num">${v}</b></div>`).join("")}</div>`:'<div class="empty">Még senki nem mentett tervet.</div>'}<p class="muted" style="font-size:12px;margin:8px 0 0">Új az elmúlt 30 napban: ${o.new30}</p></div></div>`;}
+  else if(tab==="felhasznalok"){const q=(ui.admQ||"").toLowerCase();const list=a.users.filter(u=>!q||(u.email+" "+u.name).toLowerCase().includes(q));
+    body=`<div class="card"><div class="row between" style="margin-bottom:10px"><input type="text" data-admq="1" value="${esc(ui.admQ||"")}" placeholder="Keresés név vagy e-mail szerint" aria-label="Keresés" style="max-width:340px"><span class="muted" style="font-size:12.5px">${list.length} / ${a.users.length} fő</span></div>
+    <div class="tablewrap"><table><thead><tr><th>Felhasználó</th><th>Regisztrált</th><th>Utoljára aktív</th><th>Márka</th><th>Előfizetés</th><th></th></tr></thead><tbody>${list.map(u=>`<tr><td><strong>${esc(u.name||"–")}</strong>${u.superadmin?' <span class="chip on">superadmin</span>':""}<div class="muted" style="font-size:12px">${esc(u.email)}${u.confirmed?"":' · <span style="color:var(--warn)">nincs megerősítve</span>'}${u.banned?' · <span style="color:var(--warn)">letiltva</span>':""}</div></td><td class="num">${dt(u.created_at)}</td><td class="num">${dt(u.last_active||u.last_sign_in_at)}</td><td>${esc(u.brand||"–")}</td><td>${u.sub?`<span class="chip ${u.sub.status==="aktiv"||u.sub.status==="ajandek"?"good":u.sub.status==="lejart"||u.sub.status==="lemondva"?"warn":""}">${lbl(SUB_PLANS,u.sub.plan)} · ${lbl(SUB_STATUS,u.sub.status)}</span>${u.sub.current_period_end?`<div class="muted" style="font-size:11.5px">eddig: ${fmtDate(u.sub.current_period_end)}</div>`:""}`:'<span class="chip">Ingyenes</span>'}</td><td><button class="btn small ghost" data-act="admuser" data-id="${u.id}">Kezelés</button></td></tr>`).join("")||'<tr><td colspan="6" class="empty">Nincs találat.</td></tr>'}</tbody></table></div></div>`;}
+  else if(tab==="markak"){
+    body=`<div class="card stack" style="gap:10px"><h3 style="margin:0">Új márka (white label ügyfél)</h3><form class="row" data-form="admbrand" style="align-items:flex-end"><label class="f" style="flex:1;min-width:180px">Azonosító (kisbetű, kötőjel)<input type="text" id="adm-slug" placeholder="pl. ceged" pattern="[a-z0-9][a-z0-9-]{0,39}" required></label><label class="f" style="min-width:160px">Csomag<select id="adm-plan">${[["alap","Alap"],["whitelabel","White label"]].map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select></label><button class="btn">Létrehozás</button></form><p class="muted" style="margin:0;font-size:12px">A márka címe: <code>/?brand=azonosító</code>, vagy saját domain a BRAND_HOSTS beállítással. Az arculatot a márka-admin a Beállításokban állítja be.</p></div>
+    ${a.brands.map(x=>`<div class="card stack" style="gap:10px"><div class="row between"><h3 style="margin:0">${esc(x.slug)}</h3><span class="row" style="gap:6px">${[["alap","Alap"],["whitelabel","White label"]].map(([k,l])=>`<button class="mood" data-act="admbplan" data-slug="${esc(x.slug)}" data-k="${k}" aria-pressed="${x.plan===k}">${l}</button>`).join("")}<button class="chip" data-act="admbupsell" data-slug="${esc(x.slug)}" data-plan="${x.plan}" data-on="${x.upsell?0:1}">${x.upsell?"PolyOS-ajánló: be":"PolyOS-ajánló: ki"}</button></span></div>
+      <div><div class="lab2">Márka-adminok (ők szerkesztik az arculatot)</div>${x.admins.length?`<div class="row" style="gap:6px">${x.admins.map(e=>`<span class="chip">${esc(e)} <button class="cadd" style="opacity:1;width:18px;height:18px;font-size:13px" data-act="admbadmdel" data-slug="${esc(x.slug)}" data-email="${esc(e)}" aria-label="Eltávolítás">×</button></span>`).join("")}</div>`:'<div class="empty">Még nincs.</div>'}</div>
+      <form class="row" data-form="admbadm" data-slug="${esc(x.slug)}" style="flex-wrap:nowrap"><input type="email" placeholder="Regisztrált felhasználó e-mail-címe" aria-label="Márka-admin e-mail" required><button class="btn small">Hozzáadás</button></form></div>`).join("")}`;}
+  else{
+    body=a.auditMissing?'<div class="card"><p style="margin:0">A napló táblája még nincs létrehozva. Futtasd le a <code>supabase/migrations/0002_admin.sql</code> fájlt a Supabase SQL Editorban.</p></div>':
+    `<div class="card"><div class="tablewrap"><table><thead><tr><th>Időpont</th><th>Ki</th><th>Művelet</th><th>Mire</th><th>Részletek</th></tr></thead><tbody>${a.audit.map(r=>`<tr><td class="num">${esc(String(r.at).replace("T"," ").slice(0,16))}</td><td>${esc(r.actor_email||"")}</td><td>${esc(r.action)}</td><td style="font-size:12px">${esc(r.target||"")}</td><td style="font-size:12px">${esc(JSON.stringify(r.detail||{}))}</td></tr>`).join("")||'<tr><td colspan="5" class="empty">Még nincs bejegyzés.</td></tr>'}</tbody></table></div></div>`;
+  }
+  return head("Admin","Superadmin · Polymaind")+tabs+body;
+}
+function admUserSheet(id){
+  const u=(ui.adm.users||[]).find(x=>x.id===id);if(!u)return;const s=u.sub||{plan:"ingyenes",status:"probaido",current_period_end:"",note:""};
+  $("#layer").innerHTML=`<div class="modal" data-act="close"><form class="sheet" data-form="admsub" data-id="${u.id}"><div class="grabber" aria-hidden="true"></div><div class="row between"><div><div class="eyebrow">Felhasználó</div><h2>${esc(u.name||u.email)}</h2><div class="muted" style="font-size:12.5px">${esc(u.email)} · regisztrált: ${dt(u.created_at)}</div></div><button type="button" class="iconbtn" data-act="close" aria-label="Bezárás">×</button></div>
+  <div class="fg"><label class="f">Csomag<select id="as-plan">${SUB_PLANS.map(([k,l])=>`<option value="${k}" ${s.plan===k?"selected":""}>${l}</option>`).join("")}</select></label><label class="f">Állapot<select id="as-status">${SUB_STATUS.map(([k,l])=>`<option value="${k}" ${s.status===k?"selected":""}>${l}</option>`).join("")}</select></label>
+  <label class="f">Érvényes eddig<input type="date" id="as-end" value="${esc(s.current_period_end||"")}"></label><label class="f full">Megjegyzés (csak admin látja)<textarea id="as-note" rows="2" maxlength="500">${esc(s.note||"")}</textarea></label></div>
+  <p class="muted" style="margin:0;font-size:12px">A csomag egyelőre nyilvántartás: a fizetés (Stripe/Billingo) bekötéséig nem korlátoz funkciót.</p>
+  <div class="row between">${u.superadmin?"<span></span>":`<button type="button" class="btn ghost small" data-act="${u.banned?"admunban":"admban"}" data-id="${u.id}">${u.banned?"Letiltás feloldása":"Fiók letiltása"}</button>`}<button class="btn">Mentés</button></div></form></div>`;
+}
+async function admDo(action,payload,okMsg,reload){
+  try{await ctx.admin(action,payload);toast(okMsg);closeForm();if(reload)admLoad(reload)}
+  catch(e){toast(e.message==="user_not_found"?"Nincs ilyen e-mail-címmel regisztrált felhasználó.":e.message==="bad_slug"?"Az azonosító csak kisbetűt, számot és kötőjelet tartalmazhat.":"Nem sikerült. Próbáld újra.")}
+}
 /* ---------- render ---------- */
-const RENDER={ma:vMa,bovitesek:vBovitesek,olvasas:vOlvasas,szokasok:vSzokasok,terkep:vTerkep,matricak:vMatricak,naptar:vNaptar,kapcsolatok:vKapcsolatok,ugyfelek:vUgyfelek,tartalom:vTartalom,csapat:vCsapat,szamok:vSzamok,beallitasok:vBeall};
+const RENDER={ma:vMa,admin:vAdmin,bovitesek:vBovitesek,olvasas:vOlvasas,szokasok:vSzokasok,terkep:vTerkep,matricak:vMatricak,naptar:vNaptar,kapcsolatok:vKapcsolatok,ugyfelek:vUgyfelek,tartalom:vTartalom,csapat:vCsapat,szamok:vSzamok,beallitasok:vBeall};
 function render(){
   const y=window.scrollY;
   $("#view").innerHTML=demoCta()+RENDER[route]()+upStrip(route);
@@ -1297,6 +1355,14 @@ document.addEventListener("click",e=>{
     case"obnopt":if(ui.ob){ui.ob.d.pt=false;obNext()}break;
     case"pttoggle":S.settings.ptOff=!S.settings.ptOff;save();render();break;
     case"checkhide":S.prefs=S.prefs||{};S.prefs.checklistHide=true;save();render();break;
+    case"admtab":ui.admTab=b.dataset.k;render();break;
+    case"admreload":ui.adm=ui.adm||{};ui.adm.err="";admLoad(b.dataset.k);break;
+    case"admuser":admUserSheet(id);break;
+    case"admban":admDo("user.ban",{id},"Fiók letiltva.","felhasznalok");break;
+    case"admunban":admDo("user.unban",{id},"Letiltás feloldva.","felhasznalok");break;
+    case"admbplan":admDo("brand.set",{slug:b.dataset.slug,plan:b.dataset.k,upsell:true},"Csomag módosítva.","markak");break;
+    case"admbupsell":admDo("brand.set",{slug:b.dataset.slug,plan:b.dataset.plan,upsell:b.dataset.on==="1"},"Mentve.","markak");break;
+    case"admbadmdel":admDo("brand.admin.remove",{slug:b.dataset.slug,email:b.dataset.email},"Márka-admin eltávolítva.","markak");break;
     case"more":openMore();break;
     case"install":ctx.install.prompt().then(ok=>{if(ok)toast("Telepítve. Mostantól a kezdőképernyőről indíthatod.");render()});break;
     case"installhide":S.prefs=S.prefs||{};S.prefs.installHide=true;save();render();break;
@@ -1320,6 +1386,9 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeForm();if(tray
 document.addEventListener("submit",e=>{
   e.preventDefault();const f=e.target;
   if(f.dataset.form==="ob"){obNext();return}
+  if(f.dataset.form==="admsub"){admDo("sub.set",{id:f.dataset.id,plan:$("#as-plan").value,status:$("#as-status").value,current_period_end:$("#as-end").value,note:$("#as-note").value},"Előfizetés mentve.","felhasznalok");return}
+  if(f.dataset.form==="admbrand"){admDo("brand.set",{slug:$("#adm-slug").value.trim(),plan:$("#adm-plan").value,upsell:true},"Márka létrehozva.","markak");return}
+  if(f.dataset.form==="admbadm"){const em=f.querySelector("input").value.trim();if(em)admDo("brand.admin.add",{slug:f.dataset.slug,email:em},"Márka-admin hozzáadva.","markak");return}
   if(f.dataset.form==="book"){const t=$("#book-title").value.trim(),a=$("#book-author").value.trim(),st=$("#book-status").value;if(!t){toast("Írd be a könyv címét.");return}S.books=S.books||[];S.books.unshift({id:uid(),title:t,author:a,status:st,progress:st==="kesz"?100:0,started:st==="olvasom"?T:"",finished:st==="kesz"?T:""});save();toast("Könyv hozzáadva.");render();return}
   if(f.dataset.form==="todo"){const k=f.dataset.k,inp=f.querySelector("input"),v=inp.value.trim();if(!v)return;S.todos=S.todos||{};(S.todos[k]=S.todos[k]||[]).push({id:uid(),t:v,done:false});save();render();const n=document.getElementById("todo-"+k);n&&n.focus();return}
   if(f.dataset.form==="mq"){const t=$("#mq-text").value.trim(),a=$("#mq-a").value.trim();if(!t){toast("Írd be az idézetet.");return}S.myquotes=S.myquotes||[];
@@ -1340,6 +1409,7 @@ document.addEventListener("submit",e=>{
 document.addEventListener("input",e=>{
   const t=e.target;
   if(t.dataset.ob){obInput(t);return}
+  if(t.dataset.admq){ui.admQ=t.value;const pos=t.selectionStart;render();const n=document.querySelector("[data-admq]");if(n){n.focus();n.setSelectionRange(pos,pos)}return}
   if(t.dataset.hour||t.dataset.loc){const k=t.dataset.day,h=t.dataset.hour||t.dataset.loc,dd=day(k);
     if(t.dataset.hour){dd.hours=dd.hours||{};if(t.value.trim())dd.hours[h]=t.value;else delete dd.hours[h]}
     else{dd.locs=dd.locs||{};if(t.value.trim())dd.locs[h]=t.value;else delete dd.locs[h]}

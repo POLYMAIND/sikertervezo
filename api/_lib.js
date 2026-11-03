@@ -49,7 +49,7 @@ async function getUser(req) {
   if (!r || !r.ok) return null;
   const u = await r.json().catch(() => null);
   if (!u || !u.id) return null;
-  const user = { id: u.id, email: u.email || "" };
+  const user = { id: u.id, email: (u.email || "").toLowerCase(), confirmed: !!(u.email_confirmed_at || u.confirmed_at) };
   _users.set(tok, { user, exp: Date.now() + 30_000 });
   if (_users.size > 500) _users.clear();
   return user;
@@ -82,4 +82,14 @@ function appUrl(req) {
   return (req.headers["x-forwarded-proto"] || "http") + "://" + host;
 }
 
-module.exports = { env, isProd, supabaseReady, serviceReady, send, body, sb, getUser, encrypt, decrypt, appUrl, SB_URL, SB_ANON };
+// Supabase Auth admin API (service kulcs) — csak a superadmin végpont használja.
+async function authAdmin(path, opts = {}) {
+  const r = await fetch(SB_URL() + "/auth/v1/admin/" + path, Object.assign({}, opts, {
+    headers: Object.assign({ apikey: SB_SERVICE(), Authorization: "Bearer " + SB_SERVICE(), "Content-Type": "application/json" }, opts.headers || {}),
+  }));
+  const j = await r.json().catch(() => null);
+  if (!r.ok) { const e = new Error("auth_admin_" + r.status); e.status = r.status; throw e; }
+  return j;
+}
+
+module.exports = { authAdmin, env, isProd, supabaseReady, serviceReady, send, body, sb, getUser, encrypt, decrypt, appUrl, SB_URL, SB_ANON };

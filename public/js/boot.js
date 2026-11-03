@@ -144,7 +144,11 @@
     TH.apply(brandRaw, prefs); paintChrome(brandRaw);
 
     let brandAdmin = false, px = Object.assign({ enabled: false }, config.polyos || {});
-    if (!demo) { try { brandAdmin = !!(await api("/api/brand")).admin; } catch (e) {} }
+    let superadmin = false;
+    if (!demo) {
+      try { brandAdmin = !!(await api("/api/brand")).admin; } catch (e) {}
+      try { superadmin = !!(await api("/api/admin", { method: "POST", body: JSON.stringify({ action: "whoami" }) })).superadmin; } catch (e) {}
+    }
     // belépve a valódi állapot; bemutató módban csak a fejlesztői mock (élesben a szerver sosem kapcsolja be)
     if (px.enabled && (!demo || px.mock)) { try { Object.assign(px, (await api("/api/polyos", { method: "POST", body: JSON.stringify({ action: "status" }) })).polyos || {}); } catch (e) {} }
     const pr = new URLSearchParams(location.search).get("polyos");
@@ -153,7 +157,9 @@
 
     const ctx = {
       mode: demo ? "demo" : "cloud", cloud: store.cloudAvailable(), user, state: st,
-      brand: TH.effectiveBrand(brandRaw), brandRaw, brandAdmin, paintChrome, install,
+      brand: TH.effectiveBrand(brandRaw), brandRaw, brandAdmin, paintChrome, install, superadmin,
+      // superadmin hívás: a jogosultságot a szerver MINDEN kérésnél újra ellenőrzi, ez csak a felület kapuja
+      admin: async (action, payload) => api("/api/admin", { method: "POST", body: JSON.stringify(Object.assign({ action }, payload || {})) }),
       showAuth: (tab) => { sessionStorage.removeItem(DEMO_CHOSEN); authScreen(tab === "belepes" ? "belepes" : "regisztracio"); },
       logout: async () => { await store.signOut(); sessionStorage.removeItem(DEMO_CHOSEN); location.hash = ""; location.reload(); },
       setDemoPlan: (p) => { if (p === "whitelabel") ls.set(DEMO_PLAN_KEY, "whitelabel"); else ls.del(DEMO_PLAN_KEY); location.reload(); },

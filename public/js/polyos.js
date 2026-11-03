@@ -12,27 +12,27 @@
   const ST = (window.ST = window.ST || {});
 
   const MODULES = [
-    { key: "crm", icon: "👥", label: "CRM", path: "/crm",
+    { key: "crm", page: "crm", icon: "👥", label: "CRM", path: "/crm",
       pitch: "A Kapcsolatok és az Ügyfelek egy valódi CRM-ben: pipeline, e-mail, leadek, egy helyen a csapatoddal.",
       feats: ["Kapcsolatok átküldése egy kattintással", "Pipeline és lead-űrlapok", "E-mail és hírlevél a kontaktjaidnak"],
       views: ["kapcsolatok", "ugyfelek"], push: ["contact", "client"] },
-    { key: "calendar", icon: "📅", label: "Naptár", path: "/calendar",
+    { key: "calendar", page: "naptar", icon: "📅", label: "Naptár", path: "/calendar",
       pitch: "Google- és telefonos naptár, határidők és leterheltség egy nézetben.",
       feats: ["Időpontok átküldése a PolyOS Naptárba", "Google és iPhone szinkron", "Terhelés-nézet"],
       views: ["naptar"], push: ["event"] },
-    { key: "bookings", icon: "📌", label: "Foglalás", path: "/bookings",
+    { key: "bookings", page: "foglalas", icon: "📌", label: "Foglalás", path: "/bookings",
       pitch: "Megosztható foglalási link: az ügyfeleid maguk foglalnak, a foglalás a naptáradba, a lead a CRM-be kerül.",
       feats: ["Saját foglalási link (Instagram bio, Messenger)", "Emlékeztető mindkét félnek", "A foglaló automatikusan a CRM-be kerül"],
       views: ["naptar", "ma"], push: [] },
-    { key: "projects", icon: "✅", label: "Feladatkezelő", path: "/task",
+    { key: "projects", page: "feladatkezelo", icon: "✅", label: "Feladatkezelő", path: "/task",
       pitch: "Projektek és feladatok határidővel, felelőssel, csapatban.",
       feats: ["Teendők átküldése feladatként", "Projektek, állapotok, határidők", "Csapat-terheltség"],
       views: ["ma", "naptar"], push: ["task"] },
-    { key: "cashflow", icon: "💸", label: "Cashflow", path: "/cashflow",
+    { key: "cashflow", page: "", icon: "💸", label: "Cashflow", path: "/cashflow",
       pitch: "Bevétel, kiadás, előrejelzés: lásd előre, mennyi pénzed lesz a hónap végén.",
       feats: ["Bevétel és kiadás egy helyen", "Runway és előrejelzés", "AI pénzügyi tanácsadó"],
       views: ["ugyfelek", "szamok"], push: ["order"] },
-    { key: "campaign", icon: "🚀", label: "Kampánytervező", path: "/ads",
+    { key: "campaign", page: "kampanytervezes", icon: "🚀", label: "Kampánytervező", path: "/ads",
       pitch: "A tartalomtervedből kampány: hirdetés, landing oldal, lead-automatizmus.",
       feats: ["Tartalom és ötlet átküldése kampányvázlatnak", "Meta-hirdetések és riportok", "Landing- és lead-automatizmus"],
       views: ["tartalom"], push: ["content", "idea"] },
@@ -51,8 +51,14 @@
   }
   const has = (key) => cfg.linked && Array.isArray(cfg.modules) && cfg.modules.includes(key);
   const openUrl = (key) => cfg.baseUrl + ((byKey(key) || {}).path || "/");
-  const upsellUrl = (key, brandSlug) =>
-    `${cfg.baseUrl}/arazas?ref=sikertervezo&modul=${encodeURIComponent(key)}${brandSlug ? "&partner=" + encodeURIComponent(brandSlug) : ""}`;
+  // „Kipróbálom": a PolyOS modul-oldala (www.polyos.hu/modulok/<oldal>); ahol nincs külön oldal, a modul-áttekintő.
+  // A white label csomagról a kapcsolatfelvételi oldalon lehet érdeklődni.
+  const upsellUrl = (key, brandSlug) => {
+    const ref = "ref=sikertervezo" + (brandSlug && brandSlug !== "alap" ? "&partner=" + encodeURIComponent(brandSlug) : "");
+    if (key === "whitelabel") return `${cfg.publicUrl || cfg.baseUrl}/kapcsolat?${ref}&tema=whitelabel`;
+    const m = byKey(key);
+    return `${cfg.publicUrl || cfg.baseUrl}/modulok${m && m.page ? "/" + m.page : ""}?${ref}`;
+  };
   const canPush = (kind) => { const m = KIND_MODULE[kind]; return !!m && has(m); };
 
   async function call(body) {

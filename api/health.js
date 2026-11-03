@@ -3,11 +3,11 @@
 const L = require("./_lib");
 const P = require("./_polyos");
 
-const TABLES = ["sikertervezo_brands", "sikertervezo_brand_admins", "sikertervezo_state", "sikertervezo_polyos_links", "sikertervezo_polyos_nonces"];
+const TABLES = ["sikertervezo_brands", "sikertervezo_brand_admins", "sikertervezo_state", "sikertervezo_polyos_links", "sikertervezo_polyos_nonces", "sikertervezo_subscriptions", "sikertervezo_audit"];
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") return L.send(res, 405, { error: "method_not_allowed" });
-  const out = { ok: true, supabase: L.supabaseReady(), service: L.serviceReady(), app_url: !!L.env("APP_URL"), polyos: P.enabled(), tables: {} };
+  const out = { ok: true, supabase: L.supabaseReady(), service: L.serviceReady(), app_url: !!L.env("APP_URL"), polyos: P.enabled(), superadmin_configured: !!L.env("SUPERADMIN_EMAILS"), tables: {} };
   if (L.serviceReady()) {
     await Promise.all(TABLES.map(async (t) => {
       try { await L.sb(`${t}?select=*&limit=0`); out.tables[t] = true; } catch (e) { out.tables[t] = false; }
