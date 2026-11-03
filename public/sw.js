@@ -4,7 +4,7 @@
  *   - navigáció (oldalbetöltés) offline: a tárolt kezdőoldal;
  *   - /api/* és minden idegen domain: NEM nyúlunk hozzá (adat sosem kerül a gyorsítótárba).
  * Új kiadásnál a VERSION emelése törli a régi gyorsítótárat. */
-const VERSION = "st-v1";
+const VERSION = "st-v2";
 const SHELL = ["/", "/css/app.css", "/js/theme.js", "/js/polyos.js", "/js/store.js", "/js/app.js", "/js/boot.js", "/favicon.svg", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {
@@ -21,7 +21,7 @@ self.addEventListener("fetch", (e) => {
   e.respondWith(
     fetch(req)
       .then((res) => {
-        if (res.ok && res.type === "basic") { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req.mode === "navigate" ? "/" : req, copy)); }
+        if (res.ok && res.type === "basic" && (req.mode !== "navigate" || url.pathname === "/")) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req.mode === "navigate" ? "/" : req, copy)); }
         return res;
       })
       .catch(() => caches.match(req.mode === "navigate" ? "/" : req).then((hit) => hit || caches.match("/")))

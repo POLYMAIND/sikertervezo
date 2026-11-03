@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1F2024">
+<title>Sikermaker – napi tervező vállalkozóknak</title>
+<meta name="description" content="A Sikermaker a vállalkozók napi tervezője: teendők, naptár, kapcsolatok, ügyfelek, tartalom és célok egy helyen. Ingyen elkezdheted, mobilon appként is működik.">
+<link rel="canonical" href="https://sikermaker.hu/start">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Sikermaker – napi tervező vállalkozóknak">
+<meta property="og:description" content="Teendők, naptár, kapcsolatok, ügyfelek, tartalom és célok egy helyen. Ingyen elkezdheted.">
+<meta property="og:url" content="https://sikermaker.hu/start">
+<meta property="og:image" content="https://sikermaker.hu/icons/icon-512.png">
+<meta property="og:locale" content="hu_HU">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="/css/start.css">
+</head>
+<body>
+
+<header class="top" id="top">
+  <div class="in">
+    <a class="logo" href="/start" aria-label="Sikermaker – kezdőlap">
+      <svg viewBox="0 0 48 48" width="32" height="32" aria-hidden="true"><rect x="2" y="2" width="44" height="44" rx="12" fill="#1F2024"/><path d="M12 34h7v-7h7v-7h7v-7h3" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="36" cy="13" r="3.6" fill="#F7D987"/></svg>
+      <span>Sikermaker</span>
+    </a>
+    <nav class="links" id="links" aria-label="Oldal menü">
+      <a href="#funkciok">Funkciók</a>
+      <a href="#hogyan">Hogyan működik</a>
+      <a href="#arak">Árak</a>
+      <a href="#gyik">GYIK</a>
+      <a href="/?belepes" class="login">Belépés</a>
+    </nav>
+    <a class="btn sm" href="/?regisztracio">Kipróbálom ingyen</a>
+    <button class="burger" id="burger" aria-label="Menü" aria-expanded="false" aria-controls="links"><span></span><span></span></button>
+  </div>
+</header>
+
+<main>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="in grid2">
+    <div class="copy">
+      <p class="pill"><span class="dot"></span> Magyar fejlesztés · mobilon is app</p>
+      <h1>A vállalkozásod napi terve. <mark>Egy helyen.</mark></h1>
+      <p class="lead">Teendők, naptár, kapcsolatok, ügyfelek, tartalom és célok – nem öt appban és tíz cetlin, hanem egy nyugodt felületen, amit reggel kinyitsz, és tudod, mi a dolgod.</p>
+      <div class="ctas">
+        <a class="btn lg" href="/?regisztracio">Regisztrálok ingyen</a>
+        <a class="btn lg ghost" href="/?bemutato">Megnézem a bemutatót</a>
+      </div>
+      <ul class="trust">
+        <li>✓ Bankkártya nélkül</li>
+        <li>✓ 1 perc a regisztráció</li>
+        <li>✓ Bármikor lemondható</li>
+      </ul>
+    </div>
+
+    <div class="mock" aria-hidden="true">
+      <div class="mock-win">
+        <div class="mock-side">
+          <div class="ms-logo"></div>
+          <i class="on"></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+        <div class="mock-main">
+          <div class="mm-head"><b>Jó reggelt!</b><span>Kedd · 3 lépés vár ma</span></div>
+          <div class="mm-row">
+            <div class="mm-card big">
+              <small>A mai lépések</small>
+              <p class="done">Árajánlat küldése</p>
+              <p>Bejegyzés a heti témáról</p>
+              <p>Visszahívni: Minta Anna</p>
+            </div>
+            <div class="mm-card">
+              <small>Heti cél</small>
+              <div class="ring"><span>68%</span></div>
+            </div>
+          </div>
+          <div class="mm-row">
+            <div class="mm-card"><small>Naptár</small><p class="ev">10:00 Ügyféltalálkozó</p><p class="ev b">14:30 Tartalomgyártás</p></div>
+            <div class="mm-card"><small>Szokás</small><div class="dots"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i><i></i></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="mock-phone">
+        <div class="mp-bar">Sikermaker</div>
+        <div class="mp-card"><small>Ma</small><p class="done">Reggeli tervezés</p><p>Hírlevél megírása</p></div>
+        <div class="mp-card hl"><small>Hétértékelő</small><p>Kitöltésre vár</p></div>
+        <div class="mp-tab"><i class="on"></i><i></i><i></i><i></i></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLÉMA -->
+<section class="band">
+  <div class="in">
+    <h2 class="c">Ismerős?</h2>
+    <div class="grid3">
+      <div class="pain"><span class="em">🗂️</span><h3>Minden máshol van</h3><p>A teendő egy füzetben, az ügyfél a telefonban, a posztötlet egy jegyzetben, a cél pedig a fejedben.</p></div>
+      <div class="pain"><span class="em">⏳</span><h3>Pörögsz, de nem haladsz</h3><p>Egész nap dolgozol, este mégsem tudod megmondani, mit vittél előre a vállalkozásodban.</p></div>
+      <div class="pain"><span class="em">🧩</span><h3>A nagy szoftver túl sok</h3><p>A céges rendszerek egy csapatnak készültek. Neked egy egyszerű, napi tervező kellene, ami tényleg használható.</p></div>
+    </div>
+    <p class="answer">A Sikermaker erre a helyzetre készült: <b>egy nyugodt hely, ahol a napod és a vállalkozásod is összeáll.</b></p>
+  </div>
+</section>
+
+<!-- FUNKCIÓK -->
+<section id="funkciok" class="sec">
+  <div class="in">
+    <p class="kicker">Funkciók</p>
+    <h2>Minden, amire egy vállalkozó napjának szüksége van</h2>
+    <div class="feats">
+      <article class="feat"><span class="ic">🧭</span><h3>Vezérlőpult</h3><p>Reggel egy pillantás: a mai lépések, a naptár, a heti cél és a szokásaid egy képernyőn.</p></article>
+      <article class="feat"><span class="ic">📅</span><h3>Naptár, ami szinkronban van</h3><p>Gyors hozzáadás egy kattintással, és feliratkozhatsz rá Google- vagy iPhone-naptárból. Más naptárakat is behúzhatsz.</p><span class="tag">Szinkron: Pro</span></article>
+      <article class="feat"><span class="ic">🧠</span><h3>Gondolattérkép kérdéssorral</h3><p>Nem üres lappal indulsz: egy kérdéssor végigvezet, és a válaszaidból magától összeáll a térképed.</p></article>
+      <article class="feat"><span class="ic">🤝</span><h3>Kapcsolatok és ügyfelek</h3><p>Kivel hol tartasz, mikor kell visszahívni, ki mit szeret. Egyszerű ügyfélnyilvántartás, CRM-tudomány nélkül.</p><span class="tag">Pro</span></article>
+      <article class="feat"><span class="ic">✍️</span><h3>Tartalomtervező</h3><p>Témapillérek, ötletek, poszt-naptár. Tudni fogod, mit teszel ki jövő kedden.</p><span class="tag">Pro</span></article>
+      <article class="feat"><span class="ic">📈</span><h3>Számok</h3><p>Bevétel, rendelések, havi cél: látod, hol tartasz, táblázatok nélkül.</p><span class="tag">Pro</span></article>
+      <article class="feat"><span class="ic">🔁</span><h3>Heti és havi értékelő</h3><p>Pénteken jelentkezik a hétértékelő, hó végén a havi. Pár kérdés, és tisztán látod, mi működött.</p></article>
+      <article class="feat"><span class="ic">🌱</span><h3>Szokások, célok, olvasás</h3><p>Szokáskövető, célok lépésekre bontva, olvasólista. A kis lépésekből lesz a nagy eredmény.</p></article>
+      <article class="feat"><span class="ic">🏅</span><h3>Matricák és oklevél</h3><p>A haladásodat érmek és oklevél ünneplik. Mert a sikert meg is kell élni.</p></article>
+    </div>
+  </div>
+</section>
+
+<!-- MOBIL -->
+<section class="sec alt">
+  <div class="in grid2 mid">
+    <div>
+      <p class="kicker">Mobilon is</p>
+      <h2>A zsebedben is ott van, appként</h2>
+      <p class="lead sm">Telefonon a kezdőképernyőre teheted, és úgy működik, mint egy alkalmazás: alsó menüsor, gyors rögzítés, és minden szinkronban van a gépeddel. Nem kell hozzá alkalmazásbolt.</p>
+      <ul class="checks">
+        <li>Felhőben mentve, minden eszközön ugyanaz</li>
+        <li>iPhone-on és Androidon is telepíthető</li>
+        <li>Gyors felvétel: teendő, esemény, ötlet pár koppintással</li>
+      </ul>
+    </div>
+    <div class="phone-big" aria-hidden="true">
+      <div class="pb-screen">
+        <div class="mp-bar">Sikermaker</div>
+        <div class="mp-card"><small>Mai lépések · 2/4</small><p class="done">Reggeli tervezés</p><p class="done">Árajánlat küldése</p><p>Hírlevél megírása</p><p>Könyvelő hívása</p></div>
+        <div class="mp-card"><small>Következő esemény</small><p>14:30 · Tartalomgyártás</p></div>
+        <div class="mp-card hl"><small>Heti cél</small><p>68% – jó úton jársz!</p></div>
+        <div class="mp-tab"><i class="on"></i><i></i><i></i><i></i></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOGYAN -->
+<section id="hogyan" class="sec">
+  <div class="in">
+    <p class="kicker">Hogyan működik</p>
+    <h2>Három lépés, és már tervezel is</h2>
+    <ol class="steps">
+      <li><span>1</span><h3>Regisztrálsz</h3><p>Név, e-mail, jelszó. Bankkártya nem kell.</p></li>
+      <li><span>2</span><h3>Válaszolsz pár kérdésre</h3><p>Rövid bevezető kérdéssor alapján a Sikermaker a te vállalkozásodra szabja magát.</p></li>
+      <li><span>3</span><h3>Indul a napod</h3><p>Reggel kinyitod a Vezérlőpultot, és pontosan tudod, mi a három legfontosabb lépésed.</p></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ÁRAK -->
+<section id="arak" class="sec alt">
+  <div class="in">
+    <p class="kicker c">Árak</p>
+    <h2 class="c">Kezdd ingyen, válts, ha kinőtted</h2>
+    <div class="prices">
+      <div class="price">
+        <h3>Ingyenes</h3>
+        <p class="amt">0 Ft</p>
+        <p class="per">örökre</p>
+        <ul>
+          <li>Vezérlőpult és napi lépések</li>
+          <li>Naptár (az appon belül)</li>
+          <li>Gondolattérkép kérdéssorral</li>
+          <li>Célok, szokások, olvasólista</li>
+          <li>Heti és havi értékelő</li>
+          <li>Matricák, oklevél</li>
+        </ul>
+        <a class="btn ghost full" href="/?regisztracio">Ingyen kezdem</a>
+      </div>
+      <div class="price best">
+        <span class="badge">Ajánlott</span>
+        <h3>Pro</h3>
+        <p class="amt">3 999 Ft</p>
+        <p class="per">havonta, bármikor lemondható</p>
+        <ul>
+          <li><b>Minden, ami az Ingyenesben</b></li>
+          <li>Kapcsolatok és ügyfelek</li>
+          <li>Tartalomtervező</li>
+          <li>Számok (bevétel, rendelések)</li>
+          <li>Naptár-szinkron Google- és iPhone-naptárral</li>
+          <li>Más naptárak behúzása</li>
+          <li>E-mail küldése az appból</li>
+        </ul>
+        <a class="btn full" href="/?regisztracio">Kipróbálom</a>
+      </div>
+      <div class="price">
+        <span class="badge soft">Hamarosan</span>
+        <h3>White label</h3>
+        <p class="amt">Egyedi</p>
+        <p class="per">coachoknak, oktatóknak, közösségeknek</p>
+        <ul>
+          <li>Minden, ami a Próban</li>
+          <li>A saját neved, logód, színeid</li>
+          <li>Saját arculat, betűk, idézetek</li>
+          <li>Tagjaid listája (hozzájárulással)</li>
+          <li>Saját domain</li>
+        </ul>
+        <a class="btn ghost full" href="https://www.polyos.hu/kapcsolat?ref=sikermaker&amp;tema=whitelabel">Érdekel</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- POLYOS -->
+<section class="sec">
+  <div class="in polyos">
+    <div>
+      <p class="kicker">Ha nő a vállalkozásod</p>
+      <h2>A Sikermaker a PolyOS része</h2>
+      <p class="lead sm">Amikor már csapattal, foglalásokkal, kampányokkal dolgozol, a Sikermakerből egy kattintással továbbviheted a tételeidet a PolyOS üzleti rendszerébe. Nem kell újrakezdened.</p>
+    </div>
+    <div class="mods">
+      <a href="https://www.polyos.hu/modulok/naptar?ref=sikermaker">Naptár</a>
+      <a href="https://www.polyos.hu/modulok/foglalas?ref=sikermaker">Foglalás</a>
+      <a href="https://www.polyos.hu/modulok/crm?ref=sikermaker">CRM</a>
+      <a href="https://www.polyos.hu/modulok/feladatkezelo?ref=sikermaker">Feladatkezelő</a>
+      <a href="https://www.polyos.hu/modulok?ref=sikermaker">Cashflow</a>
+      <a href="https://www.polyos.hu/modulok/kampanytervezes?ref=sikermaker">Kampánytervező</a>
+    </div>
+  </div>
+</section>
+
+<!-- GYIK -->
+<section id="gyik" class="sec alt">
+  <div class="in narrow">
+    <p class="kicker c">GYIK</p>
+    <h2 class="c">Gyakori kérdések</h2>
+    <div class="faq">
+      <details><summary>Tényleg ingyenes?</summary><p>Igen. Az Ingyenes csomag nem próbaidőszak, hanem örökre használható. Bankkártyát sem kérünk a regisztrációnál.</p></details>
+      <details><summary>Mit kapok a Próban?</summary><p>A Kapcsolatok, Ügyfelek, Tartalom és Számok részt, a naptár szinkronját Google- és iPhone-naptárral, más naptárak behúzását, és e-mail küldését közvetlenül az appból. Havi 3 999 Ft, bármikor lemondható.</p></details>
+      <details><summary>Telefonon is működik?</summary><p>Igen. A böngészőből a kezdőképernyőre teheted, és appként működik iPhone-on és Androidon is. Amit a telefonon beírsz, a gépeden is ott lesz.</p></details>
+      <details><summary>Össze tudom kötni a Google-naptárammal?</summary><p>Igen. A Pro csomagban a Sikermaker naptárára feliratkozhatsz a Google- vagy iPhone-naptáradból, és a meglévő naptáraidat is behúzhatod a Sikermakerbe.</p></details>
+      <details><summary>Hol tárolódnak az adataim?</summary><p>Az Európai Unióban, titkosított kapcsolaton keresztül. A tervedet csak te látod. Az adataidat nem adjuk el, és nem használjuk hirdetésre.</p></details>
+      <details><summary>Kipróbálhatom regisztráció nélkül?</summary><p>Igen, a bemutató módban mintaadatokkal körülnézhetsz. Amit ott beírsz, csak a böngésződben marad meg.</p></details>
+      <details><summary>Mi az a white label?</summary><p>Coachoknak, oktatóknak és közösségeknek szóló változat: a Sikermaker a te neveddel, logóddal és színeiddel jelenik meg a tagjaidnak. Hamarosan érkezik, addig érdeklődni a <a href="mailto:hello@polymaind.hu">hello@polymaind.hu</a> címen lehet.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ZÁRÓ CTA -->
+<section class="final">
+  <div class="in">
+    <h2>Holnap reggel már tudni fogod, mi a dolgod.</h2>
+    <p>Kezdd el ma, ingyen. Egy perc az egész.</p>
+    <div class="ctas c">
+      <a class="btn lg light" href="/?regisztracio">Regisztrálok ingyen</a>
+      <a class="btn lg ghost-light" href="/?bemutato">Bemutató megnyitása</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="foot">
+  <div class="in fgrid">
+    <div>
+      <a class="logo" href="/start"><svg viewBox="0 0 48 48" width="28" height="28" aria-hidden="true"><rect x="2" y="2" width="44" height="44" rx="12" fill="#FFFFFF"/><path d="M12 34h7v-7h7v-7h7v-7h3" fill="none" stroke="#1F2024" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="36" cy="13" r="3.6" fill="#C9931B"/></svg><span>Sikermaker</span></a>
+      <p class="fsm">Napi tervező vállalkozóknak. A PolyOS alapmodulja.</p>
+    </div>
+    <div>
+      <h4>Termék</h4>
+      <a href="#funkciok">Funkciók</a><a href="#arak">Árak</a><a href="/?bemutato">Bemutató</a><a href="/?belepes">Belépés</a>
+    </div>
+    <div>
+      <h4>Kapcsolat</h4>
+      <a href="mailto:hello@polymaind.hu">hello@polymaind.hu</a>
+      <a href="tel:+36706005655">+36 70 600 5655</a>
+      <span class="fsm">Online, az ország bármely pontjáról</span>
+    </div>
+    <div>
+      <h4>PolyOS</h4>
+      <a href="https://www.polyos.hu/?ref=sikermaker">polyos.hu</a>
+      <a href="https://www.polyos.hu/modulok?ref=sikermaker">Modulok</a>
+    </div>
+  </div>
+  <div class="in copy-r">© <span id="yr">2026</span> Polymaind · Sikermaker</div>
+</footer>
+
+<script src="/js/start.js"></script>
+</body>
+</html>

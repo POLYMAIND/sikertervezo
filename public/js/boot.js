@@ -214,7 +214,9 @@
     try { init = await store.init(config); } catch (e) { /* felhő nélkül: bemutató mód */ }
     if (init.cloud && store.isRecovery()) { authScreen("ujjelszo"); return; }
     if (init.user) return launch(store.userInfo());
+    const qs = new URLSearchParams(location.search);
+    if (qs.has("bemutato")) { sessionStorage.setItem(DEMO_CHOSEN, "1"); history.replaceState(null, "", location.pathname + location.hash); }
     if (!init.cloud || sessionStorage.getItem(DEMO_CHOSEN)) return launch(null);
-    authScreen(new URLSearchParams(location.search).get("regisztracio") != null ? "regisztracio" : "belepes");
+    authScreen(qs.get("regisztracio") != null ? "regisztracio" : "belepes");
   })();
 })();

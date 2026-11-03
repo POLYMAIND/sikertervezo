@@ -19,6 +19,7 @@ http.createServer(async (req, res) => {
   }
   let f = path.join(root, "public", path.normalize(u.pathname).replace(/^(\.\.[/\\])+/, ""));
   if (fs.existsSync(f) && fs.statSync(f).isDirectory()) f = path.join(f, "index.html");
+  if (!fs.existsSync(f) && fs.existsSync(f + ".html")) f = f + ".html";
   if (!fs.existsSync(f)) f = path.join(root, "public", "index.html");
   res.setHeader("Content-Type", TYPES[path.extname(f)] || "application/octet-stream");
   fs.createReadStream(f).pipe(res);
