@@ -760,9 +760,14 @@ const Q_DEFAULT=["Kinek segítettem ma?","Mi vitt ma közelebb a célomhoz?","Mi
 const questions=()=>S.settings.questions||Q_DEFAULT;
 function closeHTML(k,card){
   const dd=day(k),c=dd.close||{};
-  const inner=`<div class="stack" style="gap:10px">${questions().map((q,i)=>`<label class="f">${esc(q)}<input type="text" id="close-${k}-${i}" data-close="${k}" data-q="${i}" value="${esc((c.a||[])[i]||"")}"></label>`).join("")}
+  // a kérdések helyben is átírhatók (✎ Kérdések): ugyanazok, mint a Beállításokban
+  if(card&&ui.qEdit){const qs=questions();return `<div class="card stack" id="estizaras" style="gap:10px"><div class="row between"><h3 style="margin:0">Esti zárás: a kérdéseid</h3><button class="btn small" data-act="qedit">Kész</button></div>
+    <p class="muted" style="margin:0;font-size:12.5px">Írd át őket a saját szavaidra. Legfeljebb 5 kérdés lehet; minden este ezekre válaszolsz.</p>
+    ${qs.map((q,i)=>`<div class="row" style="gap:6px;flex-wrap:nowrap"><label class="f grow" style="margin:0">${i+1}. kérdés<input type="text" data-qset="${i}" value="${esc(q)}" maxlength="120"></label>${qs.length>1?`<button class="iconbtn" data-act="qdel" data-i="${i}" aria-label="${i+1}. kérdés törlése" style="align-self:flex-end">×</button>`:""}</div>`).join("")}
+    <div class="row between">${qs.length<5?'<button class="chip" data-act="qadd">＋ Új kérdés</button>':"<span></span>"}<button class="nc-skip" data-act="qreset">Eredeti kérdések</button></div></div>`}
+  const inner=`<div class="stack" style="gap:10px">${questions().map((q,i)=>!String(q).trim()?"":`<label class="f">${esc(q)}<input type="text" id="close-${k}-${i}" data-close="${k}" data-q="${i}" value="${esc((c.a||[])[i]||"")}"></label>`).join("")}
     <div><div class="lab2">Milyen volt a napod?</div><div class="moods">${MOODS.map((m,i)=>`<button class="mood m${i}" data-act="mood" data-day="${k}" data-i="${i}" aria-pressed="${c.mood===i}">${m}</button>`).join("")}</div></div></div>`;
-  return card?`<div class="card" id="estizaras"><div class="row between" style="margin-bottom:8px"><h3 style="margin:0">Esti zárás</h3>${c.mood!=null?'<span class="chip good">Lezártad a napot</span>':""}</div>${inner}</div>`:`<div id="estizaras"><div class="eyebrow" style="margin-bottom:8px">Esti zárás</div>${inner}</div>`;
+  return card?`<div class="card" id="estizaras"><div class="row between" style="margin-bottom:8px"><h3 style="margin:0">Esti zárás</h3><span class="row" style="gap:6px">${c.mood!=null?'<span class="chip good">Lezártad a napot</span>':""}<button class="chip" data-act="qedit" title="A kérdések átírása">✎ Kérdések</button></span></div>${inner}</div>`:`<div id="estizaras"><div class="eyebrow" style="margin-bottom:8px">Esti zárás</div>${inner}</div>`;
 }
 
 /* ---------- naptár és térkép ---------- */
@@ -1877,6 +1882,10 @@ document.addEventListener("click",e=>{
     case"pxdelno":ui.pxdel=false;render();break;
     case"pxdisconnect":ui.pxdel=false;ctx.polyosDisconnect().then(()=>{toast("Leválasztva a PolyOS-ről.");render()},()=>toast("Nem sikerült. Próbáld újra."));break;
     case"uphide":S.prefs=S.prefs||{};S.prefs.upHide=Object.assign({},S.prefs.upHide,{[b.dataset.k]:true});save();render();break;
+    case"qedit":ui.qEdit=!ui.qEdit;render();break;
+    case"qadd":{const q=(S.settings.questions||Q_DEFAULT).slice();if(q.length<5){q.push("");S.settings.questions=q;save();render();setTimeout(()=>{const el=document.querySelector(`[data-qset="${q.length-1}"]`);el&&el.focus()},30)}break}
+    case"qdel":{const q=(S.settings.questions||Q_DEFAULT).slice();q.splice(+b.dataset.i,1);S.settings.questions=q;save();render();break}
+    case"qreset":delete S.settings.questions;save();render();toast("Visszaállítva az eredeti kérdésekre.");break;
     case"dedit":ui.dashEdit=!ui.dashEdit;ui.sel=null;render();break;
     case"dmove":{const d=dashPrefs(),o=dashOrder().filter(k=>!d.hidden.includes(k)),i=o.indexOf(b.dataset.k),j=i+(+b.dataset.d);if(i<0||j<0||j>=o.length)break;[o[i],o[j]]=[o[j],o[i]];d.order=o.concat(dashOrder().filter(k=>!o.includes(k)));save();render();break}
     case"dsize":{const d=dashPrefs(),k=b.dataset.k,cur=dashSize(k),list=[2,3,4,6];d.size[k]=list[(list.indexOf(cur)+1)%list.length];save();render();break}
