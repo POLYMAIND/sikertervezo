@@ -89,7 +89,7 @@
       : `<form class="stack" data-auth="waitlist" style="gap:12px"><p class="sub" style="margin:0"><b>${launchLine() || "Hamarosan nyitunk!"}</b> Iratkozz fel, és elsőként szólunk. Ajándékba most letöltheted a <b>Káoszmanagert</b>, a nyomtatható tervező- és matricacsomagunkat.</p>
         <label class="f">E-mail-cím<input type="email" name="email" autocomplete="email" required></label>
         <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
-        <label class="row" style="gap:8px;font-size:12.5px;flex-wrap:nowrap;align-items:flex-start"><input type="checkbox" name="consent" required style="margin-top:3px"><span>Feliratkozom a várólistára: az e-mail-címemet a Polymaind csak az indulásról szóló értesítéshez és az ajándék elküldéséhez használja. Bármikor kérhetem a törlését a hello@polymaind.hu címen.${legal.privacy ? " " + link(legal.privacy, "Adatkezelési tájékoztató") : ""}</span></label>
+        <label class="row" style="gap:8px;font-size:12.5px;flex-wrap:nowrap;align-items:flex-start"><input type="checkbox" name="consent" required style="margin-top:3px"><span>Feliratkozom a várólistára: az e-mail-címemet a Polymaind csak az indulásról szóló értesítéshez és az ajándék elküldéséhez használja. Bármikor kérhetem a törlését.${legal.privacy ? " " + link(legal.privacy, "Adatkezelési tájékoztató") : ""}</span></label>
         <button class="btn">Feliratkozom és letöltöm</button></form>`;
     else if (tab === "regisztracio") body = `<form class="stack" data-auth="signup" style="gap:12px">
         <label class="f">Neved<input type="text" name="name" autocomplete="name" required maxlength="60"></label>
