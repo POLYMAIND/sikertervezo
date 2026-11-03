@@ -927,12 +927,13 @@ function vTerkep(){
   if(!S.maps||!S.maps.length)S.maps=[sampleMap()];
   const m=curMap();ui.mapId=m.id;activeBoard="terkep-"+m.id;
   const sel=ui.mapSel&&m.nodes.find(n=>n.id===ui.mapSel);
-  const nodes=m.nodes.map(n=>{const l=nodeLevel(m,n);return `<div class="mnode l${Math.min(l,2)}${sel&&sel.id===n.id?" sel":""}" data-nid="${n.id}" style="left:${n.x}px;top:${n.y}px;${nodeStyle(m,n)}" tabindex="0" role="button" aria-label="${esc(n.t)}"><span class="mt">${esc(n.t)||"…"}</span></div>`}).join("");
-  return head("Gondolattérkép","Ötletek, célok, tervek egy lapon",`<button class="btn" data-act="mapnew">Új térkép</button>`)+`
+  const nodes=m.nodes.map(n=>{const l=nodeLevel(m,n);return `<div class="mnode l${Math.min(l,2)}${sel&&sel.id===n.id?" sel":""}${n.open?" open":""}" data-nid="${n.id}" style="left:${n.x}px;top:${n.y}px;${nodeStyle(m,n)}" tabindex="0" role="button" aria-label="${esc(n.t)}"><span class="mt">${esc(n.t)||"…"}</span></div>`}).join("");
+  const starter=m.nodes.length<=1||(S.maps.length===1&&!m.quiz&&m.title==="Első térképem");
+  return head("Gondolattérkép","Ötletek, célok, tervek egy lapon",`<button class="btn" data-act="mzstart">Új térkép kérdésekkel</button><button class="btn ghost" data-act="mapnew">Üres térkép</button>`)+(starter?`<div class="card mzstart"><span class="ic" aria-hidden="true">${nicon("terkep")}</span><div class="grow"><b>Nem kell egyedül kitalálnod.</b><span class="s">Kb. 10 perc alatt, egyszerre egy kérdéssel végigvezetünk: mire kell a térkép, kinek segítesz, mit adsz, mitől vagy más, honnan jönnek az ügyfeleid, mi akadályoz. A végén a válaszaidból elkészül a térkép, amit utána szabadon alakíthatsz.</span></div><button class="btn" data-act="mzstart">Kérdésekkel indulok</button></div>`:"")+`
   <div class="tabs">${S.maps.map(x=>`<button data-act="mapsel" data-id="${x.id}" aria-pressed="${x.id===m.id}">${esc(x.title||"Névtelen térkép")}</button>`).join("")}</div>
   <div class="card stack" style="gap:12px">
     <div class="row between"><label class="f" style="flex:1;min-width:220px">A térkép címe<input type="text" id="map-title" data-mtitle="1" value="${esc(m.title)}"></label>
-      <span class="row" style="gap:6px;align-self:flex-end"><button class="btn ghost small" data-act="mcenter">Középre</button>${ui.mapdel===m.id?`<button class="chip warn" data-act="mapdel" data-id="${m.id}">Igen, törlöm a térképet</button><button class="chip" data-act="mapdelno">Mégse</button>`:`<button class="btn ghost small" data-act="mapdelask" data-id="${m.id}">Térkép törlése</button>`}</span></div>
+      <span class="row" style="gap:6px;align-self:flex-end"><button class="btn ghost small" data-act="mcenter">Középre</button>${m.quiz?`<button class="btn ghost small" data-act="mzrerun" title="A válaszaid előre kitöltve; a régi térkép megmarad, így látod, mi változott">Kérdések újra (${fmtDate(m.quiz.at)})</button>`:""}${ui.mapdel===m.id?`<button class="chip warn" data-act="mapdel" data-id="${m.id}">Igen, törlöm a térképet</button><button class="chip" data-act="mapdelno">Mégse</button>`:`<button class="btn ghost small" data-act="mapdelask" data-id="${m.id}">Térkép törlése</button>`}</span></div>
     <div class="mtools">${sel?`<label class="f" style="flex:1;min-width:200px">Kijelölt ág szövege<input type="text" id="mnode-${sel.id}" data-mnode="${sel.id}" value="${esc(sel.t)}"></label>
       <span class="row" style="gap:6px;align-self:flex-end"><button class="btn small" data-act="mchild">Új ág innen</button>${sel.p?`<button class="btn ghost small" data-act="msib">Új testvér</button>`:""}
       <span class="row" style="gap:4px">${SC().map((c,i)=>`<button class="eswatch light" data-act="mcolor" data-i="${i}" style="background:${c.main}" aria-label="${c.n}" title="${c.n}" aria-pressed="${sel.c===i}"></button>`).join("")}<button class="chip" data-act="mcolor" data-i="-1">Alap</button></span>
@@ -1426,6 +1427,160 @@ function importsBlock(){
   <label class="f">A naptár iCal-linkje<input type="text" id="imp-url" inputmode="url" placeholder="https://… vagy webcal://… (.ics)" required></label><button class="btn small" style="align-self:flex-start">Naptár bekötése</button></form>
   <details class="howto"><summary>Honnan kapom meg a linket?</summary><ol><li><b>Google Naptár:</b> számítógépen a calendar.google.com → bal oldalt a naptár neve melletti ⋮ → <b>Beállítások és megosztás</b> → lent a <b>Naptár integrálása</b> résznél: <b>Titkos cím iCal formátumban</b> → másold ki.</li><li><b>iPhone / iCloud:</b> a Naptár appban a <b>Naptárak</b> → a naptár melletti ⓘ → kapcsold be a <b>Nyilvános naptár</b>-t → <b>Link megosztása</b> → Másolás. (A link bárki számára olvasható, aki ismeri.)</li><li><b>Outlook:</b> outlook.com → Beállítások → Naptár → <b>Megosztott naptárak</b> → Naptár közzététele → „Minden részlet” → az <b>ICS</b> linket másold ki.</li></ol><p class="muted" style="margin:0;font-size:12px">A linkeket titkosítva tároljuk. Az új események legfeljebb 10 percen belül jelennek meg itt.</p></details></div>`;
 }
+/* ---------- gondolattérkép-indító kérdéssor ----------
+ * 3 kör: alapkör (mindenkinek) → helyzet + szakma (rá szabott kérdések) → mélyítés (a túl általános válaszokra, max 4).
+ * A térképre CSAK a felhasználó saját szavai kerülnek, rövidítve; a kihagyott kérdés „Nyitott: …?" levél lesz.
+ * Legfeljebb 7 főág: „Cél és siker" + a hat szakmai ág (a helyzet-kérdések a hozzájuk illő ágba kerülnek). */
+const MZB={cel:"Cél és siker",kinek:"Kinek",mit:"Mit adok",mas:"Mitől vagyok más",hogyan:"Hogyan találnak rám",penz:"Pénz és kapacitás",akad:"Akadályok"};
+const MZ_ORDER=["cel","kinek","mit","mas","hogyan","penz","akad"];
+const MZ_HELYZET=[["indul","Most indulok"],["megakadt","Működik, de megakadtam"],["novekedes","Növekedni szeretnék"],["valtas","Váltanék vagy újrapozicionálnék"],["uj","Új terméket, szolgáltatást vagy programot tervezek"]];
+// [kérdés, ág, címke, példaválasz, idézőjeles?]
+const MZ_HQ={
+  indul:[["Mi az az egy dolog, amit már most is el tudnál adni, ha holnap valaki megkérdezné?","mit","Első ajánlat","Egy 60 perces egyéni konzultáció 15 000 Ft-ért"],["Kinek mondtad el eddig, mivel foglalkozol, és mit kérdeztek vissza?","kinek","Első visszajelzések","Három barátnőmnek; azt kérdezték: „online is lehet?”"],["Mennyi időd és pénzed van rá havonta, őszintén?","penz","Erőforrások","Heti 8 óra, havi 30 000 Ft"]],
+  megakadt:[["Mikor ment utoljára jól, és mi volt akkor más?","cel","Ami működött","Tavasszal, amikor hetente élőztem"],["Mit csinálsz hetente, amiről tudod, hogy nem hoz semmit, mégis csinálod?","akad","Elengedni","Napi 2 óra görgetés „inspirációért”"],["Ha egyetlen számot javíthatnál, melyik lenne: érdeklődők, vásárlások, ár, visszatérés?","akad","Szűk keresztmetszet","Érdeklődők: most havi 5, kellene 20"]],
+  novekedes:[["Mennyi a mostani havi bevételed vagy ügyfélszámod, és mennyi legyen egy év múlva?","cel","Növekedési cél","Most 12 ügyfél, egy év múlva 25"],["Mi törne el először, ha holnaptól kétszer annyi ügyfeled lenne?","akad","Korlátok","Az időpont-egyeztetés és az e-mailek"],["Mit adhatnál ki másnak, vagy mit lehetne automatizálni?","penz","Kiszervezés","Számlázás, posztok ütemezése"]],
+  valtas:[["Mi az, amit már nem akarsz csinálni, és miért?","akad","Amit elhagyok","Az egyéni óradíjas munkát, mert kiéget"],["Mi az, ami felé húz, és mit csináltál már ebben az irányban?","cel","Új irány","Csoportos program; már tartottam két workshopot"],["Mit viszel át a régiből: ügyfeleket, tudást, hírnevet?","mas","Amit viszek","10 év tapasztalat és 40 ajánló ügyfél"]],
+  uj:[["Kinek a melyik problémáját oldja meg, és ki kérte már tőled?","kinek","Igény","Kezdő vállalkozóknak a tervezést; hárman kérték"],["Mikorra kell kész lennie, és mi a legkisebb változat, amit már árulni lehet?","mit","Első verzió","Márciusra; egy 4 hetes online csoport"],["Hogyan kapcsolódik a mostani ajánlataidhoz: előtte, utána vagy helyette jön?","penz","Ajánlatlépcső","Az egyéni konzultáció elé, belépőként"]]
+};
+const MZ_SZAKMA=[["coach","Coach, mentor, tréner"],["termek","Termékes vállalkozó (gyártó, webshop, kézműves)"],["kreativ","Kreatív szakember (designer, fotós, író, videós)"],["helyi","Helyi szolgáltató (szépségipar, sport, egészség, oktatás)"],["tanacsado","Tanácsadó, szakértő, cégeknek dolgozó szabadúszó"],["halozat","Hálózatépítő"],["tartalom","Tartalomgyártó, online oktató, digitális termék"],["vendeglatas","Vendéglátás, helyi üzlet"],["egyeb","Egyéb"]];
+const MZ_SQ={
+  coach:[["Írd le egy konkrét ügyfeledet, akivel a legszívesebben dolgoztál: hol tartott, amikor jött?","kinek","","35 éves anyuka, két év GYES után nem merte újrakezdeni"],["Honnan hová viszed el az ügyfeleidet? Mi az „előtte” és mi az „utána”?","mit","Átalakulás","Bizonytalan → saját, fizető ügyfelekkel működő szolgáltatás"],["Melyik három probléma miatt keresnek meg leggyakrabban, ahogy ők mondják?","kinek","Fájdalompontok","„Nem tudom, hol kezdjem”, „nincs időm”, „félek eladni”",1],["Van saját módszered, lépéssorod vagy meggyőződésed, ami csak a tiéd? Van neve?","mas","","Az 5 lépéses „Bátor indulás” módszer"],["Milyen formában dolgozol (egyéni, csoportos, online program, workshop), mennyiért, és hány fő fér bele egy hónapba?","penz","Ajánlatlépcső","Egyéni: 25 000 Ft/alkalom, havonta 12 fő"],["Honnan jött az utolsó öt ügyfeled?","hogyan","","3 ajánlás, 1 Instagram, 1 előadás"],["Mi tart vissza most a legjobban: a láthatóság, az ár, az időbeosztás vagy az önbizalom?","akad","","A láthatóság: nem posztolok rendszeresen"]],
+  termek:[["Melyik terméked hozza a bevétel nagyobb részét, és melyiket szereted a legjobban?","mit","Termékek","A szójagyertyák hozzák, a kerámiát szeretem"],["Ki vásárolja, és ki használja? Ugyanaz az ember, vagy ajándék, céges beszerzés?","kinek","Vásárló és használó","Főleg ajándéknak veszik, 30–45 éves nők"],["Miért téged választanak egy hasonló, olcsóbb termék helyett?","mas","","Kézzel öntött, egyedi illatok, szép csomagolás"],["Hol adod el: saját webshop, piactér, viszonteladó, vásár, üzlet? Melyik hozza a legtöbbet?","hogyan","Csatornák","Saját webshop 60%, vásárok 40%"],["Nagyjából mennyi marad egy darabon, és mi a legnagyobb költség?","penz","Árazás","Kb. 2 500 Ft; a legdrágább a viasz és a posta"],["Hol szorít a működés: alapanyag, gyártás, raktár, szállítás?","akad","Működés","A csomagolás viszi el az estéket"],["Melyik hónapokban fogy a legtöbb, és mikor áll?","penz","Szezon","November–december csúcs, nyáron áll"]],
+  kreativ:[["Melyik munkád miatt keresnek meg, és melyiket csinálnád szívesebben?","mit","Fókusz","Logókért keresnek, arculatot csinálnék"],["Melyik három munkát tennéd a portfóliód elejére, és miért pont azokat?","mas","Portfólió","Egy kávézó, egy jógastúdió és egy borászat arculata"],["Hogyan írná le a stílusodat három szóban egy elégedett megbízód?","mas","Stílus","„Letisztult, meleg, bátor”",1],["Kik a megbízóid (cégek, ügynökségek, magánszemélyek), és ki fizet a legjobban?","kinek","","Kisvállalkozások; az ügynökségek fizetnek jobban"],["Projektre, óradíjra vagy csomagban árazol? Mikor érezted utoljára, hogy aluláraztad magad?","penz","Árazás","Projektre; a múlt havi arculatnál"],["Mennyi időd megy el nem alkotó munkára (egyeztetés, javítási körök, számlázás)?","akad","Folyamatok","Heti kb. 10 óra"],["Van olyan ötleted, amit egyszer elkészítesz és sokszor eladsz (sablon, preset, nyomat, kurzus)?","mit","Termékesítés","Instagram-sablon csomag kisvállalkozóknak"]],
+  helyi:[["Melyik szolgáltatásodat kérik a legtöbben, és melyiken keresel a legtöbbet?","mit","","Gél lakkot kérik, a műkörmön keresek a legtöbbet"],["A vendégeid hányad része tér vissza, és milyen gyakran?","kinek","Törzsvendégek","Kb. 70%, háromhetente"],["Mit mondanak rólad a vendégeid, amikor ajánlanak valakinek?","mas","","„Nála mindig nyugi van, és sosem késik”",1],["Honnan találnak rád: ajánlás, Google, Instagram, kirakat, foglalóoldal?","hogyan","","Főleg ajánlás és Google-térkép"],["Hány üres idősáv van egy átlagos héten, és melyik napokon?","penz","Foglaltság","5–6 sáv, hétfőn és kedden délelőtt"],["Mit adhatnál még a meglévő vendégeidnek: bérletet, terméket, ajándékutalványt, csomagot?","mit","Bővítés","Ajándékutalvány karácsonyra"]],
+  tanacsado:[["Milyen cégnek segítesz a legjobban: méret, iparág, és ki dönt náluk?","kinek","","10–50 fős gyártócégek; az ügyvezető dönt"],["Milyen üzleti problémát oldasz meg, és mibe kerül nekik, ha nem oldják meg?","mit","Érték","Pénzügyi átláthatóság; havi több százezer elfolyik"],["Mi a belépő ajánlatod, és mi az, amit hosszú távon havidíjasan adsz?","penz","Ajánlatlépcső","Egynapos átvilágítás → havi kontrolling"],["Mennyi idő telik el az első beszélgetéstől a szerződésig, és hol akad el leggyakrabban?","hogyan","Értékesítési folyamat","Kb. 6 hét; az árajánlat után elakad"],["Melyik három referenciád a legjobb, számokkal?","mas","Bizonyítékok","Egy cégnél 18%-kal csökkent a költség"],["Mit adsz te, amit egy olcsóbb versenytárs vagy egy AI-eszköz nem tud?","mas","Pozíció","Ott ülök velük a vezetői megbeszélésen"]],
+  halozat:[["Mi a fő célod: saját termékhasználat, mellékjövedelem vagy vezetői pálya?","cel","Fő cél","Mellékjövedelem, havi 100 000 Ft"],["Kik a vásárlóid, és kik lehetnének csapattagok? Miben különböznek?","kinek","Két célcsoport","Vásárlók: anyukák; csapattagok: akik otthonról dolgoznának"],["Miért pont ezt a céget és terméket választottad? Mi a saját történeted?","mas","Énmárka","A bőrproblémám megoldódott, ezért kezdtem ajánlani"],["Hogyan építesz kapcsolatot tukmálás nélkül: tartalommal, ajánlással, eseménnyel?","hogyan","","Napi sztorikkal és havi kóstoló-estekkel"],["Hol tartasz a következő szintig, és mennyi pont hiányzik még?","penz","Szint","Még 1 200 pont a vezetői szintig"],["Kiben látsz most vezetőt a csapatodból, és mire van szüksége tőled?","kinek","Csapat","Timiben; heti egy közös tervezésre"]],
+  tartalom:[["Kinek készíted a tartalmat, és mit tud meg az, aki három hónapja követ?","kinek","","Kezdő futóknak; három hónap után lefut 5 km-t"],["Melyik három témád hozza a legtöbb mentést, megosztást vagy kérdést?","mit","Tartalompillérek","Edzéstervek, sérülésmegelőzés, felszerelés"],["Melyik platform a főhadiszállásod, és melyik csak terjeszt?","hogyan","","Instagram a fő, a TikTok csak terjeszt"],["Miből keresel most pénzt, és miből szeretnél: szponzoráció, kurzus, közösség, termék?","penz","Bevételi lábak","Most szponzoráció; online kurzust szeretnék"],["Mi az ingyenes anyagod, és hova viszi tovább az embereket?","hogyan","Tölcsér","Ingyenes 4 hetes edzésterv → hírlevél"],["Mennyi idő egy tartalom elkészítése, és mit lehetne újrahasznosítani?","akad","Gyártás","Egy Reel 3 óra; a hosszú videókból lehetne rövidet vágni"]],
+  vendeglatas:[["Milyen alkalomra jönnek hozzád: ebéd, randi, céges est, gyors kávé, bevásárlás?","kinek","Alkalmak","Hétköznap ebéd, hétvégén reggeli"],["Melyik három tétel fogy a legjobban, és melyiken marad a legtöbb?","mit","Kínálat","Bowl, lepény, limonádé; a limonádén marad a legtöbb"],["Ha három szóban kellene leírni a hangulatodat, mi lenne az?","mas","","Napfényes, családias, zöld"],["Melyik nap és napszak gyenge, és miért?","penz","Forgalom","Hétfő délután; nincs, ami idehozná az embereket"],["Kik a törzsvendégeid, és mi hozza vissza őket?","kinek","Közösség","A szomszéd irodák; a napi menü"],["Milyen rendezvény, csomag vagy kiszállítás hiányzik még?","mit","Új bevétel","Céges reggeli-csomag kiszállítással"]],
+  egyeb:[["Kinek segítesz a legtöbbet? Írj le egy konkrét embert.","kinek","","Egy kisvállalkozó, aki egyedül viszi a boltját"],["Mit adsz nekik: terméket, szolgáltatást, tudást?","mit","","Havi könyvelést és egy negyedéves átnézést"],["Miért téged választanak más helyett?","mas","","Mindig elérhető vagyok és érthetően magyarázok"],["Honnan jön most a legtöbb érdeklődő?","hogyan","","Ajánlásból"],["Mennyiért adod, és mennyit bírsz egy hónapban?","penz","","Havi 40 000 Ft-tól, 15 ügyfél fér bele"],["Mi akadályoz most a legjobban?","akad","","Az időm nagy része adminisztráció"]]
+};
+const MZ_DEEP=[
+  [/^\s*(nem tudom|fogalmam sincs|nem tudom még|passz)/i,"Ha a legjobb barátod válaszolna helyetted, mit mondana?"],
+  [/\b(mindenki|bárki|mindenkinek|bárkinek)/i,"Ki az az egy ember, akinek a legjobban tudtál segíteni? Mit csinált, miért jött hozzád?"],
+  [/(minőség|odafigyel|szeretettel|igényes munk)/i,"Mit csinálsz konkrétan másképp, mint a többiek? Mondj egy esetet."],
+  [/^(?!.*\d).*(több ügyfél|több pénz|több bevétel|több vevő|több vendég)/i,"Mennyi pontosan, és mikorra? Mire kell ez a szám?"],
+  [/nincs időm/i,"Mi viszi el a heted legnagyobb részét, hány órában?"],
+  [/minden fontos/i,"Ha csak egyet tarthatnál meg, melyik lenne?"],
+  [/^\s*majd ha/i,"Mi a legkisebb lépés, amit jövő héten meg tudsz tenni?"],
+  [/mások is/i,"Melyik elégedett ügyfeled mondta, hogy nálad más volt? Mit mondott pontosan?",1]
+];
+function mzDeepFor(ans){
+  const a=String(ans||"").trim();if(!a)return null;
+  for(const[re,q,quote]of MZ_DEEP)if(re.test(a))return {q,quote:!!quote};
+  if(a.split(/[,;\n]/).filter(x=>x.trim()).length>=5)return {q:"Ebből melyik három hozza a legtöbbet?"};
+  return null;
+}
+const MZ_PROFMAP={mlm:"halozat",tartalom:"tartalom"};
+// a lépések a válaszokból épülnek (elágazás + visszakérdezés)
+function mzSteps(st){
+  const a=st.a,steps=[
+    {k:"cel",type:"choice",q:"Mire kell most ez a térkép?",opts:[["dontes","Dönteni szeretnék"],["terv","Tervet csinálnék"],["otlet","Ötleteket gyűjtenék"],["rend","Rendet raknék a fejemben"]]},
+    {k:"kozep",q:"Ha egy mondatban kellene leírnod, mi kerüljön a közepére, mi lenne az?",ex:"Saját online programot indítok tavaszra",req:1},
+    {k:"ido",type:"choice",q:"Mekkora időtávra gondolkodsz?",opts:[["egy hónap","Egy hónap"],["egy negyedév","Egy negyedév"],["egy év","Egy év"],["több év","Több év"]]},
+    {k:"miert",q:"Mi történt, ami miatt pont most kezdesz bele?",ex:"Januárban lejár a munkaszerződésem",br:"cel",label:"Miért most"},
+    {k:"siker",q:"Honnan tudod majd, hogy a térkép elvégezte a dolgát? Mi lesz másképp egy hónap múlva?",ex:"Tudni fogom, mivel indulok, és lesz 3 fizető ügyfelem",br:"cel",label:"Siker"},
+    {k:"biztos",type:"two",q:"Mi az, amit már biztosan tudsz, és mi az, ami még kavarog?",f:[["biztos","Amit biztosan tudok","Online szeretnék dolgozni, kisebb csoportokkal"],["kavarog","Ami még kavarog","Mennyit kérjek érte, és hol találom meg őket"]],br:"cel"}
+  ];
+  if(a.cel==="dontes"){
+    steps.push({k:"opciok",type:"list",q:"Milyen lehetőségek között választasz? Soronként egyet írj (2–4).",ex:"Saját stúdiót nyitok\nOnline maradok\nBeállok egy szalonba",req:1});
+    const ops=String(a.opciok||"").split("\n").map(x=>x.trim()).filter(Boolean).slice(0,4);
+    ops.forEach((o,i)=>{steps.push({k:"pro"+i,q:`Mi szól amellett, hogy „${o}”?`,ex:"Több bevétel, a saját szabályaim szerint",br:"opt"+i,label:"Mellette"},{k:"con"+i,q:`Mi a kockázata annak, hogy „${o}”?`,ex:"Nagy kezdő költség, bérleti szerződés",br:"opt"+i,label:"Kockázat"})});
+    steps.push({k:"jel",q:"Mi lenne az a jel vagy szám, ami eldönti a kérdést?",ex:"Ha márciusig meglesz 10 állandó vendég, nyitok",br:"cel",label:"Döntési jel"});
+  }else{
+    steps.push({k:"helyzet",type:"choice",q:"Melyik illik most rád a legjobban?",opts:MZ_HELYZET});
+    if(a.helyzet)(MZ_HQ[a.helyzet]||[]).forEach((x,i)=>steps.push({k:"h"+i,q:x[0],br:x[1],label:x[2],ex:x[3],quote:!!x[4]}));
+    steps.push({k:"szakma",type:"choice",q:"Melyik írja le legjobban, mivel foglalkozol?",opts:MZ_SZAKMA});
+    if(a.szakma)(MZ_SQ[a.szakma]||[]).forEach((x,i)=>steps.push({k:"s"+i,q:x[0],br:x[1],label:x[2],ex:x[3],quote:!!x[4]}));
+  }
+  // mélyítés: a túl általános válasz után egyszer visszakérdezünk (menetenként legfeljebb 4-szer)
+  const out=[];let deep=0;
+  for(const s of steps){out.push(s);
+    if(s.type||!s.br||deep>=4)continue;const d=mzDeepFor(a[s.k]);
+    if(d){deep++;out.push({k:s.k+"_m",q:d.q,deep:1,parent:s.k,br:s.br,label:s.label,quote:d.quote||s.quote,ex:s.ex||"Egy konkrét eset, név vagy szám"})}}
+  return out;
+}
+function mzShort(t,n){t=String(t||"").replace(/\s+/g," ").trim();if(t.length<=n)return t;const c=t.slice(0,n);const i=c.lastIndexOf(" ");return (i>n*0.6?c.slice(0,i):c).replace(/[,;:.\s]+$/,"")+"…"}
+const isOpenAns=v=>!String(v||"").trim()||/^\s*(nem tudom|fogalmam sincs|passz)\s*\.?$/i.test(v);
+// válaszokból fa: középpont + legfeljebb 7 főág, főáganként legfeljebb 4 levél
+function mzTree(st){
+  const a=st.a,steps=mzSteps(st),dec=a.cel==="dontes";
+  const ops=dec?String(a.opciok||"").split("\n").map(x=>x.trim()).filter(Boolean).slice(0,4):[];
+  const order=dec?["cel",...ops.map((_,i)=>"opt"+i)]:MZ_ORDER;
+  const label=k=>k.startsWith("opt")?mzShort(ops[+k.slice(3)],40):MZB[k];
+  const br={};order.forEach(k=>br[k]=[]);
+  const add=(k,t,open)=>{if(!br[k])return;br[k].push({t,open:!!open})};
+  for(const s of steps){
+    if(s.type==="choice"||s.type==="list"||s.deep||!s.br)continue;
+    if(s.type==="two"){s.f.forEach(([fk,fl])=>{const v=a[fk];if(isOpenAns(v))add(s.br,`Nyitott: ${fl.toLowerCase()}?`,1);else add(s.br,fk==="kavarog"?"Nyitott: "+mzShort(v,70):"Biztos: "+mzShort(v,70),fk==="kavarog")});continue}
+    const follow=steps.find(x=>x.parent===s.k);const v=follow&&!isOpenAns(a[follow.k])?a[follow.k]:a[s.k];
+    if(isOpenAns(v)){add(s.br,`Nyitott: ${(s.label||mzShort(s.q,46)).replace(/\?$/,"")}?`,1);continue}
+    const q=(follow&&!isOpenAns(a[follow.k])?follow.quote:s.quote);
+    const parts=String(v).split("\n").map(x=>x.trim()).filter(Boolean).slice(0,3);
+    parts.forEach(p=>{let t=mzShort(p,q?80:70);if(q&&!/^[„"]/.test(t))t="„"+t.replace(/[”"]$/,"")+"”";add(s.br,(s.label&&parts.length===1?s.label+": ":"")+t)});
+  }
+  // főáganként legfeljebb 4 levél: a fölösleg az utolsóba olvad (válasz nem vész el)
+  order.forEach(k=>{const L=br[k];while(L.length>4){const x=L.pop();L[L.length-1].t=mzShort(L[L.length-1].t+" · "+x.t,120)}});
+  const center=mzShort(a.kozep||"A térképem",80)+(a.ido?` (${a.ido})`:"");
+  return {center,branches:order.map(k=>({k,t:label(k),leaves:br[k]})).filter(b=>b.leaves.length||!dec)};
+}
+// automatikus elrendezés: főágak ellipszisen a középpont körül, levelek kifelé legyezőben
+function mzLayout(tree){
+  const cx=MAP_W/2,cy=MAP_H/2,n=tree.branches.length,nodes=[],r={id:uid(),x:cx,y:cy,t:tree.center,p:null};nodes.push(r);
+  const clamp=(v,lo,hi)=>Math.round(Math.min(hi,Math.max(lo,v)));
+  tree.branches.forEach((b,i)=>{
+    const ang=-Math.PI/2+i*2*Math.PI/n,bx=cx+360*Math.cos(ang),by=cy+250*Math.sin(ang),bn={id:uid(),x:clamp(bx,110,MAP_W-110),y:clamp(by,40,MAP_H-40),t:b.t,p:r.id};nodes.push(bn);
+    const k=b.leaves.length;b.leaves.forEach((l,j)=>{const off=(j-(k-1)/2)*0.5,la=ang+off;nodes.push({id:uid(),x:clamp(bn.x+250*Math.cos(la),100,MAP_W-100),y:clamp(bn.y+120*Math.sin(la)+(Math.abs(Math.cos(ang))>0.7?(j-(k-1)/2)*58:0),26,MAP_H-26),t:l.t,p:bn.id,open:l.open||undefined})});
+  });
+  return nodes;
+}
+function mzStart(fromMap){
+  const prev=fromMap&&fromMap.quiz;
+  const prof=MZ_PROFMAP[S.settings.profile]||"";
+  ui.mz={i:0,st:{a:prev?Object.assign({},prev.a):{szakma:prof||undefined}},tree:null,rerun:fromMap?fromMap.id:null};
+  mzRender();
+}
+function mzClose(){const el=$("#mapquiz");if(el)el.remove();ui.mz=null;document.body.classList.remove("ob-open")}
+function mzBody(s,a){
+  const ex=s.ex?`<div class="mz-ex"><span>Példa:</span> ${esc(s.ex)}</div>`:"";
+  if(s.type==="choice")return `<h2>${esc(s.q)}</h2><div class="ob-choices">${s.opts.map(([k,l])=>`<button type="button" class="ob-choice" data-act="mzpick" data-k="${esc(k)}" aria-pressed="${a[s.k]===k}"><b>${esc(l)}</b></button>`).join("")}</div>${s.k==="szakma"&&MZ_PROFMAP[S.settings.profile]?'<p class="ob-note">A bevezetőben megadott tevékenységed alapján előre kijelöltük. Ha más illik jobban, válassz.</p>':""}`;
+  if(s.type==="two")return `<h2>${esc(s.q)}</h2>${s.f.map(([k,l,e])=>`<label class="f">${esc(l)}<textarea data-mz="${k}" rows="3" placeholder="${esc(e)}">${esc(a[k]||"")}</textarea></label>`).join("")}`;
+  if(s.type==="list")return `<h2>${esc(s.q)}</h2><textarea data-mz="${s.k}" rows="5" placeholder="${esc(s.ex)}">${esc(a[s.k]||"")}</textarea>`;
+  return `${s.deep?'<div class="eyebrow">Egy pontosító kérdés</div>':""}<h2>${esc(s.q)}</h2>${ex}<textarea data-mz="${s.k}" rows="4" placeholder="Írd le a saját szavaiddal…">${esc(a[s.k]||"")}</textarea>${s.deep?`<p class="ob-note">Erre azért kérdezünk vissza, mert az előző válasz még elég általános: „${esc(mzShort(a[s.parent],80))}”. Egy konkrét eset, név vagy szám sokat segít.</p>`:""}`;
+}
+function mzRender(){
+  const z=ui.mz;if(!z)return;
+  let el=$("#mapquiz");if(!el){el=document.createElement("div");el.id="mapquiz";document.body.appendChild(el);document.body.classList.add("ob-open")}
+  if(z.tree){
+    el.innerHTML=`<div class="ob" role="dialog" aria-modal="true" aria-label="A térkép előnézete"><div class="ob-top"><div class="ob-prog"><i style="width:100%"></i></div><span class="ob-count">Előnézet</span><button type="button" class="nc-skip" data-act="mzclose">Bezárás</button></div>
+    <div class="ob-body"><h2>Így néz ki a térképed</h2><p class="lead">Átírhatod vagy törölheted az ágakat, mielőtt a lapra kerülnek. A halvány „Nyitott” levelek azok, amikre még nem volt válasz: ezek a következő lépéseid.</p>
+    <label class="f">Középpont<input type="text" data-mzt="c" value="${esc(z.tree.center)}"></label>
+    ${z.tree.branches.map((b,i)=>`<div class="mz-branch"><div class="row" style="gap:8px;flex-wrap:nowrap"><input type="text" class="mz-bt" data-mzt="b${i}" value="${esc(b.t)}" aria-label="Főág"><button type="button" class="iconbtn" data-act="mzdelb" data-i="${i}" aria-label="Főág törlése">×</button></div>
+      ${b.leaves.map((l,j)=>`<div class="row mz-leaf${l.open?" open":""}" style="gap:8px;flex-wrap:nowrap"><input type="text" data-mzt="l${i}_${j}" value="${esc(l.t)}" aria-label="Levél"><button type="button" class="iconbtn" data-act="mzdell" data-i="${i}" data-j="${j}" aria-label="Levél törlése">×</button></div>`).join("")||'<div class="muted" style="font-size:12.5px;padding-left:14px">Üres ág, később bővítheted.</div>'}</div>`).join("")}</div>
+    <div class="ob-nav"><button type="button" class="btn ghost" data-act="mzbackq">Vissza a kérdésekhez</button><button type="button" class="btn" data-act="mzapply">Térképre rakom</button></div></div>`;
+    return;
+  }
+  const steps=mzSteps(z.st);z.i=Math.min(z.i,steps.length-1);const s=steps[z.i],a=z.st.a;
+  const canNext=s.type!=="choice"||!!a[s.k];const need=s.req&&!String(a[s.k]||"").trim();
+  el.innerHTML=`<div class="ob" role="dialog" aria-modal="true" aria-label="Gondolattérkép-indító kérdések"><div class="ob-top"><div class="ob-prog"><i style="width:${Math.round((z.i+1)/steps.length*100)}%"></i></div><span class="ob-count">${z.i+1} / ${steps.length}</span><button type="button" class="nc-skip" data-act="mzclose">Bezárás</button></div>
+  <form class="ob-body" data-form="mz">${mzBody(s,a)}</form>
+  <div class="ob-nav">${z.i>0?'<button type="button" class="btn ghost" data-act="mzback">Vissza</button>':"<span></span>"}<span class="row" style="gap:8px">${s.type==="choice"||s.req?"":'<button type="button" class="btn ghost" data-act="mzskip">Kihagyom</button>'}<button type="button" class="btn" data-act="mznext" ${canNext&&!need?"":"disabled"}>${z.i===steps.length-1?"Elkészítem a térképet":"Tovább"}</button></span></div></div>`;
+  const f=el.querySelector(".ob-body textarea");if(f&&!matchMedia("(max-width:860px)").matches)f.focus();
+}
+function mzNext(skip){
+  const z=ui.mz,steps=mzSteps(z.st),s=steps[z.i];
+  if(skip){if(s.type==="two")s.f.forEach(([k])=>z.st.a[k]="");else z.st.a[s.k]=""}
+  const ns=mzSteps(z.st);
+  if(z.i<ns.length-1){z.i++;mzRender();const b=$("#mapquiz .ob-body");if(b)b.scrollTop=0;return}
+  z.tree=mzTree(z.st);mzRender();
+}
+function mzApply(){
+  const z=ui.mz,t=z.tree;const nodes=mzLayout(t);
+  const title=mzShort(t.center.replace(/\s*\([^)]*\)$/,""),40)+(z.rerun?" · "+fmtDate(T):"");
+  const m={id:uid(),title,nodes,quiz:{v:1,a:Object.assign({},z.st.a),at:T}};
+  S.maps=S.maps||[];S.maps.push(m);ui.mapId=m.id;ui.mapSel=null;mapCentered=null;save();mzClose();
+  if(route!=="terkep")location.hash="terkep";else render();
+  toast(z.rerun?"Elkészült az új változat. A régit a fülek között találod, így látszik, mi változott.":"Kész a térképed. Húzd az ágakat, ahová szeretnéd, és bővítsd bátran.");
+}
 /* ---------- render ---------- */
 const RENDER={ma:vMa,admin:vAdmin,ertekelesek:vErtekelesek,bovitesek:vBovitesek,olvasas:vOlvasas,szokasok:vSzokasok,terkep:vTerkep,matricak:vMatricak,naptar:vNaptar,kapcsolatok:vKapcsolatok,ugyfelek:vUgyfelek,tartalom:vTartalom,csapat:vCsapat,szamok:vSzamok,beallitasok:vBeall};
 function render(){
@@ -1614,6 +1769,19 @@ document.addEventListener("click",e=>{
       ctx.email({to,subject:subj||"Üzenet",text:txt,senderName:S.settings.name||"",kind:"msg"}).then(()=>{toast("Elküldve. A válasz a te e-mail-címedre érkezik.");closeForm()},e=>{b.disabled=false;b.textContent="Küldés e-mailben";toast({not_configured:"Az e-mail-küldés hamarosan indul. Addig másold ki az üzenetet.",daily_limit:"Ma már elérted a napi 50 e-mailt.",pro_required:"Az e-mail-küldés Pro funkció.",not_confirmed:"Előbb erősítsd meg az e-mail-címed."}[e.message]||"Nem sikerült elküldeni. Próbáld újra.")});break}
     case"buypro":b.disabled=true;ctx.billing("checkout").then(r=>{location.href=r.url},()=>{b.disabled=false;toast("Most nem sikerült elindítani a fizetést. Próbáld újra.")});break;
     case"billportal":ctx.billing("portal").then(r=>{location.href=r.url},e=>toast(e.message==="no_customer"?"Az előfizetésedet nem bankkártyával indítottad; írj nekünk, ha módosítanál rajta.":"Most nem sikerült megnyitni. Próbáld újra."));break;
+    case"mzstart":mzStart(null);break;
+    case"mzrerun":mzStart(curMap());break;
+    case"mzclose":mzClose();break;
+    case"mzpick":{const z=ui.mz,steps=mzSteps(z.st),st=steps[z.i];const old=z.st.a[st.k];z.st.a[st.k]=b.dataset.k;
+      if(old!==b.dataset.k){if(st.k==="helyzet")Object.keys(z.st.a).forEach(k=>{if(/^h\d/.test(k))delete z.st.a[k]});if(st.k==="szakma")Object.keys(z.st.a).forEach(k=>{if(/^s\d/.test(k))delete z.st.a[k]});if(st.k==="cel")["opciok","jel"].concat(Object.keys(z.st.a).filter(k=>/^(pro|con)\d/.test(k))).forEach(k=>delete z.st.a[k])}
+      mzNext(false);break}
+    case"mznext":mzNext(false);break;
+    case"mzskip":mzNext(true);break;
+    case"mzback":if(ui.mz&&ui.mz.i>0){ui.mz.i--;mzRender()}break;
+    case"mzbackq":ui.mz.tree=null;mzRender();break;
+    case"mzdelb":ui.mz.tree.branches.splice(+b.dataset.i,1);mzRender();break;
+    case"mzdell":ui.mz.tree.branches[+b.dataset.i].leaves.splice(+b.dataset.j,1);mzRender();break;
+    case"mzapply":mzApply();break;
     case"more":openMore();break;
     case"install":ctx.install.prompt().then(ok=>{if(ok)toast("Telepítve. Mostantól a kezdőképernyőről indíthatod.");render()});break;
     case"installhide":S.prefs=S.prefs||{};S.prefs.installHide=true;save();render();break;
@@ -1637,6 +1805,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeForm();if(tray
 document.addEventListener("submit",e=>{
   e.preventDefault();const f=e.target;
   if(f.dataset.form==="ob"){obNext();return}
+  if(f.dataset.form==="mz"){return}
   if(f.dataset.form==="qadd"){saveQuickAdd();return}
   if(f.dataset.form==="impadd"){const btn=f.querySelector(".btn");btn.disabled=true;btn.textContent="Ellenőrzöm a naptárt…";
     ctx.calendar("import.add",{name:$("#imp-name").value,url:$("#imp-url").value,color:$("#imp-color").value}).then(()=>{ui.imports=null;ui.ext=null;toast("Naptár bekötve.");render()},e=>{btn.disabled=false;btn.textContent="Naptár bekötése";toast({bad_url:"Ez nem érvényes https:// vagy webcal:// naptárlink.",not_ics:"Ezen a linken nem naptár van. Az iCal (.ics) linket másold be.",too_many:"Legfeljebb 8 naptárat köthetsz be.",too_large:"Ez a naptár túl nagy.",pro_required:"Ez Pro funkció."}[e.message]||"Nem sikerült elérni a naptárt. Ellenőrizd a linket.")});return}
@@ -1663,6 +1832,8 @@ document.addEventListener("submit",e=>{
 document.addEventListener("input",e=>{
   const t=e.target;
   if(t.dataset.ob){obInput(t);return}
+  if(t.dataset.mz&&ui.mz){ui.mz.st.a[t.dataset.mz]=t.value;const nb=document.querySelector('#mapquiz [data-act="mznext"]');if(nb){const st=mzSteps(ui.mz.st)[ui.mz.i];nb.disabled=!!(st&&st.req&&!t.value.trim())}return}
+  if(t.dataset.mzt&&ui.mz&&ui.mz.tree){const k=t.dataset.mzt,T2=ui.mz.tree;if(k==="c")T2.center=t.value;else if(k[0]==="b")T2.branches[+k.slice(1)].t=t.value;else{const[i,j]=k.slice(1).split("_").map(Number);T2.branches[i].leaves[j].t=t.value}return}
   if(t.dataset.rev&&ui.rev){ui.rev.a[t.dataset.rev]=t.value;return}
   if(t.dataset.revgoal&&ui.rev){ui.rev.goals[+t.dataset.revgoal]=t.value;return}
   if(t.dataset.revfocus&&ui.rev){ui.rev.focus=t.value;return}
