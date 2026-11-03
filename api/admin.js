@@ -15,6 +15,7 @@
 //   { action:"audit" }                                    -> utolsó 100 napló-esemény
 //   { action:"waitlist" }                                 -> várólista (e-mail, forrás, dátum, letöltések) + regisztráció állapota
 //   { action:"signup.set", open }                         -> a regisztráció nyitása / zárása (az adatbázis kényszeríti ki)
+//   { action:"launch.set", at }                           -> a nyitás időpontja (visszaszámláló, automatikus nyitás)
 const L = require("./_lib");
 const B = require("./_brands");
 const W = require("./_waitlist");
@@ -143,6 +144,7 @@ module.exports = async function handler(req, res) {
     if (action === "brand.set") {
       if (!B.SLUG_RE.test(b.slug || "")) return L.send(res, 400, { error: "bad_slug" });
       if (!B.PLANS.includes(b.plan)) return L.send(res, 400, { error: "bad_plan" });
+      if (b.slug === "alap") return L.send(res, 400, { error: "bad_slug" }); // az alap márka nem lehet white label (az a Sikermaker-arculat)
       await L.sb("sikertervezo_brands?on_conflict=slug", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ slug: b.slug, plan: b.plan, upsell: b.upsell !== false, updated_by: user.id, updated_at: new Date().toISOString() }) });
       await audit(user, "brand.set", b.slug, { plan: b.plan, upsell: b.upsell !== false });
       return L.send(res, 200, { ok: true });
@@ -159,14 +161,27 @@ module.exports = async function handler(req, res) {
     }
     if (action === "waitlist") {
       const rows = await safe(L.sb("sikertervezo_waitlist?select=email,source,created_at,downloads,notified_at&order=created_at.desc&limit=5000"), null);
-      return L.send(res, 200, { ok: true, waitlist: rows || [], missing: rows === null, signupOpen: await W.signupOpen(true) });
+      const st = await W.signupState(true);
+      return L.send(res, 200, { ok: true, waitlist: rows || [], missing: rows === null, signupOpen: st.open, launchAt: st.launchAt });
     }
     if (action === "signup.set") {
       const open = b.open === true;
-      await L.sb("sikertervezo_flags?on_conflict=id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ id: "default", signup_open: open, updated_by: user.id, updated_at: new Date().toISOString() }) });
-      await W.signupOpen(true);
+      const row = { id: "default", signup_open: open, updated_by: user.id, updated_at: new Date().toISOString() };
+      // lezáráskor a már elmúlt nyitási időpont törlődik (különben az automatikusan újranyitna)
+      if (!open) { const st = await W.signupState(true); if (st.launchAt && Date.parse(st.launchAt) <= Date.now()) row.launch_at = null; }
+      await L.sb("sikertervezo_flags?on_conflict=id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(row) });
+      await W.signupState(true);
       await audit(user, "signup.set", "default", { open });
       return L.send(res, 200, { ok: true, signupOpen: open });
+    }
+    if (action === "launch.set") {
+      // { at: ISO időpont | null } — a nyitás időpontja (visszaszámláló); null = nincs időzített nyitás
+      const at = b.at == null || b.at === "" ? null : new Date(b.at);
+      if (at && (isNaN(at) || at.getFullYear() < 2024 || at.getFullYear() > 2100)) return L.send(res, 400, { error: "bad_value" });
+      await L.sb("sikertervezo_flags?on_conflict=id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ id: "default", launch_at: at ? at.toISOString() : null, updated_by: user.id, updated_at: new Date().toISOString() }) });
+      await W.signupState(true);
+      await audit(user, "launch.set", "default", { at: at ? at.toISOString() : null });
+      return L.send(res, 200, { ok: true });
     }
     if (action === "audit") {
       const rows = await safe(L.sb("sikertervezo_audit?select=at,actor_email,action,target,detail&order=at.desc&limit=100"), null);

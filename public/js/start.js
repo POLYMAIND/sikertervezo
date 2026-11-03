@@ -18,11 +18,39 @@
   addEventListener("scroll", onScroll, { passive: true }); onScroll();
 
   /* ---- regisztráció nyitva? (különben várólista) — a szerver mondja meg; hiba esetén marad a várólista ---- */
-  fetch("/api/config", { credentials: "same-origin" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (c) {
-    if (!c || !c.signup || !c.signup.open) return;
+  var launchTxt = "";
+  function openUp() {
     root.classList.add("signup-open");
     $$("[data-open-href]").forEach(function (a) { a.setAttribute("href", a.getAttribute("data-open-href")); if (a.hasAttribute("data-open-text")) a.textContent = a.getAttribute("data-open-text"); });
-  }).catch(function () {});
+  }
+  function loadConfig() {
+    return fetch("/api/config", { credentials: "same-origin", cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+  }
+  /* ---- visszaszámláló a nyitásig (az időpontot az Adminban lehet állítani) ---- */
+  function countdown(at) {
+    var t = Date.parse(at); if (!t) return;
+    try { launchTxt = new Intl.DateTimeFormat("hu-HU", { timeZone: "Europe/Budapest", month: "long", day: "numeric", weekday: "long", hour: "2-digit", minute: "2-digit" }).format(new Date(t)); } catch (e) { launchTxt = ""; }
+    $$("[data-cd-fallback]").forEach(function (el) { el.hidden = true; el.style.display = "none"; });
+    $$("[data-countdown]").forEach(function (el) { el.hidden = false; });
+    $$("[data-cd-when]").forEach(function (el) { el.textContent = launchTxt ? "· " + launchTxt : ""; });
+    var last = {};
+    function draw() {
+      var left = Math.max(0, t - Date.now()), s = Math.floor(left / 1000);
+      var v = { d: Math.floor(s / 86400), h: Math.floor(s / 3600) % 24, m: Math.floor(s / 60) % 60, s: s % 60 };
+      $$("[data-cd]").forEach(function (el) {
+        var k = el.getAttribute("data-cd"), txt = k === "d" ? String(v.d) : String(v[k]).padStart(2, "0");
+        if (el.textContent !== txt) { el.textContent = txt; if (last[k] !== undefined) { el.classList.remove("tick"); void el.offsetWidth; el.classList.add("tick"); } }
+      });
+      last = v;
+      if (left <= 0) { clearInterval(iv); setTimeout(function () { loadConfig().then(function (c) { if (c && c.signup && c.signup.open) openUp(); }); }, 2500); }
+    }
+    var iv = setInterval(draw, 1000); draw();
+  }
+  loadConfig().then(function (c) {
+    if (!c || !c.signup) return;
+    if (c.signup.open) return openUp();
+    if (c.signup.launchAt) countdown(c.signup.launchAt);
+  });
 
   /* ---- várólista-űrlapok ---- */
   function escH(t) { return String(t).replace(/[&<>"']/g, function (ch) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]; }); }
@@ -40,7 +68,7 @@
         .then(function (x) {
           if (!x.ok || !x.j.ok) throw new Error((x.j && x.j.error) || "fail");
           var box = d.createElement("div"); box.className = "wlok";
-          box.innerHTML = "<b>" + (x.j.already ? "Már a listán vagy, köszönjük!" : "Kész, feliratkoztál!") + "</b><p>Hétvégén nyitunk, és elsőként szólunk. Addig itt az ajándékod" + (x.j.already ? "" : " (e-mailben is elküldtük)") + ".</p>" +
+          box.innerHTML = "<b>" + (x.j.already ? "Már a listán vagy, köszönjük!" : "Kész, feliratkoztál!") + "</b><p>" + (launchTxt ? "Nyitás: " + escH(launchTxt) + ". " : "Hamarosan nyitunk. ") + "Elsőként szólunk, addig itt az ajándékod" + (x.j.already ? "" : " (e-mailben is elküldtük)") + ".</p>" +
             (x.j.download ? '<a class="btn" href="' + escH(x.j.download) + '">Letöltöm a Káoszmanagert</a>' : "");
           f.parentNode.replaceChild(box, f);
         })
@@ -62,6 +90,33 @@
     var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in-view"); io.unobserve(e.target); } }); }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
     items.forEach(function (el) { io.observe(el); });
   } else items.forEach(function (el) { el.classList.add("in-view"); });
+
+  /* ---- Káoszmanager: görgetésre lapozódó könyv (borító kinyílik, a lapok egyenként átfordulnak) ---- */
+  var book = $("#book"), gsec = $("[data-scrolly]");
+  if (book && gsec) {
+    var leaves = $$(".leaf", book), N = leaves.length - 1; // az utolsó lap a jobb oldalon marad
+    var wide = matchMedia("(min-width:981px)");
+    var setMode = function () { gsec.classList.toggle("scrolly-on", wide.matches); };
+    setMode(); if (wide.addEventListener) wide.addEventListener("change", setMode);
+    var clamp = function (v) { return v < 0 ? 0 : v > 1 ? 1 : v; }, braf = 0;
+    var paint = function () {
+      braf = 0;
+      var vh = innerHeight, p;
+      if (wide.matches) { var r = gsec.getBoundingClientRect(); p = clamp(-r.top / Math.max(1, r.height - vh)); }
+      else { var a = book.parentNode.getBoundingClientRect(); p = clamp((vh * 0.85 - a.top) / (vh * 0.8)); }
+      var f = clamp((p - 0.06) / 0.84) * N;
+      book.style.setProperty("--shift", (-50 * (1 - clamp(f))).toFixed(2) + "%");
+      book.style.setProperty("--open", clamp(f * 2).toFixed(2));
+      leaves.forEach(function (l, i) {
+        var rr = i < N ? clamp(f - i) : 0;
+        l.style.setProperty("--r", rr.toFixed(3));
+        l.style.setProperty("--b", (1 - 0.2 * Math.sin(Math.PI * rr)).toFixed(3));
+        l.style.zIndex = rr >= 1 ? 10 + i : rr > 0 ? 60 : 40 - i;
+      });
+    };
+    var onBook = function () { if (!braf) braf = requestAnimationFrame(paint); };
+    addEventListener("scroll", onBook, { passive: true }); addEventListener("resize", onBook); paint();
+  }
 
   /* ---- hero mockup: enyhe dőlés az egér után (csak asztali) ---- */
   var mock = $("#mock");

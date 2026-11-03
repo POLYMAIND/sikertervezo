@@ -9,6 +9,9 @@ const BR=ctx.brand, TH=ST.theme, PX=ST.polyos, DEMO=ctx.mode!=="cloud";
 // csomag: ingyenes / pro. A white label márka felhasználói Pro-t kapnak.
 const PRO=ctx.plan==="pro"||BR.plan==="whitelabel";
 const PRO_VIEWS=["tartalom","kapcsolatok","ugyfelek","szamok"];
+// bemutatóban a Pro funkciókat egy kis „PRO” címke jelöli, hogy egyértelmű legyen, mi tartozik a Pro csomaghoz
+const SHOWPRO=DEMO&&PRO;
+const proTag=(cls)=>SHOWPRO?`<span class="protag${cls?" "+cls:""}" title="A Pro csomag része">PRO</span>`:"";
 const PRO_PRICE="3 999 Ft / hó";
 /* ---------- utils ---------- */
 const $=s=>document.querySelector(s);
@@ -54,7 +57,7 @@ function sample(){
     days,
     contacts:[
       {id:uid(),name:"Horváth Rita",src:"Instagram",interest:"Üzlet",stage:2,next:"Bemutató online",nextDate:d(0),note:"Két gyerek, otthonról dolgozna",created:d(-9)},
-      {id:uid(),name:"Molnár Petra",src:"Ajánlás (Edit)",interest:"Termék",stage:1,next:"Mintát küldeni",nextDate:d(-2),note:"",created:d(-6)},
+      {id:uid(),name:"Minta Kata",src:"Ajánlás (Edit)",interest:"Termék",stage:1,next:"Mintát küldeni",nextDate:d(-2),note:"",created:d(-6)},
       {id:uid(),name:"Nagy Dóra",src:"Facebook csoport",interest:"Mindkettő",stage:0,next:"Első üzenet",nextDate:d(1),note:"",created:d(-1)},
       {id:uid(),name:"Lakatos Bianka",src:"Live",interest:"Üzlet",stage:3,next:"Döntés: belép?",nextDate:d(3),note:"Jövő héten dönt",created:d(-20)},
       {id:uid(),name:"Simon Eszter",src:"Instagram",interest:"Termék",stage:0,next:"Visszaírni a sztorira",nextDate:d(0),note:"",created:d(-3)},
@@ -270,13 +273,13 @@ function navBadge(k,dc){if(!PRO&&PRO_VIEWS.includes(k))return 0;if(k==="kapcsola
 function nav(){
   const dc=dueCounts();
   $("#nav").innerHTML=VIEWS.map(([k,l])=>{
-    const n=navBadge(k,dc),b=!PRO&&PRO_VIEWS.includes(k)?'<span class="badge probadge">PRO</span>':n?`<span class="badge">${n}</span>`:"";
+    const n=navBadge(k,dc),b=!PRO&&PRO_VIEWS.includes(k)?'<span class="badge probadge">PRO</span>':(n?`<span class="badge">${n}</span>`:"")+(PRO_VIEWS.includes(k)?proTag():"");
     return `<a href="#${k}" ${route===k?'aria-current="page"':""}>${l}${b}</a>`}).join("");
   const tb=$("#tabbar");
   if(tb){
     const restBadge=VIEWS.filter(([k])=>!TABS.includes(k)).reduce((a,[k])=>a+navBadge(k,dc),0);
     const inRest=!TABS.includes(route);
-    tb.innerHTML=TABS.map(k=>{const l=(VIEWS.find(v=>v[0]===k)||[k,k])[1],n=navBadge(k,dc);return `<a href="#${k}" class="tab" ${route===k?'aria-current="page"':""}>${nicon(k)}<span>${l}</span>${n?`<i class="tbadge">${n}</i>`:""}</a>`}).join("")
+    tb.innerHTML=TABS.map(k=>{const l=(VIEWS.find(v=>v[0]===k)||[k,k])[1],n=navBadge(k,dc);return `<a href="#${k}" class="tab" ${route===k?'aria-current="page"':""}>${nicon(k)}<span>${l}</span>${PRO_VIEWS.includes(k)?proTag("tpro"):""}${n?`<i class="tbadge">${n}</i>`:""}</a>`}).join("")
       +`<button type="button" class="tab" data-act="more" ${inRest?'aria-current="page"':""} aria-haspopup="dialog">${nicon("tobb")}<span>${inRest?esc((VIEWS.find(v=>v[0]===route)||["",""])[1]):"Több"}</span>${restBadge?`<i class="tbadge">${restBadge}</i>`:""}</button>`;
   }
   const mt=$("#mtitle");if(mt)mt.textContent=(VIEWS.find(v=>v[0]===route)||["",""])[1];
@@ -284,12 +287,12 @@ function nav(){
 function openMore(){
   const dc=dueCounts();
   $("#layer").innerHTML=`<div class="modal" data-act="close"><div class="sheet moresheet" role="dialog" aria-label="Minden nézet"><div class="grabber" aria-hidden="true"></div><div class="row between"><h2>Minden nézet</h2><button type="button" class="iconbtn" data-act="close" aria-label="Bezárás">×</button></div>
-  <div class="moregrid">${VIEWS.filter(([k])=>!TABS.includes(k)).map(([k,l])=>{const n=navBadge(k,dc);return `<a href="#${k}" class="moreitem" data-act="close" ${route===k?'aria-current="page"':""}>${nicon(k)}<span>${l}</span>${n?`<i class="tbadge">${n}</i>`:""}</a>`}).join("")}</div>
+  <div class="moregrid">${VIEWS.filter(([k])=>!TABS.includes(k)).map(([k,l])=>{const n=navBadge(k,dc);return `<a href="#${k}" class="moreitem" data-act="close" ${route===k?'aria-current="page"':""}>${nicon(k)}<span>${l}</span>${PRO_VIEWS.includes(k)?proTag("tpro"):""}${n?`<i class="tbadge">${n}</i>`:""}</a>`}).join("")}</div>
   ${DEMO&&ctx.cloud?`<button class="btn" data-act="signup">${SIGNUP_CTA}</button>`:""}${!DEMO?`<button class="btn ghost" data-act="logout">Kijelentkezés</button>`:""}</div></div>`;
 }
 
 /* ---------- views ---------- */
-function head(title,sub,right,hand){return `<div class="head"><div class="stack"><div class="eyebrow">${esc(sub)}</div><h1>${esc(title)}${hand?` <span class="hand">${esc(hand)}</span>`:""}</h1></div><div class="row">${right||""}${DEMO&&!ctx.cloud?'<span class="proto">Bemutató mód, mintaadatokkal</span>':""}${syncBadge()}</div></div>`}
+function head(title,sub,right,hand){return `<div class="head"><div class="stack"><div class="eyebrow">${esc(sub)}</div><h1>${esc(title)}${hand?` <span class="hand">${esc(hand)}</span>`:""}${PRO_VIEWS.includes(route)?proTag("hpro"):""}</h1></div><div class="row">${right||""}${DEMO&&!ctx.cloud?'<span class="proto">Bemutató mód, mintaadatokkal</span>':""}${syncBadge()}</div></div>`}
 
 function stepsHTML(k){
   const dd=day(k);
@@ -1215,6 +1218,9 @@ const ADM_TABS=[["attekintes","Áttekintés"],["varolista","Várólista"],["felh
 const SUB_PLANS=[["ingyenes","Ingyenes"],["pro","Pro"]];
 const SUB_STATUS=[["probaido","Próbaidő"],["aktiv","Aktív"],["lejart","Lejárt"],["lemondva","Lemondva"],["ajandek","Ajándék"]];
 const lbl=(arr,k)=>(arr.find(x=>x[0]===k)||[k,k])[1];
+const fmtLaunch=s=>{try{return new Intl.DateTimeFormat("hu-HU",{timeZone:"Europe/Budapest",month:"long",day:"numeric",weekday:"long",hour:"2-digit",minute:"2-digit"}).format(new Date(s))}catch(e){return String(s)}};
+// datetime-local mezőhöz: a böngésző helyi ideje szerint (magyar gépen magyar idő)
+const toLocalInput=s=>{const x=new Date(s);if(isNaN(x))return"";const p2=n=>String(n).padStart(2,"0");return `${x.getFullYear()}-${p2(x.getMonth()+1)}-${p2(x.getDate())}T${p2(x.getHours())}:${p2(x.getMinutes())}`};
 const dt=s=>s?fmtDate(String(s).slice(0,10))+" "+String(s).slice(0,4):"–";
 async function admLoad(what){
   ui.adm=ui.adm||{};ui.adm.loading=what;ui.adm.err="";render();
@@ -1248,6 +1254,9 @@ function vAdmin(){
     body=w.missing?'<div class="card"><p style="margin:0">A várólista táblája még nincs létrehozva (0009_waitlist.sql).</p></div>':
     `<div class="card status" style="box-shadow:none;gap:14px"><div class="grow"><b>Regisztráció: ${w.signupOpen?"NYITVA":"ZÁRVA (várólista)"}</b><div class="muted" style="font-size:12.5px">${w.signupOpen?"Bárki létrehozhat fiókot. A landing és a belépőképernyő a regisztrációt kínálja.":"Új fiók nem hozható létre (ezt az adatbázis is kikényszeríti). A landing és a belépőképernyő e-mail-címet gyűjt, és utána letölthető a Káoszmanager."}</div></div>
     ${ui.signupConfirm?`<button class="btn" data-act="signupset" data-k="${w.signupOpen?"close":"open"}">Igen, ${w.signupOpen?"lezárom":"megnyitom"}</button><button class="nc-skip" data-act="signupno">Mégse</button>`:`<button class="btn ${w.signupOpen?"ghost":""}" data-act="signupask">${w.signupOpen?"Regisztráció lezárása":"Regisztráció megnyitása"}</button>`}</div>
+    <div class="card stack" style="gap:10px"><div class="row between"><h3 style="margin:0">Nyitás időpontja (visszaszámláló)</h3>${w.launchAt?`<span class="chip">${esc(fmtLaunch(w.launchAt))}</span>`:'<span class="chip">Nincs beállítva</span>'}</div>
+      <p class="muted" style="margin:0;font-size:12.5px">A landingen és az appban visszaszámláló fut eddig az időpontig, és ekkor a regisztráció <b>magától megnyílik</b> (az adatbázis is ezt követi). Magyar idő szerint add meg.</p>
+      <div class="row" style="gap:8px;flex-wrap:wrap"><input type="datetime-local" id="wl-launch" value="${esc(w.launchAt?toLocalInput(w.launchAt):"")}" aria-label="Nyitás időpontja" style="max-width:230px"><button class="btn small" data-act="launchset">Mentés</button>${w.launchAt?'<button class="btn small ghost" data-act="launchclear">Időzítés törlése</button>':""}</div></div>
     <div class="grid g3">${[["Feliratkozó",list.length],["Új az elmúlt 7 napban",wk],["Letöltötte az ajándékot",dl]].map(([l,v])=>`<div class="card kpi"><div class="v num">${v}</div><div class="l">${l}</div></div>`).join("")}</div>
     <div class="card"><div class="row between" style="margin-bottom:10px"><h3 style="margin:0">Feliratkozók</h3>${list.length?'<button class="btn ghost small" data-act="wlcsv">Letöltés (CSV)</button>':""}</div>
     ${list.length?`<div class="tablewrap"><table><thead><tr><th>E-mail</th><th>Feliratkozott</th><th>Honnan</th><th>Letöltés</th></tr></thead><tbody>${list.map(x=>`<tr><td>${esc(x.email)}</td><td class="num">${esc(String(x.created_at).replace("T"," ").slice(0,16))}</td><td>${esc(x.source||"–")}</td><td class="num">${x.downloads||0}</td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">Még nincs feliratkozó.</div>'}</div>`}
@@ -1262,6 +1271,7 @@ function vAdmin(){
   else if(tab==="markak"){
     body=`<div class="card stack" style="gap:10px"><h3 style="margin:0">Új márka (white label ügyfél)</h3><form class="row" data-form="admbrand" style="align-items:flex-end"><label class="f" style="flex:1;min-width:180px">Azonosító (kisbetű, kötőjel)<input type="text" id="adm-slug" placeholder="pl. ceged" pattern="[a-z0-9][a-z0-9-]{0,39}" required></label><label class="f" style="min-width:160px">Csomag<select id="adm-plan">${[["alap","Alap"],["whitelabel","White label"]].map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select></label><button class="btn">Létrehozás</button></form><p class="muted" style="margin:0;font-size:12px">A márka címe: <code>/?brand=azonosító</code>, vagy saját domain a BRAND_HOSTS beállítással. Az arculatot a márka-admin a Beállításokban állítja be.</p></div>
     ${a.brands.map(x=>`<div class="card stack" style="gap:10px"><div class="row between"><h3 style="margin:0">${esc(x.slug)}</h3><span class="row" style="gap:6px">${[["alap","Alap"],["whitelabel","White label"]].map(([k,l])=>`<button class="mood" data-act="admbplan" data-slug="${esc(x.slug)}" data-k="${k}" aria-pressed="${x.plan===k}">${l}</button>`).join("")}<button class="chip" data-act="admbupsell" data-slug="${esc(x.slug)}" data-plan="${x.plan}" data-on="${x.upsell?0:1}">${x.upsell?"PolyOS-ajánló: be":"PolyOS-ajánló: ki"}</button></span></div>
+      ${x.plan==="whitelabel"?`<div class="row" style="gap:8px"><a class="btn small" href="/app?brand=${encodeURIComponent(x.slug)}#markam">Megnyitom és beállítom</a><span class="muted" style="font-size:12px">Az ő márkájában nyílik meg; minden mentésed naplózva lesz („támogatói hozzáférés”). A felhasználói ezen a linken regisztrálnak: <code>${esc(location.origin)}/app?brand=${esc(x.slug)}</code></span></div>`:""}
       <div><div class="lab2">Márka-adminok (ők szerkesztik az arculatot)</div>${x.admins.length?`<div class="row" style="gap:6px">${x.admins.map(e=>`<span class="chip">${esc(e)} <button class="cadd" style="opacity:1;width:18px;height:18px;font-size:13px" data-act="admbadmdel" data-slug="${esc(x.slug)}" data-email="${esc(e)}" aria-label="Eltávolítás">×</button></span>`).join("")}</div>`:'<div class="empty">Még nincs.</div>'}</div>
       <form class="row" data-form="admbadm" data-slug="${esc(x.slug)}" style="flex-wrap:nowrap"><input type="email" placeholder="Regisztrált felhasználó e-mail-címe" aria-label="Márka-admin e-mail" required><button class="btn small">Hozzáadás</button></form></div>`).join("")}`;}
   else{
@@ -1276,6 +1286,8 @@ function admUserSheet(id){
   <div class="fg"><label class="f">Csomag<select id="as-plan">${SUB_PLANS.map(([k,l])=>`<option value="${k}" ${s.plan===k?"selected":""}>${l}</option>`).join("")}</select></label><label class="f">Állapot<select id="as-status">${SUB_STATUS.map(([k,l])=>`<option value="${k}" ${s.status===k?"selected":""}>${l}</option>`).join("")}</select></label>
   <label class="f">Érvényes eddig<input type="date" id="as-end" value="${esc(s.current_period_end||"")}"></label><label class="f full">Megjegyzés (csak admin látja)<textarea id="as-note" rows="2" maxlength="500">${esc(s.note||"")}</textarea></label></div>
   <div class="status"><div class="grow"><b>Admin jog</b><div class="muted" style="font-size:12.5px">${u.superadmin?"Fő admin (a Vercel beállításából), innen nem módosítható.":u.me?"Ez a te fiókod.":u.admin?"Admin: látja és kezeli a regisztrálókat, előfizetéseket, márkákat.":u.confirmed?"Nem admin.":"Előbb erősítse meg az e-mail-címét, csak utána tehető adminná."}</div></div>${u.superadmin||u.me||(!u.admin&&!u.confirmed)?"":ui.admConfirm===u.id?`<span class="row" style="gap:6px"><button type="button" class="btn small" data-act="${u.admin?"admrevoke":"admgrant"}" data-id="${u.id}">${u.admin?"Igen, elveszem":"Igen, adminná teszem"}</button><button type="button" class="btn small ghost" data-act="admconfno" data-id="${u.id}">Mégse</button></span>`:`<button type="button" class="btn small ${u.admin?"ghost":""}" data-act="admconf" data-id="${u.id}">${u.admin?"Admin jog elvétele":"Adminná teszem"}</button>`}</div>
+  <div class="status" style="flex-wrap:wrap"><div class="grow" style="min-width:200px"><b>White label</b><div class="muted" style="font-size:12.5px">Saját márkát kap: saját név, logó, színek, és a saját felhasználói. Ő lesz a márka gazdája, de te is be tudod állítani helyette (a Márkák fülön: „Megnyitom és beállítom”).</div></div>
+    <div class="row" style="gap:6px;flex-wrap:nowrap"><input type="text" id="as-wl" placeholder="pl. minta-marka" aria-label="Márka azonosítója" maxlength="40" style="width:150px"><button type="button" class="btn small" data-act="admwl" data-email="${esc(u.email)}">Márkát kap</button></div></div>
   <p class="muted" style="margin:0;font-size:12px">A Pro azonnal bekapcsolja a Pro funkciókat (aktív, ajándék, vagy próbaidő a megadott dátumig). Az online fizetés bekötéséig itt kezeled.</p>
   <div class="row between">${u.superadmin?"<span></span>":`<button type="button" class="btn ghost small" data-act="${u.banned?"admunban":"admban"}" data-id="${u.id}">${u.banned?"Letiltás feloldása":"Fiók letiltása"}</button>`}<button class="btn">Mentés</button></div></form></div>`;
 }
@@ -1323,7 +1335,7 @@ function calSyncCard(){
     ${https?`<label class="f">A te naptárlinked (titkos, ne oszd meg)<input type="text" readonly value="${esc(https)}" id="cal-url" onfocus="this.select()"></label><div class="row" style="gap:8px"><button class="btn small" data-act="calcopy">Link másolása</button><a class="btn small ghost" href="${esc(webcal)}">Megnyitás a telefonon / Macen</a></div>`:c.active?'<p class="muted" style="margin:0;font-size:12.5px">Biztonsági okból a linket csak létrehozáskor mutatjuk meg. Ha új eszközt kötnél be, kérj új linket (a régi ilyenkor megszűnik, a már bekötött naptárakat is frissíteni kell).</p>':""}
     <details class="howto"><summary>Hogyan kötöm be?</summary><ol><li><b>iPhone:</b> koppints a „Megnyitás a telefonon” gombra, majd az „Előfizetés” gombra. Vagy kézzel: Beállítások → Naptár → Fiókok → Fiók hozzáadása → Egyéb → Előfizetett naptár → illeszd be a linket.</li><li><b>Google Naptár:</b> számítógépen a calendar.google.com oldalon bal oldalt a „Más naptárak” melletti <b>+</b> → „URL alapján” → illeszd be a linket → „Naptár hozzáadása”.</li><li><b>Outlook:</b> Naptár → Naptár hozzáadása → Feliratkozás a webről.</li></ol><p class="muted" style="margin:0;font-size:12px">A Google és az iPhone néhány óránként frissíti a feliratkozott naptárt, ezért egy új időpont késéssel jelenhet meg.</p></details>`;
   }
-  return `<div class="card stack" id="naptarszinkron" style="gap:12px"><div class="row between"><h3 style="margin:0">Naptár-szinkron</h3><span class="chip">Google · iPhone · Outlook</span></div>${body}${PRO&&!DEMO?'<hr class="sep">'+importsBlock():""}
+  return `<div class="card stack" id="naptarszinkron" style="gap:12px"><div class="row between"><h3 style="margin:0">Naptár-szinkron${proTag()}</h3><span class="chip">Google · iPhone · Outlook</span></div>${body}${PRO&&!DEMO?'<hr class="sep">'+importsBlock():""}
   <p class="muted" style="margin:0;font-size:12px">A tervezőből a naptáraidba: feliratkozó link. A naptáraidból a tervezőbe: a „Más naptárak behúzása” rész. A Google Naptárba közvetlen írás (teljes kétirányú szinkron) hamarosan.</p></div>`;
 }
 
@@ -1464,12 +1476,12 @@ const extOf=k=>((ui.ext&&ui.ext.events)||[]).filter(e=>e.date===k);
 function extLabel(e){return `${e.allDay?"Egész nap":e.start}${e.allDay?"":"–"+e.end}`}
 function importsBlock(){
   if(!PRO)return "";
-  if(DEMO)return '<p class="muted" style="margin:0;font-size:12.5px">Más naptárak behúzása fiókkal érhető el.</p>';
+  if(DEMO)return `<p class="muted" style="margin:0;font-size:12.5px">Más naptárak behúzása fiókkal érhető el.${proTag()}</p>`;
   const im=ui.imports;
   if(!im){ctx.calendar("import.list").then(r=>{ui.imports=r.imports||[];render()},e=>{ui.imports={err:e.message||"hiba"};render()});return '<div class="spinner" role="status" aria-label="Betöltés"></div>'}
   if(im.err)return `<p class="muted" style="margin:0">${im.err==="not_configured"?"A naptárak behúzása ezen a telepítésen még nincs bekapcsolva.":"Most nem sikerült betölteni a bekötött naptárakat."}</p>`;
   const COLS=["#3E7BFA","#12A150","#E5484D","#C77700","#8B5CF6","#0EA5E9"];
-  return `<div class="stack" style="gap:10px"><h3 style="margin:6px 0 0;font-size:16px">Más naptárak behúzása</h3><p class="muted" style="margin:0;font-size:12.5px">A Google, iCloud vagy Outlook naptáraid eseményei megjelennek a tervező naptárában, így egy helyen látsz mindent. Csak olvassuk őket, nem módosítjuk.</p>
+  return `<div class="stack" style="gap:10px"><h3 style="margin:6px 0 0;font-size:16px">Más naptárak behúzása${proTag()}</h3><p class="muted" style="margin:0;font-size:12.5px">A Google, iCloud vagy Outlook naptáraid eseményei megjelennek a tervező naptárában, így egy helyen látsz mindent. Csak olvassuk őket, nem módosítjuk.</p>
   ${im.length?`<div class="list">${im.map(c=>`<div class="li"><span class="dot" style="background:${esc(c.color)}"></span><div class="grow"><div class="t">${esc(c.name)}</div><div class="s">${esc(c.host||"")}${c.last_error?' · <span style="color:var(--warn)">nem sikerült frissíteni</span>':c.last_ok_at?" · frissítve: "+fmtDate(String(c.last_ok_at).slice(0,10)):""}</div></div>${ui.impDel===c.id?`<button class="chip warn" data-act="impdel" data-id="${c.id}">Igen, leválasztom</button><button class="chip" data-act="impdelno">Mégse</button>`:`<button class="iconbtn" data-act="impdelask" data-id="${c.id}" aria-label="Leválasztás">×</button>`}</div>`).join("")}</div>`:""}
   <form class="stack" data-form="impadd" style="gap:10px"><div class="grid g2"><label class="f">Megnevezés<input type="text" id="imp-name" maxlength="60" placeholder="Például: Google (munka)" required></label><label class="f">Szín<select id="imp-color">${COLS.map((c,i)=>`<option value="${c}">${["Kék","Zöld","Piros","Narancs","Lila","Égszínkék"][i]}</option>`).join("")}</select></label></div>
   <label class="f">A naptár iCal-linkje<input type="text" id="imp-url" inputmode="url" placeholder="https://… vagy webcal://… (.ics)" required></label><button class="btn small" style="align-self:flex-start">Naptár bekötése</button></form>
@@ -1649,7 +1661,8 @@ function vMarkam(){
   activeBoard=null;
   if(!MARKAM)return head("Márkám","Nincs hozzáférés")+'<div class="card empty">Ez az oldal a white label márka gazdájának érhető el.</div>';
   const tab=ui.mkTab||"arculat";
-  const tabs=`<div class="tabs">${[["arculat","Arculat"],["felhasznalok","Felhasználóim"]].map(([k,l])=>`<button data-act="mktab" data-k="${k}" aria-pressed="${tab===k}">${l}</button>`).join("")}</div>`;
+  const sup=ctx.brandSupport?`<div class="card status" style="box-shadow:none;border:1.5px dashed var(--accent)"><div class="grow"><b>Támogatói mód: „${esc(BR.slug)}” márkát állítod be a partner helyett.</b><div class="muted" style="font-size:12.5px">Amit itt mentesz, az ő márkájára vonatkozik, és minden lépésed naplózva van. A saját felületedre a <a href="/app">sikermaker.hu/app</a> címen jutsz vissza.</div></div></div>`:"";
+  const tabs=sup+`<div class="tabs">${[["arculat","Arculat"],["felhasznalok","Felhasználóim"]].map(([k,l])=>`<button data-act="mktab" data-k="${k}" aria-pressed="${tab===k}">${l}</button>`).join("")}</div>`;
   let body="";
   if(tab==="arculat"){
     const d=ui.brand||(ui.brand=JSON.parse(JSON.stringify(ctx.brandRaw||{})));ui.brandFor="brand";
@@ -1831,6 +1844,8 @@ document.addEventListener("click",e=>{
     case"platclearno":ui.platClear=false;render();break;
     case"platclearyes":ui.platClear=false;ctx.admin("platform.set",{config:{}}).then(()=>{toast("Visszaállítva a semleges alapkinézetre. Újratöltöm…");setTimeout(()=>location.reload(),900)},()=>toast("Nem sikerült. Próbáld újra."));break;
 
+    case"launchset":{const v=$("#wl-launch").value;if(!v){toast("Válaszd ki a nyitás napját és időpontját.");break}const at=new Date(v);if(isNaN(at)){toast("Hibás időpont.");break}admDo("launch.set",{at:at.toISOString()},"Elmentve: a visszaszámláló eddig fut.","varolista");break}
+    case"launchclear":admDo("launch.set",{at:null},"Az időzített nyitás törölve.","varolista");break;
     case"signupask":ui.signupConfirm=true;render();break;
     case"signupno":ui.signupConfirm=false;render();break;
     case"signupset":ui.signupConfirm=false;admDo("signup.set",{open:b.dataset.k==="open"},b.dataset.k==="open"?"A regisztráció megnyílt.":"A regisztráció lezárva.","varolista");break;
@@ -1845,6 +1860,9 @@ document.addEventListener("click",e=>{
 
     case"admban":admDo("user.ban",{id},"Fiók letiltva.","felhasznalok");break;
     case"admunban":admDo("user.unban",{id},"Letiltás feloldva.","felhasznalok");break;
+    case"admwl":{const slug=($("#as-wl").value||"").trim().toLowerCase(),email=b.dataset.email;
+      if(!/^[a-z0-9][a-z0-9-]{1,39}$/.test(slug)||slug==="alap"){toast("Az azonosító kisbetű, szám és kötőjel lehet (2–40 karakter), például: minta-marka.");break}
+      (async()=>{try{await ctx.admin("brand.set",{slug,plan:"whitelabel",upsell:true});await ctx.admin("brand.admin.add",{slug,email});closeForm();toast("Kész: saját márkát kapott ("+slug+").");ui.admTab="markak";admLoad("markak")}catch(e){toast(e.message==="bad_slug"?"Ez az azonosító nem használható.":"Nem sikerült. Próbáld újra.")}})();break}
     case"admbplan":admDo("brand.set",{slug:b.dataset.slug,plan:b.dataset.k,upsell:true},"Csomag módosítva.","markak");break;
     case"admbupsell":admDo("brand.set",{slug:b.dataset.slug,plan:b.dataset.plan,upsell:b.dataset.on==="1"},"Mentve.","markak");break;
     case"admbadmdel":admDo("brand.admin.remove",{slug:b.dataset.slug,email:b.dataset.email},"Márka-admin eltávolítva.","markak");break;

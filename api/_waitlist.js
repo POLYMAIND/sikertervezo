@@ -10,19 +10,24 @@ const FILE = () => L.env("LEAD_FILE", "Kaoszmanager.pdf");
 const FILE_NAME = () => L.env("LEAD_FILE_NAME", "Kaoszmanager.pdf");
 const TTL = 7 * 864e5;
 
-let _flag = { at: 0, val: false };
-async function signupOpen(fresh) {
+let _flag = { at: 0, val: { open: false, launchAt: null } };
+// { open, launchAt }: nyitva, ha a kapcsoló be van kapcsolva VAGY elérkezett a nyitás időpontja (ugyanígy dönt az
+// adatbázis-trigger is). Hiba esetén zárt (fail-closed); a 0009 migráció előtt (nincs tábla, 404) a korábbi, nyitott állapot.
+async function signupState(fresh) {
   if (!fresh && Date.now() - _flag.at < 15000) return _flag.val;
-  let val = false; // fail-closed: hiba vagy hiányzó sor esetén zárt
+  let val = { open: false, launchAt: null };
   if (L.serviceReady()) {
-    try { const r = await L.sb("sikertervezo_flags?id=eq.default&select=signup_open&limit=1"); val = !!(r && r[0] && r[0].signup_open); }
-    // a 0009 migráció előtt (nincs tábla, 404) a korábbi állapot él: nincs várólista, nincs adatbázis-kapu.
-    // Minden más hiba esetén zárt (fail-closed).
-    catch (e) { val = e.status === 404; }
+    try {
+      const r = await L.sb("sikertervezo_flags?id=eq.default&select=signup_open,launch_at&limit=1");
+      const f = (r && r[0]) || {};
+      const launchAt = f.launch_at || null;
+      val = { open: !!f.signup_open || (!!launchAt && Date.parse(launchAt) <= Date.now()), launchAt };
+    } catch (e) { val = { open: e.status === 404, launchAt: null }; }
   }
   _flag = { at: Date.now(), val };
   return val;
 }
+async function signupOpen(fresh) { return (await signupState(fresh)).open; }
 
 function key() {
   const k = Buffer.from(L.env("LINK_ENC_KEY"), "base64");
@@ -48,4 +53,4 @@ function ipHash(req) {
   return crypto.createHmac("sha256", key()).update("ip:" + ip).digest("hex").slice(0, 32);
 }
 
-module.exports = { BUCKET, FILE, FILE_NAME, signupOpen, sign, verify, ipHash };
+module.exports = { BUCKET, FILE, FILE_NAME, signupOpen, signupState, sign, verify, ipHash };

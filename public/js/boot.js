@@ -59,6 +59,14 @@
 
   /* ---------- belépés / regisztráció ---------- */
   let wlDone = "";
+  // „Nyitás: november 7., szombat 10:00 (még 3 nap 18 óra)" — a nyitás időpontját az Adminban lehet állítani
+  function launchLine() {
+    const at = config.signup && config.signup.launchAt, t = at ? Date.parse(at) : 0;
+    if (!t || t <= Date.now()) return "";
+    let when = ""; try { when = new Intl.DateTimeFormat("hu-HU", { timeZone: "Europe/Budapest", month: "long", day: "numeric", weekday: "long", hour: "2-digit", minute: "2-digit" }).format(new Date(t)); } catch (e) { return ""; }
+    const h = Math.floor((t - Date.now()) / 36e5), d = Math.floor(h / 24);
+    return `Nyitás: ${when} (még ${d ? d + " nap " : ""}${h % 24} óra)!`;
+  }
   function authScreen(tab, msg) {
     tab = tab || "belepes";
     const eb = TH.effectiveBrand(brandRaw), legal = config.legal || {};
@@ -69,7 +77,7 @@
     if (tab === "regisztracio" && !open) body = wlDone ? `<div class="stack" style="gap:12px"><p style="margin:0"><b>Feliratkoztál, köszönjük!</b> Amint megnyitjuk a ${esc(eb.productName)}-t, elsőként szólunk.</p>
         <p class="sub" style="margin:0">Addig itt az ajándékod, a Káoszmanager nyomtatható csomag. A linket e-mailben is elküldtük.</p>
         <a class="btn" href="${esc(wlDone)}">Letöltöm a Káoszmanagert</a></div>`
-      : `<form class="stack" data-auth="waitlist" style="gap:12px"><p class="sub" style="margin:0"><b>Hamarosan nyitunk!</b> Iratkozz fel, és elsőként szólunk. Ajándékba most letöltheted a <b>Káoszmanagert</b>, a nyomtatható tervező- és matricacsomagunkat.</p>
+      : `<form class="stack" data-auth="waitlist" style="gap:12px"><p class="sub" style="margin:0"><b>${launchLine() || "Hamarosan nyitunk!"}</b> Iratkozz fel, és elsőként szólunk. Ajándékba most letöltheted a <b>Káoszmanagert</b>, a nyomtatható tervező- és matricacsomagunkat.</p>
         <label class="f">E-mail-cím<input type="email" name="email" autocomplete="email" required></label>
         <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
         <label class="row" style="gap:8px;font-size:12.5px;flex-wrap:nowrap;align-items:flex-start"><input type="checkbox" name="consent" required style="margin-top:3px"><span>Feliratkozom a várólistára: az e-mail-címemet a Polymaind csak az indulásról szóló értesítéshez és az ajándék elküldéséhez használja. Bármikor kérhetem a törlését a hello@polymaind.hu címen.${legal.privacy ? " " + link(legal.privacy, "Adatkezelési tájékoztató") : ""}</span></label>
@@ -164,7 +172,7 @@
     const prefs = (st && st.prefs && st.prefs.bg) || {};
     TH.apply(brandRaw, prefs); paintChrome(brandRaw);
 
-    let brandAdmin = false, px = Object.assign({ enabled: false }, config.polyos || {});
+    let brandAdmin = false, brandSupport = false, px = Object.assign({ enabled: false }, config.polyos || {});
     let superadmin = false;
     // csomag: belépve a szerver mondja meg (/api/me); bemutató módban a csomagváltó (alapból Pro, hogy minden látszódjon)
     let userPlan = demo ? (["ingyenes", "pro", "whitelabel"].includes(ls.get(DEMO_PLAN_KEY)) ? ls.get(DEMO_PLAN_KEY) : "pro") : "ingyenes";
@@ -174,7 +182,7 @@
     const payResult = new URLSearchParams(location.search).get("fizetes");
     if (payResult) { const q = new URLSearchParams(location.search); q.delete("fizetes"); history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "") + location.hash); }
     if (!demo) {
-      try { brandAdmin = !!(await api("/api/brand" + location.search)).admin; } catch (e) {}
+      try { const br = await api("/api/brand" + location.search); brandAdmin = !!br.admin; brandSupport = !!br.support; } catch (e) {}
       try { superadmin = !!(await api("/api/admin", { method: "POST", body: JSON.stringify({ action: "whoami" }) })).superadmin; } catch (e) {}
     }
     // belépve a valódi állapot; bemutató módban csak a fejlesztői mock (élesben a szerver sosem kapcsolja be)
@@ -185,7 +193,7 @@
 
     const ctx = {
       mode: demo ? "demo" : "cloud", cloud: store.cloudAvailable(), user, state: st,
-      brand: TH.effectiveBrand(brandRaw), brandRaw, brandAdmin, paintChrome, install, superadmin,
+      brand: TH.effectiveBrand(brandRaw), brandRaw, brandAdmin, brandSupport, paintChrome, install, superadmin,
       // superadmin hívás: a jogosultságot a szerver MINDEN kérésnél újra ellenőrzi, ez csak a felület kapuja
       emailReady: !!(config.email && config.email.enabled),
       brandConsent: () => store.brandConsent(TH.effectiveBrand(brandRaw).slug),
@@ -203,7 +211,7 @@
       plan: userPlan, planSource, payResult, signupOpen: !!(config.signup && config.signup.open),
       saveBrand: async (draft) => {
         if (demo) { ls.set(DEMO_BRAND_KEY, JSON.stringify(draft)); return; }
-        try { await api("/api/brand", { method: "PUT", body: JSON.stringify({ brand: draft }) }); }
+        try { await api("/api/brand" + location.search, { method: "PUT", body: JSON.stringify({ brand: draft }) }); }
         catch (e) { throw new Error(e.status === 403 ? "forbidden" : "save_failed"); }
       },
       polyosConnect: () => PX.connect().catch(() => alert("Nem sikerült elindítani az összekapcsolást. Próbáld újra később.")),
