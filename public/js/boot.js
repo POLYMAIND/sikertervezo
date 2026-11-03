@@ -50,10 +50,10 @@
     $("#brandrow").innerHTML = `${logo}<div class="brand">${esc(eb.productName)}<small>${esc(eb.tagline)}</small></div>`;
     document.title = eb.productName;
     // a böngészőfül ikonja a márka színeit követi (logó nélkül a jel a kiemelőszínnel), szerkesztés közben is élőben
-    const fi = document.querySelector('link[rel="icon"]'); if (fi) { fi.setAttribute("type", eb.logo ? "" : "image/svg+xml"); fi.setAttribute("href", eb.logo || "data:image/svg+xml;charset=utf-8," + encodeURIComponent(TH.svg(TH.MARK))); }
+    const fi = document.querySelector('link[rel="icon"]'); if (fi) { fi.setAttribute("type", !eb.logo || /\.svg$|^data:image\/svg/.test(eb.logo) ? "image/svg+xml" : ""); fi.setAttribute("href", eb.logo || "data:image/svg+xml;charset=utf-8," + encodeURIComponent(TH.svg(TH.MARK))); }
     const at = document.querySelector('meta[name="apple-mobile-web-app-title"]'); if (at) at.setAttribute("content", eb.productName);
     const mf = $("#manifest"); if (mf) mf.setAttribute("href", "/api/manifest" + location.search);
-    const ai = $("#appleicon"); if (ai) ai.setAttribute("href", eb.logo ? "/api/icon?size=180" + (location.search ? "&" + location.search.slice(1) : "") : "/icons/apple-touch-icon.png");
+    const ai = $("#appleicon"); if (ai) ai.setAttribute("href", eb.logo && eb.logo !== TH.LOGO ? "/api/icon?size=180" + (location.search ? "&" + location.search.slice(1) : "") : "/icons/apple-touch-icon.png");
   }
   function setFoot(t) { const f = $("#foot"); if (f) f.innerHTML = t; }
 

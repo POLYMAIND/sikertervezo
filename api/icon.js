@@ -6,6 +6,8 @@ module.exports = async function handler(req, res) {
   const q = new URL(req.url, "http://x").searchParams;
   if (q.get("format") === "svg") {
     const b0 = B.publicBrand(await B.loadBrand(B.resolveSlug(req)), await B.loadPlatform());
+    // a Sikermaker (nem white label) saját logót használ; a márkaszínű jel csak a logó nélküli white label márkáé
+    if (b0.plan !== "whitelabel" && !b0.logo) { res.statusCode = 302; res.setHeader("Location", "/logo.svg"); res.setHeader("Cache-Control", "public, max-age=300"); return res.end(); }
     const hex = (v, d) => (typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v) ? v : d);
     const c = ((b0.plan === "whitelabel" || b0.themed) && b0.colors) || {};
     const A = hex(c.accent, "#6D4AFF"), H = hex(c.highlight, "#F4CF72");

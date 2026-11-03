@@ -785,7 +785,7 @@ async function drawCert(a){
   x.strokeStyle=P.accent;x.lineWidth=14;x.strokeRect(48,48,W-96,H-96);
   x.strokeStyle=P.hl500;x.lineWidth=3;x.strokeRect(80,80,W-160,H-160);
   // logó: a márka saját logója (data-URL), különben a semleges jel — idegen domainről nem rajzolunk (a vászon „szennyeződne")
-  const src=BR.logo&&/^data:image\//.test(BR.logo)?BR.logo:"data:image/svg+xml;charset=utf-8,"+encodeURIComponent(TH.svg(MARK_SVG));
+  const src=BR.logo&&(/^data:image\//.test(BR.logo)||BR.logo===TH.LOGO)?BR.logo:"data:image/svg+xml;charset=utf-8,"+encodeURIComponent(TH.svg(MARK_SVG));
   const img=new Image();await new Promise(r=>{img.onload=r;img.onerror=r;img.src=src});
   try{if(img.naturalWidth){const sc=Math.min(240/img.naturalWidth,184/img.naturalHeight);const w=img.naturalWidth*sc,h=img.naturalHeight*sc;x.drawImage(img,W/2-w/2,130+(184-h)/2,w,h)}}catch(e){}
   x.textAlign="center";x.fillStyle=P.ink;
@@ -1124,7 +1124,7 @@ function installCard(where){
   const body=mode==="prompt"
     ?`<span class="s">Egy koppintás, és a ${esc(BR.productName)} saját ikonnal, teljes képernyőn indul, mint egy app.</span>`
     :`<span class="s">Safariban koppints a <b>Megosztás</b> ikonra <span aria-hidden="true">(négyzet felfelé nyíllal)</span>, majd a <b>Főképernyőhöz adás</b> pontra.</span>`;
-  return `<div class="card installcard"><span class="ic" aria-hidden="true">${TH.svg(TH.MARK).replace('width="48" height="48"','width="40" height="40"')}</span><div class="grow"><span class="t">Tedd ki a kezdőképernyőre</span>${body}</div><div class="row" style="gap:8px">${mode==="prompt"?'<button class="btn small" data-act="install">Telepítés</button>':""}${where==="ma"?'<button class="nc-skip" style="color:var(--muted)" data-act="installhide">Most nem</button>':""}</div></div>`;
+  return `<div class="card installcard"><span class="ic" aria-hidden="true">${BR.logo?`<img src="${esc(BR.logo)}" width="40" height="40" alt="">`:TH.svg(TH.MARK).replace('width="48" height="48"','width="40" height="40"')}</span><div class="grow"><span class="t">Tedd ki a kezdőképernyőre</span>${body}</div><div class="row" style="gap:8px">${mode==="prompt"?'<button class="btn small" data-act="install">Telepítés</button>':""}${where==="ma"?'<button class="nc-skip" style="color:var(--muted)" data-act="installhide">Most nem</button>':""}</div></div>`;
 }
 /* ---------- bevezető (első belépés) és „Első lépések" lista ---------- */
 const PROFILES=[
@@ -1143,7 +1143,7 @@ function obOpen(){
 function obClose(){const el=$("#onboard");if(el)el.remove();ui.ob=null;document.body.classList.remove("ob-open")}
 function obField(k,label,v,type,extra){return `<label class="f">${label}<input type="${type||"text"}" data-ob="${k}" value="${esc(v)}" ${extra||""}></label>`}
 function obBody(step,d){
-  if(step==="udv")return `<div class="ob-hero">${TH.svg(TH.MARK).replace('width="48" height="48"','width="64" height="64"')}</div><h2>Szia! Állítsuk be együtt a tervezőt.</h2><p class="lead">Pár rövid kérdés, nagyjából 2 perc. Utána a ${esc(BR.productName)} pontosan rád szabva indul, és megmutatjuk, hol mit találsz.</p><ul class="ob-list"><li>Hogyan szólítsunk</li><li>Mivel foglalkozol, és mik a napi lépéseid</li><li>Mi a különbség a kapcsolat és az ügyfél között</li><li>Az első kapcsolatod és ügyfeled felvétele</li></ul>`;
+  if(step==="udv")return `<div class="ob-hero">${BR.logo?`<img src="${esc(BR.logo)}" width="64" height="64" alt="">`:TH.svg(TH.MARK).replace('width="48" height="48"','width="64" height="64"')}</div><h2>Szia! Állítsuk be együtt a tervezőt.</h2><p class="lead">Pár rövid kérdés, nagyjából 2 perc. Utána a ${esc(BR.productName)} pontosan rád szabva indul, és megmutatjuk, hol mit találsz.</p><ul class="ob-list"><li>Hogyan szólítsunk</li><li>Mivel foglalkozol, és mik a napi lépéseid</li><li>Mi a különbség a kapcsolat és az ügyfél között</li><li>Az első kapcsolatod és ügyfeled felvétele</li></ul>`;
   if(step==="nev")return `<h2>Hogyan szólíthatunk?</h2><p class="lead">Ezzel köszönünk minden reggel, és ez kerül az okleveleidre és az üzenetvázlataid aláírásába.</p>${obField("name","A teljes neved",d.name,"text",'autocomplete="name" maxlength="60" placeholder="Például: Minta Anna"')}${obField("nick","Így szólíts (nem kötelező)",d.nick,"text",'maxlength="30" placeholder="Például: Anna"')}`;
   if(step==="profil")return `<h2>Mivel foglalkozol?</h2><p class="lead">Ez alapján javaslunk napi lépéseket. Később bármit átírhatsz.</p><div class="ob-choices">${PROFILES.map(p=>`<button type="button" class="ob-choice" data-act="obprof" data-k="${p.k}" aria-pressed="${d.profile===p.k}"><b>${esc(p.l)}</b><span>${esc(p.d)}</span></button>`).join("")}</div>`;
   if(step==="lepesek")return `<h2>Az 5 napi lépésed</h2><p class="lead">Ez az öt dolog visz előre minden nap. A Vezérlőpulton pipálod ki őket, és ha mind az öt megvan, az „arany nap”.</p><div class="stack" style="gap:10px">${d.steps.map((s,i)=>`<label class="f">${i+1}. lépés<input type="text" data-ob="step${i}" value="${esc(s)}" maxlength="24"></label>`).join("")}</div>`;

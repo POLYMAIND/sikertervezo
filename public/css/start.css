@@ -61,7 +61,7 @@ mark{background:linear-gradient(transparent 58%,var(--hl-300) 58%,var(--hl-300) 
 .mock{position:relative;padding:10px 0 40px}
 .mock-win{display:flex;background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);border:1px solid var(--line);overflow:hidden;min-height:330px;transform:rotate(-1deg)}
 .mock-side{width:64px;background:var(--ink);padding:16px 14px;display:flex;flex-direction:column;gap:12px}
-.ms-logo{width:34px;height:34px;border-radius:9px;background:var(--hl-bright);margin-bottom:8px}
+.ms-logo{width:34px;height:34px;margin-bottom:8px}
 .mock-side i{display:block;height:9px;border-radius:5px;background:rgba(255,255,255,.22)}
 .mock-side i.on{background:#fff}
 .mock-main{flex:1;padding:20px;display:flex;flex-direction:column;gap:12px;min-width:0}

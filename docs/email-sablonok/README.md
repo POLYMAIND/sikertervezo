@@ -11,6 +11,4 @@ Supabase → Authentication → Emails → Templates. Mindegyiknél a **Subject*
 | Invite user | `5-meghivo.html` | Meghívót kaptál a Sikermakerbe |
 | Reauthentication | `6-megerosito-kod.html` | A megerősítő kódod – Sikermaker |
 
-A feladó neve és címe (most: „Supabase Auth <noreply@mail.app.supabase.io>”) csak saját SMTP-vel cserélhető: Authentication → Emails → SMTP Settings. Brevóval: host `smtp-relay.brevo.com`, port `587`, felhasználó a Brevo SMTP-loginja, jelszó a Brevo **SMTP-kulcsa** (nem az API-kulcs), feladó: `hello@sikermaker.hu` (a Brevóban hitelesített cím), név: `Sikermaker`.
-
-A sablonok a jelenlegi Sikermaker-arculat színeit használják (kiemelőszín `#997433`), a logó: `https://sikermaker.hu/icons/email-logo.png`. Ha az arculat színe változik, a `build.mjs` `ACCENT` értékét és a logót kell frissíteni, majd újragenerálni.
+A feladó neve és címe (most: „Supabase Auth <noreply@mail.app.supabase.io>”) csak saját SMTP-vel cserélhető: Authentication → Emails → SMTP Settings. Brevóval: host `smtp-relay.brevo.com`, port `587`, felhasználó a Brevo SMTP-loginja, jelszó a Brevo **SMTP-kulcsa** (nem az API-kulcs), feladó a Brevóban hitelesített cím, név: Sikermaker.

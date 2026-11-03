@@ -97,7 +97,8 @@
       productName: (wl && b.productName) || "Sikermaker",
       tagline: (wl && b.tagline) || "Napi tervező a vállalkozásodhoz",
       ownerName: (wl && b.ownerName) || "",
-      logo: (wl && b.logo) || "",
+      // a Sikermaker saját logója az alap; white label márka logó nélkül a márkaszínű jelet kapja (MARK)
+      logo: (wl && b.logo) || (wl0 ? "" : LOGO),
       accent: isHex(c.accent) ? c.accent : NEUTRAL.accent,
       highlight: isHex(c.highlight) ? c.highlight : NEUTRAL.highlight,
       sidebar: ["dark", "accent", "light"].includes(c.sidebar) ? c.sidebar : NEUTRAL.sidebar,
@@ -193,7 +194,8 @@
   };
 
   // a semleges alap-logó (white label csomagban a márka saját logója váltja)
+  const LOGO = "/logo.svg";
   const MARK = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48"><rect x="2" y="2" width="44" height="44" rx="12" fill="{A}"/><path d="M12 34h7v-7h7v-7h7v-7h3" fill="none" stroke="{P}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="36" cy="13" r="3.6" fill="{HB}"/></svg>';
 
-  ST.theme = { MARK, apply, effectiveBrand, tokens, palette, svg, canvasFont, current: () => current, FONTS, BG_COLORS, BG_PATTERNS, DEFAULT_PREFS, NEUTRAL, util: { mix, contrast, readableOn, isHex } };
+  ST.theme = { LOGO, MARK, apply, effectiveBrand, tokens, palette, svg, canvasFont, current: () => current, FONTS, BG_COLORS, BG_PATTERNS, DEFAULT_PREFS, NEUTRAL, util: { mix, contrast, readableOn, isHex } };
 })();
