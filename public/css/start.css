@@ -453,3 +453,16 @@ html:not(.signup-open) .hero h1{font-size:clamp(36px,4.6vw,56px)}
   .wlcard .wlmsg:empty{display:none}
   .wlcard .wltrust{margin-top:12px}
 }
+
+/* mobilmenü: elváló panel, bemutató és feliratkozás is benne */
+.links .mcta{display:none}
+@media (max-width:760px){
+  .links{box-shadow:0 18px 40px rgba(31,32,36,.18);border-radius:0 0 20px 20px;padding:4px 16px 18px;max-height:calc(100vh - 68px);overflow:auto;z-index:30}
+  .links a{color:var(--ink);font-weight:600}
+  .links .mcta{display:flex;margin-top:12px;padding:14px 18px;border:0;color:var(--ink);background:linear-gradient(135deg,#F7D987,#E0A93A);justify-content:center;font-weight:800;border-radius:999px}
+  .links .mcta:last-child{border-bottom:0}
+  .top{z-index:40}
+  .burger[aria-expanded="true"] span:first-child{transform:translateY(3.5px) rotate(45deg)}
+  .burger[aria-expanded="true"] span:last-child{transform:translateY(-3.5px) rotate(-45deg)}
+  .burger span{transition:transform .2s}
+}
