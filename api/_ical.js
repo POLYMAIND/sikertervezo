@@ -53,7 +53,7 @@ function build(state, opts) {
       `SUMMARY:${esc("Utánkövetés: " + c.name + (c.next ? " – " + c.next : ""))}`, "CATEGORIES:Utánkövetés", "TRANSP:TRANSPARENT", "END:VEVENT"]);
   });
   const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", `PRODID:-//Polymaind//${esc(o.name)}//HU`, "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
-    `X-WR-CALNAME:${esc(o.name)}`, `X-WR-TIMEZONE:${TZ}`, "REFRESH-INTERVAL;VALUE=DURATION:PT1H", "X-PUBLISHED-TTL:PT1H", ...VTIMEZONE, ...ev.flat(), "END:VCALENDAR"];
+    `NAME:${esc(o.name)}`, `X-WR-CALNAME:${esc(o.name)}`, `X-WR-CALDESC:${esc(o.name + " – időpontok, tartalmak, utánkövetések")}`, `X-WR-TIMEZONE:${TZ}`, `TIMEZONE-ID:${TZ}`, "REFRESH-INTERVAL;VALUE=DURATION:PT1H", "X-PUBLISHED-TTL:PT1H", ...VTIMEZONE, ...ev.flat(), "END:VCALENDAR"];
   return lines.map(fold).join("\r\n") + "\r\n";
 }
 

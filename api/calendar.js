@@ -41,7 +41,10 @@ module.exports = async function handler(req, res) {
       const token = crypto.randomBytes(24).toString("base64url");
       await L.sb(`sikertervezo_ical_feeds?user_id=eq.${user.id}`, { method: "DELETE" });
       await L.sb("sikertervezo_ical_feeds", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ token_hash: hash(token), user_id: user.id, brand_slug: B.resolveSlug(req) }) });
-      return L.send(res, 200, { ok: true, url: L.appUrl(req) + "/api/ical?t=" + token });
+      // a link a naptár nevére végződik: ha egy naptárprogram a címből vesz nevet, akkor is szép legyen
+      const brand = B.publicBrand(await B.loadBrand(B.resolveSlug(req)), await B.loadPlatform());
+      const file = String(brand.productName || "Sikertervező").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "") || "Sikertervezo";
+      return L.send(res, 200, { ok: true, url: L.appUrl(req) + "/naptar/" + file + ".ics?t=" + token });
     }
     // ---- külső naptárak bekötése (Pro) ----
     if (b.action && b.action.startsWith("import.") || b.action === "events") {
