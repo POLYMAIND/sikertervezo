@@ -7,6 +7,7 @@ const dir = path.dirname(new URL(import.meta.url).pathname);
 
 const ACCENT = "#6D4AFF", INK = "#1F2024", MUTED = "#62646B", BG = "#F4F4F1";
 const LOGO = "https://sikertervezo.vercel.app/icons/icon-192.png";
+const POLYOS = "https://www.polyos.hu/?ref=sikertervezo-email";
 const HELLO = `{{ if .Data.full_name }}Szia {{ .Data.full_name }}!{{ else }}Szia!{{ end }}`;
 
 function layout({ preheader, title, intro, button, link = "{{ .ConfirmationURL }}", after, code }) {
@@ -34,9 +35,21 @@ function layout({ preheader, title, intro, button, link = "{{ .ConfirmationURL }
       ${cta}
       ${after ? `<p style="margin:26px 0 0;font-size:15px;line-height:1.6">${after}</p>` : ""}
     </td></tr>
+    <tr><td style="padding:18px 0 0">
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:${INK};border-radius:18px"><tr><td style="padding:22px 24px">
+        <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:#B9A8FF">A Sikertervező a PolyOS része</div>
+        <div style="margin:6px 0 14px;font-size:15px;line-height:1.5;color:#FFFFFF">Ha a vállalkozásod kinövi a tervezőt: CRM, naptár és foglalás, feladatkezelő, cashflow és kampánytervező egy helyen.</div>
+        <a href="${POLYOS}" style="display:inline-block;padding:11px 20px;border-radius:999px;background:#FFFFFF;color:${INK};font-size:14px;font-weight:700;text-decoration:none">Megnézem a PolyOS-t</a>
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:18px;font-size:13px;line-height:1.7;color:#C9CBD0">
+          <tr><td style="padding-right:14px;color:#8A8C93">E-mail</td><td><a href="mailto:hello@polymaind.hu" style="color:#FFFFFF">hello@polymaind.hu</a></td></tr>
+          <tr><td style="padding-right:14px;color:#8A8C93">Telefon</td><td><a href="tel:+36706005655" style="color:#FFFFFF">+36 70 600 5655</a></td></tr>
+          <tr><td style="padding-right:14px;color:#8A8C93">Online</td><td style="color:#FFFFFF">online, az ország bármely pontjáról</td></tr>
+        </table>
+      </td></tr></table>
+    </td></tr>
     <tr><td style="padding:20px 8px 0;font-size:12px;line-height:1.55;color:${MUTED};text-align:center">
       Ezt a levelet azért kaptad, mert ezzel az e-mail-címmel ({{ .Email }}) műveletet indítottak a Sikertervezőben.<br>
-      Ha nem te voltál, nyugodtan hagyd figyelmen kívül: semmi nem változik.
+      Ha nem te voltál, nyugodtan hagyd figyelmen kívül: semmi nem változik.<br>A Sikertervezőt a Polymaind üzemelteti.
     </td></tr>
   </table>
 </td></tr></table>
