@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="hu"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Megerősítő kód</title></head>
+<body style="margin:0;padding:0;background:#F4F4F1;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1F2024">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0">A megerősítő kódod a Sikertervezőhöz.</div>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#F4F4F1"><tr><td align="center" style="padding:32px 16px">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:520px">
+    <tr><td style="padding:0 4px 18px">
+      <table role="presentation" cellspacing="0" cellpadding="0" border="0"><tr>
+        <td style="vertical-align:middle"><img src="https://sikertervezo.vercel.app/icons/icon-192.png" width="40" height="40" alt="" style="display:block;border:0;border-radius:11px"></td>
+        <td style="vertical-align:middle;padding-left:12px;font-size:19px;font-weight:700;color:#1F2024">Sikertervező</td>
+      </tr></table>
+    </td></tr>
+    <tr><td style="background:#ffffff;border-radius:22px;padding:34px 30px;box-shadow:0 8px 24px rgba(31,32,36,.06)">
+      <h1 style="margin:0 0 14px;font-size:24px;line-height:1.25;font-weight:700;color:#1F2024">Megerősítő kód</h1>
+      <p style="margin:0 0 8px;font-size:15.5px;line-height:1.6">{{ if .Data.full_name }}Szia {{ .Data.full_name }}!{{ else }}Szia!{{ end }}</p>
+      <p style="margin:0 0 26px;font-size:15.5px;line-height:1.6">Egy érzékeny művelethez szükség van a megerősítésedre. Ezt a kódot írd be a tervezőben:</p>
+      <div style="font-size:32px;font-weight:700;letter-spacing:8px;color:#1F2024;background:#F4F4F1;border-radius:14px;padding:16px 0;text-align:center">{{ .Token }}</div>
+      
+    </td></tr>
+    <tr><td style="padding:20px 8px 0;font-size:12px;line-height:1.55;color:#62646B;text-align:center">
+      Ezt a levelet azért kaptad, mert ezzel az e-mail-címmel ({{ .Email }}) műveletet indítottak a Sikertervezőben.<br>
+      Ha nem te voltál, nyugodtan hagyd figyelmen kívül: semmi nem változik.
+    </td></tr>
+  </table>
+</td></tr></table>
+</body></html>
