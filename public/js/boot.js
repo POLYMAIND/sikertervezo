@@ -135,7 +135,7 @@
     const ctx = {
       mode: demo ? "demo" : "cloud", cloud: store.cloudAvailable(), user, state: st,
       brand: TH.effectiveBrand(brandRaw), brandRaw, brandAdmin, paintChrome,
-      showAuth: () => { sessionStorage.removeItem(DEMO_CHOSEN); authScreen("regisztracio"); },
+      showAuth: (tab) => { sessionStorage.removeItem(DEMO_CHOSEN); authScreen(tab === "belepes" ? "belepes" : "regisztracio"); },
       logout: async () => { await store.signOut(); sessionStorage.removeItem(DEMO_CHOSEN); location.hash = ""; location.reload(); },
       setDemoPlan: (p) => { if (p === "whitelabel") ls.set(DEMO_PLAN_KEY, "whitelabel"); else ls.del(DEMO_PLAN_KEY); location.reload(); },
       saveBrand: async (draft) => {
@@ -147,7 +147,10 @@
       polyosDisconnect: async () => { await PX.disconnect(); PX.init({ linked: false, modules: [] }); },
     };
     $("#boot").hidden = true; $("#appshell").hidden = false;
-    setFoot(demo ? "Bemutató mód: amit beírsz, csak ebben a böngészőben marad meg." : `<span class="syncdot" id="sync">Mentve</span>`);
+    // kilépés a bemutatóból / kijelentkezés: mindig látható helyen (az app kattintás-kezelője fogja meg a data-act-et)
+    setFoot(demo
+      ? `<div class="stack" style="gap:8px">Bemutató mód: amit beírsz, csak ebben a böngészőben marad meg.${store.cloudAvailable() ? '<button class="btn small footbtn" data-act="signup">Regisztrálok</button>' : ""}</div>`
+      : `<div class="stack" style="gap:6px"><span class="syncdot" id="sync">Mentve</span><span class="footmail">${esc((user && user.email) || "")}</span><button class="btn small footbtn ghostside" data-act="logout">Kijelentkezés</button></div>`);
     app = ST.start(ctx);
   }
 

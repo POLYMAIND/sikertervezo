@@ -241,7 +241,7 @@ function nav(){
 }
 
 /* ---------- views ---------- */
-function head(title,sub,right,hand){return `<div class="head"><div class="stack"><div class="eyebrow">${esc(sub)}</div><h1>${esc(title)}${hand?` <span class="hand">${esc(hand)}</span>`:""}</h1></div><div class="row">${right||""}${DEMO?'<span class="proto">Bemutató mód, mintaadatokkal</span>':""}${syncBadge()}</div></div>`}
+function head(title,sub,right,hand){return `<div class="head"><div class="stack"><div class="eyebrow">${esc(sub)}</div><h1>${esc(title)}${hand?` <span class="hand">${esc(hand)}</span>`:""}</h1></div><div class="row">${right||""}${DEMO&&!ctx.cloud?'<span class="proto">Bemutató mód, mintaadatokkal</span>':""}${syncBadge()}</div></div>`}
 
 function stepsHTML(k){
   const dd=day(k);
@@ -1020,16 +1020,21 @@ function brandCard(){
 }
 function accountCard(){
   if(DEMO)return `<div class="card stack"><h3>Bemutató mód</h3><p class="muted" style="margin:0">Most belépés nélkül, mintaadatokkal próbálod a tervezőt: amit beírsz, csak ebben a böngészőben marad meg. Fiókkal minden eszközödön ugyanazt látod.</p>
-  <div class="row">${ctx.cloud?'<button class="btn" data-act="authshow">Fiókot hozok létre</button>':""}<span id="resetrow" class="row"><button class="btn ghost" data-act="resetask">Mintaadatok visszaállítása</button></span></div>
+  <div class="row">${ctx.cloud?'<button class="btn" data-act="signup">Regisztrálok és elkezdem</button>':""}<span id="resetrow" class="row"><button class="btn ghost" data-act="resetask">Mintaadatok visszaállítása</button></span></div>
   <div class="row" style="gap:6px"><span class="lab2" style="margin:0">Csomag a bemutatóban:</span><button class="mood" data-act="demoplan" data-k="alap" aria-pressed="${BR.plan!=="whitelabel"}">Alap</button><button class="mood" data-act="demoplan" data-k="whitelabel" aria-pressed="${BR.plan==="whitelabel"}">White label</button></div></div>`;
   return `<div class="card stack"><h3>Fiók</h3><div class="row between"><div><b>${esc((ctx.user&&ctx.user.email)||"")}</b><div class="muted" style="font-size:12.5px">A terved a fiókodhoz van mentve, minden eszközödön ugyanaz.</div></div><span class="row"><button class="btn ghost small" data-act="export">Adataim letöltése</button><button class="btn ghost small" data-act="logout">Kijelentkezés</button></span></div></div>`;
 }
 
+/* ---------- bemutató mód: regisztrációs felhívás minden oldal tetején ---------- */
+function demoCta(){
+  if(!DEMO||!ctx.cloud)return "";
+  return `<div class="card democta" role="region" aria-label="Regisztráció"><div class="grow"><span class="t">Tetszik? Kezdd el a saját tervedet.</span><span class="s">Most mintaadatokkal nézelődsz. Regisztrálj ingyen, és a saját terved minden eszközödön ott lesz.</span></div><div class="row" style="gap:10px"><button class="btn democta-btn" data-act="signup">Regisztrálok és elkezdem</button><button class="nc-skip" data-act="authshow">Már van fiókom</button></div></div>`;
+}
 /* ---------- render ---------- */
 const RENDER={ma:vMa,bovitesek:vBovitesek,olvasas:vOlvasas,szokasok:vSzokasok,terkep:vTerkep,matricak:vMatricak,naptar:vNaptar,kapcsolatok:vKapcsolatok,ugyfelek:vUgyfelek,tartalom:vTartalom,csapat:vCsapat,szamok:vSzamok,beallitasok:vBeall};
 function render(){
   const y=window.scrollY;
-  $("#view").innerHTML=RENDER[route]()+upStrip(route);
+  $("#view").innerHTML=demoCta()+RENDER[route]()+upStrip(route);
   nav();drawer();bindBoards();bindMap();
   window.scrollTo(0,y);
   checkAch(false);
@@ -1146,7 +1151,8 @@ document.addEventListener("click",e=>{
     case"pxdelno":ui.pxdel=false;render();break;
     case"pxdisconnect":ui.pxdel=false;ctx.polyosDisconnect().then(()=>{toast("Leválasztva a PolyOS-ről.");render()},()=>toast("Nem sikerült. Próbáld újra."));break;
     case"uphide":S.prefs=S.prefs||{};S.prefs.upHide=Object.assign({},S.prefs.upHide,{[b.dataset.k]:true});save();render();break;
-    case"authshow":ctx.showAuth();break;
+    case"authshow":ctx.showAuth("belepes");break;
+    case"signup":ctx.showAuth("regisztracio");break;
     case"logout":ctx.logout();break;
     case"export":{const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"}),u=URL.createObjectURL(blob),a2=document.createElement("a");a2.href=u;a2.download="sikertervezo-adataim-"+T+".json";document.body.appendChild(a2);a2.click();a2.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);break}
     case"demoplan":ctx.setDemoPlan(b.dataset.k);break;
