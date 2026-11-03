@@ -5,8 +5,8 @@ import fs from "node:fs";
 import path from "node:path";
 const dir = path.dirname(new URL(import.meta.url).pathname);
 
-const ACCENT = "#6D4AFF", INK = "#1F2024", MUTED = "#62646B", BG = "#F4F4F1";
-const LOGO = "https://sikertervezo.vercel.app/icons/icon-192.png";
+const ACCENT = "#997433", INK = "#1F2024", MUTED = "#62646B", BG = "#F4F4F1";
+const LOGO = "https://sikermaker.hu/icons/email-logo.png";
 const POLYOS = "https://www.polyos.hu/?ref=sikermaker-email";
 const HELLO = `{{ if .Data.full_name }}Szia {{ .Data.full_name }}!{{ else }}Szia!{{ end }}`;
 
@@ -37,8 +37,8 @@ function layout({ preheader, title, intro, button, link = "{{ .ConfirmationURL }
     </td></tr>
     <tr><td style="padding:18px 0 0">
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:${INK};border-radius:18px"><tr><td style="padding:22px 24px">
-        <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:#B9A8FF">A Sikermaker a PolyOS része</div>
-        <div style="margin:6px 0 14px;font-size:15px;line-height:1.5;color:#FFFFFF">Ha a vállalkozásod kinövi a tervezőt: CRM, naptár és foglalás, feladatkezelő, cashflow és kampánytervező egy helyen.</div>
+        <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:#F4CF72">A Sikermaker a PolyOS része</div>
+        <div style="margin:6px 0 14px;font-size:15px;line-height:1.5;color:#FFFFFF">Ha a vállalkozásod kinövi a Sikermakert: CRM, naptár és foglalás, feladatkezelő, cashflow és kampánytervező egy helyen.</div>
         <a href="${POLYOS}" style="display:inline-block;padding:11px 20px;border-radius:999px;background:#FFFFFF;color:${INK};font-size:14px;font-weight:700;text-decoration:none">Megnézem a PolyOS-t</a>
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-top:18px;font-size:13px;line-height:1.7;color:#C9CBD0">
           <tr><td style="padding-right:14px;color:#8A8C93">E-mail</td><td><a href="mailto:hello@polymaind.hu" style="color:#FFFFFF">hello@polymaind.hu</a></td></tr>
@@ -63,7 +63,7 @@ const T = {
     html: layout({ preheader: "Erősítsd meg az e-mail-címed, és kezdheted a saját tervedet.", title: "Üdv a Sikermakerben!",
       intro: "Örülünk, hogy itt vagy. Már csak egy lépés van hátra: erősítsd meg az e-mail-címed, és máris kezdheted a saját tervedet. Minden eszközödön ugyanazt fogod látni.",
       button: "Megerősítem és kezdem",
-      after: "Tipp: a telefonodon tedd ki a tervezőt a kezdőképernyőre, és appként indul, egy koppintással." }),
+      after: "Tipp: a telefonodon tedd ki a Sikermakert a kezdőképernyőre, és appként indul, egy koppintással." }),
   },
   "2-belepo-link": {
     subject: "A belépő linked – Sikermaker",
