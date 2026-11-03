@@ -6,6 +6,7 @@
 //   { action:"overview" }                                 -> számok
 //   { action:"users", page }                              -> felhasználók + előfizetés + utolsó aktivitás
 //   { action:"user.ban" | "user.unban", id }
+//   { action:"user.admin.grant" | "user.admin.revoke", id }   superadmin jog kiosztása / visszavonása
 //   { action:"sub.set", id, plan, status, current_period_end, note }
 //   { action:"brands" }                                   -> márkák + adminjaik
 //   { action:"brand.set", slug, plan, upsell }            -> márka létrehozása / csomag váltása
@@ -18,7 +19,17 @@ const PLANS = ["ingyenes", "alap", "whitelabel"];
 const STATUSES = ["probaido", "aktiv", "lejart", "lemondva", "ajandek"];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const admins = () => L.env("SUPERADMIN_EMAILS").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
-const isSuper = (u) => !!(u && u.confirmed && u.email && admins().includes(u.email));
+const isRoot = (u) => !!(u && u.email && admins().includes(String(u.email).toLowerCase()));
+async function dbAdminIds() {
+  try { return new Set((await L.sb("sikertervezo_superadmins?select=user_id")).map((r) => r.user_id)); } catch (e) { return new Set(); }
+}
+// Superadmin: MEGERŐSÍTETT e-mail ÉS (fő admin a SUPERADMIN_EMAILS-ből VAGY a felületen kinevezett admin).
+// Ha nincs fő admin beállítva, senki sem admin (fail-closed) — a kinevezett adminok sem.
+async function isSuper(u) {
+  if (!u || !u.confirmed || !admins().length) return false;
+  if (isRoot(u)) return true;
+  return (await dbAdminIds()).has(u.id);
+}
 
 async function audit(actor, action, target, detail) {
   try {
@@ -50,8 +61,9 @@ module.exports = async function handler(req, res) {
   if (!user) return L.send(res, 401, { error: "unauthorized" });
   let b; try { b = await L.body(req); } catch (e) { return L.send(res, 413, { error: "too_large" }); }
   const action = b && b.action;
-  if (action === "whoami") return L.send(res, 200, { ok: true, superadmin: isSuper(user) });
-  if (!isSuper(user)) return L.send(res, 403, { error: "forbidden" });
+  const sup = await isSuper(user);
+  if (action === "whoami") return L.send(res, 200, { ok: true, superadmin: sup });
+  if (!sup) return L.send(res, 403, { error: "forbidden" });
 
   try {
     if (action === "overview") {
@@ -71,14 +83,15 @@ module.exports = async function handler(req, res) {
       } });
     }
     if (action === "users") {
-      const [users, states, subs] = await Promise.all([
+      const [users, states, subs, dbAdmins] = await Promise.all([
         allUsers(),
         safe(L.sb("sikertervezo_state?select=user_id,brand_slug,updated_at"), []),
         safe(L.sb("sikertervezo_subscriptions?select=*"), []),
+        dbAdminIds(),
       ]);
       const st = {}; states.forEach((s) => { if (!st[s.user_id] || s.updated_at > st[s.user_id].updated_at) st[s.user_id] = s; });
       const sb = {}; subs.forEach((s) => { sb[s.user_id] = s; });
-      const list = users.map(userView).map((u) => Object.assign(u, { brand: st[u.id] ? st[u.id].brand_slug : "", last_active: st[u.id] ? st[u.id].updated_at : null, sub: sb[u.id] || null, superadmin: admins().includes((u.email || "").toLowerCase()) }))
+      const list = users.map(userView).map((u) => Object.assign(u, { brand: st[u.id] ? st[u.id].brand_slug : "", last_active: st[u.id] ? st[u.id].updated_at : null, sub: sb[u.id] || null, superadmin: admins().includes((u.email || "").toLowerCase()), admin: dbAdmins.has(u.id), me: u.id === user.id }))
         .sort((a, c) => String(c.created_at).localeCompare(String(a.created_at)));
       return L.send(res, 200, { ok: true, users: list });
     }
@@ -87,6 +100,21 @@ module.exports = async function handler(req, res) {
       if (b.id === user.id) return L.send(res, 400, { error: "self" });
       await L.authAdmin("users/" + b.id, { method: "PUT", body: JSON.stringify({ ban_duration: action === "user.ban" ? "876000h" : "none" }) });
       await audit(user, action, b.id);
+      return L.send(res, 200, { ok: true });
+    }
+    if (action === "user.admin.grant" || action === "user.admin.revoke") {
+      if (!UUID.test(b.id || "")) return L.send(res, 400, { error: "bad_id" });
+      if (b.id === user.id) return L.send(res, 400, { error: "self" }); // magadtól nem veheted el (és nem is kell kiosztanod)
+      const target = await L.authAdmin("users/" + b.id).catch(() => null);
+      if (!target || !target.id) return L.send(res, 404, { error: "user_not_found" });
+      if (isRoot({ email: target.email })) return L.send(res, 400, { error: "root" }); // a fő admin a beállításból jön
+      if (action === "user.admin.grant") {
+        if (!(target.email_confirmed_at || target.confirmed_at)) return L.send(res, 400, { error: "not_confirmed" });
+        await L.sb("sikertervezo_superadmins?on_conflict=user_id", { method: "POST", headers: { Prefer: "resolution=ignore-duplicates,return=minimal" }, body: JSON.stringify({ user_id: b.id, granted_by: user.id }) });
+      } else {
+        await L.sb(`sikertervezo_superadmins?user_id=eq.${b.id}`, { method: "DELETE" });
+      }
+      await audit(user, action, b.id, { email: target.email });
       return L.send(res, 200, { ok: true });
     }
     if (action === "sub.set") {

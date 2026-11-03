@@ -163,3 +163,7 @@ test("superadmin: megerősítetlen e-mail és más fiók nem admin", async () =>
   assert.equal((await adminCall("users", { id: "x", email: "hello@pelda.hu", email_confirmed_at: "2026-11-01" }, "web@polymaind.hu")).status, 403);
   assert.equal((await adminCall("users", null, "web@polymaind.hu")).status, 401);
 });
+test("superadmin: kinevezett admin csak akkor admin, ha van fő admin beállítva", async () => {
+  // a mock /rest/v1/ minden lekérdezésre üres listát ad → nincs kinevezett admin → idegen fiók nem admin
+  assert.equal((await adminCall("whoami", { id: "x", email: "hello@pelda.hu", email_confirmed_at: "2026-11-01" }, "web@polymaind.hu")).body.superadmin, false);
+});
