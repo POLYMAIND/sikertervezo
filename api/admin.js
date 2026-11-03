@@ -11,7 +11,7 @@
 //   { action:"brands" }                                   -> márkák + adminjaik
 //   { action:"brand.set", slug, plan, upsell }            -> márka létrehozása / csomag váltása
 //   { action:"brand.admin.add" | "brand.admin.remove", slug, email }
-//   { action:"brand.features", slug, features }           -> márkánként bekapcsolható funkciók (Csapat, Üzenetsablonok, Számok)
+//   { action:"brand.features", slug, features }           -> márkánként bekapcsolható funkciók (Csapat, Üzenetsablonok, Számok, Szépség-matricák)
 //   { action:"platform.get" | "platform.set", config }    az app alap-arculata (név, logó, színek, betűk…)
 //   { action:"audit" }                                    -> utolsó 100 napló-esemény
 //   { action:"waitlist" }                                 -> várólista (e-mail, forrás, dátum, letöltések) + regisztráció állapota

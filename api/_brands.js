@@ -66,7 +66,7 @@ function overlay(base, top) {
   return out;
 }
 // Márkánként bekapcsolható funkciók. Csak a superadmin állítja (Admin -> Márkák), a márka gazdája nem.
-const FEATURES = ["csapat", "sablonok", "szamok"];
+const FEATURES = ["csapat", "sablonok", "szamok", "matricak"];
 function cleanFeatures(f) {
   const out = {};
   if (f && typeof f === "object") FEATURES.forEach((k) => { if (f[k] === true) out[k] = true; });
