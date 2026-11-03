@@ -8,7 +8,7 @@
     var l = location, q = l.search, h = l.hash;
     var standalone = (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
     var appQuery = /[?&](regisztracio|belepes|bemutato|brand|wl|fizetes|polyos|forras|code|error|token_hash|type)(=|&|$)/.test(q);
-    var appHash = h.length > 1 && !/^#(funkciok|hogyan|arak|gyik|top)$/.test(h);
+    var appHash = h.length > 1 && !/^#(funkciok|hogyan|arak|gyik|top|varolista)$/.test(h);
     if (standalone || appQuery || appHash) l.replace("/app" + q + h);
   } catch (e) { /* ha bármi hiba van, marad a landing */ }
 })();

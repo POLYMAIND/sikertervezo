@@ -4,6 +4,7 @@
 "use strict";
 const ST=(window.ST=window.ST||{});
 ST.start=function(ctx){
+const SIGNUP_CTA=ctx.signupOpen?"Regisztrálok és elkezdem":"Feliratkozom a várólistára";
 const BR=ctx.brand, TH=ST.theme, PX=ST.polyos, DEMO=ctx.mode!=="cloud";
 // csomag: ingyenes / pro. A white label márka felhasználói Pro-t kapnak.
 const PRO=ctx.plan==="pro"||BR.plan==="whitelabel";
@@ -284,7 +285,7 @@ function openMore(){
   const dc=dueCounts();
   $("#layer").innerHTML=`<div class="modal" data-act="close"><div class="sheet moresheet" role="dialog" aria-label="Minden nézet"><div class="grabber" aria-hidden="true"></div><div class="row between"><h2>Minden nézet</h2><button type="button" class="iconbtn" data-act="close" aria-label="Bezárás">×</button></div>
   <div class="moregrid">${VIEWS.filter(([k])=>!TABS.includes(k)).map(([k,l])=>{const n=navBadge(k,dc);return `<a href="#${k}" class="moreitem" data-act="close" ${route===k?'aria-current="page"':""}>${nicon(k)}<span>${l}</span>${n?`<i class="tbadge">${n}</i>`:""}</a>`}).join("")}</div>
-  ${DEMO&&ctx.cloud?`<button class="btn" data-act="signup">Regisztrálok és elkezdem</button>`:""}${!DEMO?`<button class="btn ghost" data-act="logout">Kijelentkezés</button>`:""}</div></div>`;
+  ${DEMO&&ctx.cloud?`<button class="btn" data-act="signup">${SIGNUP_CTA}</button>`:""}${!DEMO?`<button class="btn ghost" data-act="logout">Kijelentkezés</button>`:""}</div></div>`;
 }
 
 /* ---------- views ---------- */
@@ -1107,7 +1108,7 @@ function brandCard(){
 }
 function accountCard(){
   if(DEMO)return `<div class="card stack"><h3>Bemutató mód</h3><p class="muted" style="margin:0">Most belépés nélkül, mintaadatokkal próbálod a tervezőt: amit beírsz, csak ebben a böngészőben marad meg. Fiókkal minden eszközödön ugyanazt látod.</p>
-  <div class="row">${ctx.cloud?'<button class="btn" data-act="signup">Regisztrálok és elkezdem</button>':""}<span id="resetrow" class="row"><button class="btn ghost" data-act="resetask">Mintaadatok visszaállítása</button></span></div>
+  <div class="row">${ctx.cloud?`<button class="btn" data-act="signup">${SIGNUP_CTA}</button>`:""}<span id="resetrow" class="row"><button class="btn ghost" data-act="resetask">Mintaadatok visszaállítása</button></span></div>
 </div>`;
   return `<div class="card stack"><h3>Fiók</h3><div class="row between"><div><b>${esc((ctx.user&&ctx.user.email)||"")}</b><div class="muted" style="font-size:12.5px">A terved a fiókodhoz van mentve, minden eszközödön ugyanaz.</div>${consentRow()}</div><span class="row"><button class="btn ghost small" data-act="export">Adataim letöltése</button><button class="btn ghost small" data-act="logout">Kijelentkezés</button></span></div></div>`;
 }
@@ -1115,7 +1116,7 @@ function accountCard(){
 /* ---------- bemutató mód: regisztrációs felhívás minden oldal tetején ---------- */
 function demoCta(){
   if(!DEMO||!ctx.cloud)return "";
-  return `<div class="card democta" role="region" aria-label="Regisztráció"><div class="grow"><span class="t">Tetszik? Kezdd el a saját tervedet.</span><span class="s">Most mintaadatokkal nézelődsz. Regisztrálj ingyen, és a saját terved minden eszközödön ott lesz.</span></div><div class="row" style="gap:10px"><button class="btn democta-btn" data-act="signup">Regisztrálok és elkezdem</button><button class="nc-skip" data-act="authshow">Már van fiókom</button></div></div>`;
+  return `<div class="card democta" role="region" aria-label="Regisztráció"><div class="grow"><span class="t">${ctx.signupOpen?"Tetszik? Kezdd el a saját tervedet.":"Tetszik? Hamarosan nyitunk!"}</span><span class="s">${ctx.signupOpen?"Most mintaadatokkal nézelődsz. Regisztrálj ingyen, és a saját terved minden eszközödön ott lesz.":"Most mintaadatokkal nézelődsz. Iratkozz fel a várólistára: elsőként szólunk, és ajándékba letöltheted a Káoszmanagert."}</span></div><div class="row" style="gap:10px"><button class="btn democta-btn" data-act="signup">${SIGNUP_CTA}</button><button class="nc-skip" data-act="authshow">Már van fiókom</button></div></div>`;
 }
 /* ---------- telepítés a kezdőképernyőre ---------- */
 function installCard(where){
@@ -1210,7 +1211,7 @@ function checklistCard(){
   <div class="list">${items.map(([l,ok,act])=>`<div class="li ${ok?"done":""}"><span class="cbx" aria-hidden="true" ${ok?'aria-pressed="true"':""}>${ok?"✓":""}</span><div class="grow t">${l}</div>${ok?"":act}</div>`).join("")}</div></div>`;
 }
 /* ---------- superadmin (Polymaind) ---------- */
-const ADM_TABS=[["attekintes","Áttekintés"],["felhasznalok","Regisztrálók"],["arculat","Sikermaker-arculat"],["markak","Márkák"],["naplo","Napló"]];
+const ADM_TABS=[["attekintes","Áttekintés"],["varolista","Várólista"],["felhasznalok","Regisztrálók"],["arculat","Sikermaker-arculat"],["markak","Márkák"],["naplo","Napló"]];
 const SUB_PLANS=[["ingyenes","Ingyenes"],["pro","Pro"]];
 const SUB_STATUS=[["probaido","Próbaidő"],["aktiv","Aktív"],["lejart","Lejárt"],["lemondva","Lemondva"],["ajandek","Ajándék"]];
 const lbl=(arr,k)=>(arr.find(x=>x[0]===k)||[k,k])[1];
@@ -1221,6 +1222,7 @@ async function admLoad(what){
     if(what==="attekintes")ui.adm.overview=(await ctx.admin("overview")).overview;
     if(what==="felhasznalok")ui.adm.users=(await ctx.admin("users")).users;
     if(what==="markak")ui.adm.brands=(await ctx.admin("brands")).brands;
+    if(what==="varolista")ui.adm.waitlist=await ctx.admin("waitlist");
     if(what==="naplo"){const r=await ctx.admin("audit");ui.adm.audit=r.audit;ui.adm.auditMissing=r.missing}
     if(what==="arculat"){const r=await ctx.admin("platform.get");ui.adm.platform=r;
       // élő előnézet: a szerkesztett alap-arculat azonnal ráül az appra (mentésig csak nálad látszik)
@@ -1232,7 +1234,7 @@ function vAdmin(){
   activeBoard=null;
   if(!ctx.superadmin)return head("Admin","Nincs hozzáférés")+'<div class="card empty">Ez az oldal csak a superadminnak érhető el.</div>';
   const a=ui.adm=ui.adm||{},tab=ui.admTab||"attekintes";
-  const need={attekintes:"overview",felhasznalok:"users",arculat:"platform",markak:"brands",naplo:"audit"}[tab];
+  const need={varolista:"waitlist",attekintes:"overview",felhasznalok:"users",arculat:"platform",markak:"brands",naplo:"audit"}[tab];
   if(!a[need]&&a.loading!==tab&&!a.err)setTimeout(()=>admLoad(tab),0);
   const tabs=`<div class="tabs">${ADM_TABS.map(([k,l])=>`<button data-act="admtab" data-k="${k}" aria-pressed="${tab===k}">${l}</button>`).join("")}<button data-act="admreload" data-k="${tab}">↻ Frissítés</button></div>`;
   let body="";
@@ -1242,6 +1244,13 @@ function vAdmin(){
     body=`<div class="grid g4">${[["Regisztrált",o.users],["Megerősített e-mail",o.confirmed],["Új az elmúlt 7 napban",o.new7],["Aktív az elmúlt 7 napban",o.active7]].map(([l,v])=>`<div class="card kpi"><div class="v num">${v}</div><div class="l">${l}</div></div>`).join("")}</div>
     <div class="grid g2"><div class="card"><h3>Előfizetések állapota</h3>${Object.keys(o.byStatus).length?`<div class="list">${Object.entries(o.byStatus).map(([k,v])=>`<div class="li"><div class="grow t">${lbl(SUB_STATUS,k)}</div><b class="num">${v}</b></div>`).join("")}</div>`:'<div class="empty">Még senkinek nincs beállított előfizetése (mindenki ingyenes).</div>'}</div>
     <div class="card"><h3>Felhasználók márkánként</h3>${Object.keys(o.byBrand).length?`<div class="list">${Object.entries(o.byBrand).map(([k,v])=>`<div class="li"><div class="grow t">${esc(k)}</div><b class="num">${v}</b></div>`).join("")}</div>`:'<div class="empty">Még senki nem mentett tervet.</div>'}<p class="muted" style="font-size:12px;margin:8px 0 0">Új az elmúlt 30 napban: ${o.new30}</p></div></div>`;}
+  else if(tab==="varolista"){const w=a.waitlist,list=w.waitlist||[],dl=list.filter(x=>x.downloads>0).length,wk=list.filter(x=>Date.now()-Date.parse(x.created_at)<7*864e5).length;
+    body=w.missing?'<div class="card"><p style="margin:0">A várólista táblája még nincs létrehozva (0009_waitlist.sql).</p></div>':
+    `<div class="card status" style="box-shadow:none;gap:14px"><div class="grow"><b>Regisztráció: ${w.signupOpen?"NYITVA":"ZÁRVA (várólista)"}</b><div class="muted" style="font-size:12.5px">${w.signupOpen?"Bárki létrehozhat fiókot. A landing és a belépőképernyő a regisztrációt kínálja.":"Új fiók nem hozható létre (ezt az adatbázis is kikényszeríti). A landing és a belépőképernyő e-mail-címet gyűjt, és utána letölthető a Káoszmanager."}</div></div>
+    ${ui.signupConfirm?`<button class="btn" data-act="signupset" data-k="${w.signupOpen?"close":"open"}">Igen, ${w.signupOpen?"lezárom":"megnyitom"}</button><button class="nc-skip" data-act="signupno">Mégse</button>`:`<button class="btn ${w.signupOpen?"ghost":""}" data-act="signupask">${w.signupOpen?"Regisztráció lezárása":"Regisztráció megnyitása"}</button>`}</div>
+    <div class="grid g3">${[["Feliratkozó",list.length],["Új az elmúlt 7 napban",wk],["Letöltötte az ajándékot",dl]].map(([l,v])=>`<div class="card kpi"><div class="v num">${v}</div><div class="l">${l}</div></div>`).join("")}</div>
+    <div class="card"><div class="row between" style="margin-bottom:10px"><h3 style="margin:0">Feliratkozók</h3>${list.length?'<button class="btn ghost small" data-act="wlcsv">Letöltés (CSV)</button>':""}</div>
+    ${list.length?`<div class="tablewrap"><table><thead><tr><th>E-mail</th><th>Feliratkozott</th><th>Honnan</th><th>Letöltés</th></tr></thead><tbody>${list.map(x=>`<tr><td>${esc(x.email)}</td><td class="num">${esc(String(x.created_at).replace("T"," ").slice(0,16))}</td><td>${esc(x.source||"–")}</td><td class="num">${x.downloads||0}</td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">Még nincs feliratkozó.</div>'}</div>`}
   else if(tab==="felhasznalok"){const q=(ui.admQ||"").toLowerCase();const list=a.users.filter(u=>!q||(u.email+" "+u.name).toLowerCase().includes(q));
     body=`<div class="card"><div class="row between" style="margin-bottom:10px"><input type="text" data-admq="1" value="${esc(ui.admQ||"")}" placeholder="Keresés név vagy e-mail szerint" aria-label="Keresés" style="max-width:340px"><span class="muted" style="font-size:12.5px">${list.length} / ${a.users.length} fő</span></div>
     <div class="tablewrap"><table><thead><tr><th>Felhasználó</th><th>Regisztrált</th><th>Utoljára aktív</th><th>Márka</th><th>Előfizetés</th><th></th></tr></thead><tbody>${list.map(u=>`<tr><td><strong>${esc(u.name||"–")}</strong>${u.superadmin?' <span class="chip on">fő admin</span>':u.admin?' <span class="chip on">admin</span>':""}<div class="muted" style="font-size:12px">${esc(u.email)}${u.confirmed?"":' · <span style="color:var(--warn)">nincs megerősítve</span>'}${u.banned?' · <span style="color:var(--warn)">letiltva</span>':""}</div></td><td class="num">${dt(u.created_at)}</td><td class="num">${dt(u.last_active||u.last_sign_in_at)}</td><td>${esc(u.brand||"–")}</td><td>${u.sub?`<span class="chip ${u.sub.status==="aktiv"||u.sub.status==="ajandek"?"good":u.sub.status==="lejart"||u.sub.status==="lemondva"?"warn":""}">${lbl(SUB_PLANS,u.sub.plan)} · ${lbl(SUB_STATUS,u.sub.status)}</span>${u.sub.current_period_end?`<div class="muted" style="font-size:11.5px">eddig: ${fmtDate(u.sub.current_period_end)}</div>`:""}`:'<span class="chip">Ingyenes</span>'}</td><td><button class="btn small ghost" data-act="admuser" data-id="${u.id}">Kezelés</button></td></tr>`).join("")||'<tr><td colspan="6" class="empty">Nincs találat.</td></tr>'}</tbody></table></div></div>`;}
@@ -1304,7 +1313,7 @@ function calSyncCard(){
   const c=ui.cal||{};
   let body;
   if(!PRO)body=`<p style="margin:0">A naptár-szinkron a Pro csomag része (${PRO_PRICE}).</p><div class="row">${proCta()}</div>`;
-  else if(DEMO)body=`<p style="margin:0">A naptár-szinkronhoz fiók kell: ${ctx.cloud?'<button class="chip" data-act="signup">Regisztrálok</button>':"a bemutató módban nem érhető el."}</p>`;
+  else if(DEMO)body=`<p style="margin:0">A naptár-szinkronhoz fiók kell: ${ctx.cloud?`<button class="chip" data-act="signup">${ctx.signupOpen?"Regisztrálok":"Feliratkozom a várólistára"}</button>`:"a bemutató módban nem érhető el."}</p>`;
   else if(!c.loaded){if(!c.loading){c.loading=true;ui.cal=c;ctx.calendar("status").then(r=>{ui.cal=Object.assign({loaded:true},r);render()},()=>{ui.cal={loaded:true,err:true};render()})}body='<div class="spinner" role="status" aria-label="Betöltés"></div>'}
   else if(c.err)body='<p style="margin:0">Most nem sikerült betölteni. Próbáld újra később.</p>';
   else{
@@ -1822,6 +1831,11 @@ document.addEventListener("click",e=>{
     case"platclearno":ui.platClear=false;render();break;
     case"platclearyes":ui.platClear=false;ctx.admin("platform.set",{config:{}}).then(()=>{toast("Visszaállítva a semleges alapkinézetre. Újratöltöm…");setTimeout(()=>location.reload(),900)},()=>toast("Nem sikerült. Próbáld újra."));break;
 
+    case"signupask":ui.signupConfirm=true;render();break;
+    case"signupno":ui.signupConfirm=false;render();break;
+    case"signupset":ui.signupConfirm=false;admDo("signup.set",{open:b.dataset.k==="open"},b.dataset.k==="open"?"A regisztráció megnyílt.":"A regisztráció lezárva.","varolista");break;
+    case"wlcsv":{const rows=((ui.adm.waitlist||{}).waitlist||[]);const q=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';const csv="\ufeff"+["email;feliratkozott;forras;letoltesek"].concat(rows.map(x=>[x.email,String(x.created_at).replace("T"," ").slice(0,16),x.source||"",x.downloads||0].map(q).join(";"))).join("\n");
+      const blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),u=URL.createObjectURL(blob),a2=document.createElement("a");a2.href=u;a2.download="sikermaker-varolista-"+T+".csv";document.body.appendChild(a2);a2.click();a2.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);break}
     case"admreload":ui.adm=ui.adm||{};ui.adm.err="";admLoad(b.dataset.k);break;
     case"admuser":ui.admConfirm=null;admUserSheet(id);break;
     case"admconf":ui.admConfirm=id;admUserSheet(id);break;

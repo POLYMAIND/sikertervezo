@@ -3,7 +3,7 @@
 const L = require("./_lib");
 const P = require("./_polyos");
 
-const TABLES = ["sikertervezo_brands", "sikertervezo_brand_admins", "sikertervezo_state", "sikertervezo_polyos_links", "sikertervezo_polyos_nonces", "sikertervezo_subscriptions", "sikertervezo_audit", "sikertervezo_superadmins", "sikertervezo_platform", "sikertervezo_ical_feeds", "sikertervezo_cal_imports"];
+const TABLES = ["sikertervezo_brands", "sikertervezo_brand_admins", "sikertervezo_state", "sikertervezo_polyos_links", "sikertervezo_polyos_nonces", "sikertervezo_subscriptions", "sikertervezo_audit", "sikertervezo_superadmins", "sikertervezo_platform", "sikertervezo_ical_feeds", "sikertervezo_cal_imports", "sikertervezo_flags", "sikertervezo_waitlist"];
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") return L.send(res, 405, { error: "method_not_allowed" });

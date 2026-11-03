@@ -17,11 +17,45 @@
   var top = $("#top"), onScroll = function () { if (top) top.classList.toggle("scrolled", scrollY > 8); };
   addEventListener("scroll", onScroll, { passive: true }); onScroll();
 
+  /* ---- regisztráció nyitva? (különben várólista) — a szerver mondja meg; hiba esetén marad a várólista ---- */
+  fetch("/api/config", { credentials: "same-origin" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (c) {
+    if (!c || !c.signup || !c.signup.open) return;
+    root.classList.add("signup-open");
+    $$("[data-open-href]").forEach(function (a) { a.setAttribute("href", a.getAttribute("data-open-href")); if (a.hasAttribute("data-open-text")) a.textContent = a.getAttribute("data-open-text"); });
+  }).catch(function () {});
+
+  /* ---- várólista-űrlapok ---- */
+  function escH(t) { return String(t).replace(/[&<>"']/g, function (ch) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]; }); }
+  var ERR = { bad_email: "Ez nem tűnik érvényes e-mail-címnek.", rate_limited: "Túl sok próbálkozás. Próbáld újra egy óra múlva." };
+  $$(".wlform").forEach(function (f) {
+    f.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var msg = $(".wlmsg", f), btn = $("button", f), em = f.elements.email.value.trim();
+      msg.className = "wlmsg"; msg.textContent = "";
+      if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(em)) { msg.className = "wlmsg err"; msg.textContent = ERR.bad_email; f.elements.email.focus(); return; }
+      if (!f.elements.consent.checked) { msg.className = "wlmsg err"; msg.textContent = "Pipáld be a hozzájárulást, és már küldjük is."; return; }
+      btn.disabled = true; btn.textContent = "Küldés…";
+      fetch("/api/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: em, consent: true, website: f.elements.website.value, source: "landing-" + (f.getAttribute("data-src") || "") }) })
+        .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, j: j }; }); })
+        .then(function (x) {
+          if (!x.ok || !x.j.ok) throw new Error((x.j && x.j.error) || "fail");
+          var box = d.createElement("div"); box.className = "wlok";
+          box.innerHTML = "<b>" + (x.j.already ? "Már a listán vagy, köszönjük!" : "Kész, feliratkoztál!") + "</b><p>Hétvégén nyitunk, és elsőként szólunk. Addig itt az ajándékod" + (x.j.already ? "" : " (e-mailben is elküldtük)") + ".</p>" +
+            (x.j.download ? '<a class="btn" href="' + escH(x.j.download) + '">Letöltöm a Káoszmanagert</a>' : "");
+          f.parentNode.replaceChild(box, f);
+        })
+        .catch(function (err) {
+          btn.disabled = false; btn.textContent = "Feliratkozom"; msg.className = "wlmsg err";
+          msg.textContent = ERR[err.message] || "Most nem sikerült. Próbáld újra pár perc múlva, vagy írj nekünk: hello@polymaind.hu.";
+        });
+    });
+  });
+
   if (calm) { root.classList.add("calm"); return; }
   root.classList.add("motion");
 
   /* ---- görgetésre beúszás (lépcsőzetesen a testvérek között) ---- */
-  var groups = [".hero .copy > *", ".band h2", ".pain", ".answer", ".sec h2", ".kicker", ".sec .lead", ".feat", ".checks li", ".phone-big", ".steps li", ".price", ".mods a", ".faq details", ".final h2", ".final p", ".final .ctas"];
+  var groups = [".hero .copy > *", ".gift-art", ".band h2", ".pain", ".answer", ".sec h2", ".kicker", ".sec .lead", ".feat", ".checks li", ".phone-big", ".steps li", ".price", ".mods a", ".faq details", ".final h2", ".final p", ".final .ctas"];
   var items = [];
   groups.forEach(function (sel) { $$(sel).forEach(function (el, i) { if (el.classList.contains("rv")) return; el.classList.add("rv"); el.style.setProperty("--d", (Math.min(i, 8) * 70) + "ms"); items.push(el); }); });
   if ("IntersectionObserver" in window) {

@@ -36,7 +36,7 @@
       <a href="#gyik">GYIK</a>
       <a href="/app?belepes" class="login">Belépés</a>
     </nav>
-    <a class="btn sm" href="/app?regisztracio">Kipróbálom ingyen</a>
+    <a class="btn sm" href="#varolista" data-open-href="/app?regisztracio" data-open-text="Kipróbálom ingyen">Feliratkozom</a>
     <button class="burger" id="burger" aria-label="Menü" aria-expanded="false" aria-controls="links"><span></span><span></span></button>
   </div>
 </header>
@@ -47,18 +47,30 @@
 <section class="hero">
   <div class="in grid2">
     <div class="copy">
-      <p class="pill"><span class="dot"></span> Magyar fejlesztés · mobilon is app</p>
+      <p class="pill when-closed"><span class="dot"></span> Hétvégén nyitunk · iratkozz fel a várólistára</p>
+      <p class="pill when-open"><span class="dot"></span> Magyar fejlesztés · mobilon is app</p>
       <h1>A vállalkozásod napi terve. <mark>Egy helyen.</mark></h1>
       <p class="lead">Teendők, naptár, kapcsolatok, ügyfelek, tartalom és célok – nem öt appban és tíz cetlin, hanem egy nyugodt felületen, amit reggel kinyitsz, és tudod, mi a dolgod.</p>
-      <div class="ctas">
-        <a class="btn lg" href="/app?regisztracio">Regisztrálok ingyen</a>
-        <a class="btn lg ghost" href="/app?bemutato">Megnézem a bemutatót</a>
+      <div class="when-closed">
+        <form class="wlform" data-src="hero" novalidate>
+          <div class="wlrow"><label class="sr" for="wl-hero">E-mail-cím</label><input id="wl-hero" type="email" name="email" placeholder="E-mail-címed" autocomplete="email" required><button class="btn" type="submit">Feliratkozom</button></div>
+          <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <label class="wlcons"><input type="checkbox" name="consent" required> <span>Feliratkozom a várólistára. Az e-mail-címemet a Polymaind csak az indulásról szóló értesítéshez és az ajándék elküldéséhez használja; bármikor kérhetem a törlését (hello@polymaind.hu).</span></label>
+          <p class="wlmsg" role="status" aria-live="polite"></p>
+        </form>
+        <p class="gift">🎁 Feliratkozás után azonnal letöltheted a <a href="#varolista">Káoszmanagert</a>, a nyomtatható tervező- és matricacsomagunkat. <a class="demo" href="/app?bemutato">Vagy nézz körül a bemutatóban →</a></p>
       </div>
-      <ul class="trust">
-        <li>✓ Bankkártya nélkül</li>
-        <li>✓ 1 perc a regisztráció</li>
-        <li>✓ Bármikor lemondható</li>
-      </ul>
+      <div class="when-open">
+        <div class="ctas">
+          <a class="btn lg" href="/app?regisztracio">Regisztrálok ingyen</a>
+          <a class="btn lg ghost" href="/app?bemutato">Megnézem a bemutatót</a>
+        </div>
+        <ul class="trust">
+          <li>✓ Bankkártya nélkül</li>
+          <li>✓ 1 perc a regisztráció</li>
+          <li>✓ Bármikor lemondható</li>
+        </ul>
+      </div>
     </div>
 
     <div class="mock" id="mock" aria-hidden="true">
@@ -193,7 +205,7 @@
           <li>Heti és havi értékelő</li>
           <li>Matricák, oklevél</li>
         </ul>
-        <a class="btn ghost full" href="/app?regisztracio">Ingyen kezdem</a>
+        <a class="btn ghost full" href="#varolista" data-open-href="/app?regisztracio" data-open-text="Ingyen kezdem">Feliratkozom</a>
       </div>
       <div class="price best">
         <span class="badge">Ajánlott</span>
@@ -209,7 +221,7 @@
           <li>Más naptárak behúzása</li>
           <li>E-mail küldése az appból</li>
         </ul>
-        <a class="btn full" href="/app?regisztracio">Kipróbálom</a>
+        <a class="btn full" href="#varolista" data-open-href="/app?regisztracio" data-open-text="Kipróbálom">Feliratkozom</a>
       </div>
       <div class="price">
         <span class="badge soft">Hamarosan</span>
@@ -265,13 +277,41 @@
   </div>
 </section>
 
+<!-- VÁRÓLISTA + AJÁNDÉK -->
+<section id="varolista" class="sec gift-sec when-closed">
+  <div class="in grid2 mid">
+    <div class="gift-art" aria-hidden="true">
+      <img class="g2" src="/img/kaoszmanager-matricak.webp" alt="" width="560" height="792" loading="lazy">
+      <img class="g1" src="/img/kaoszmanager-borito.webp" alt="" width="560" height="792" loading="lazy">
+      <span class="gtag">Ingyenes</span>
+    </div>
+    <div>
+      <p class="kicker">Ajándék a feliratkozóknak</p>
+      <h2>Káoszmanager: a káoszból hiperfókusz lesz</h2>
+      <p class="lead sm">Nyomtatható csomag, amivel már ma elkezdheted: egyetlen napi cél, azonnali jutalom, és egy rakás matrica, amit tényleg kiérdemelsz. Add meg az e-mail-címed, és rögtön letöltheted; a hétvégi nyitásról pedig elsőként szólunk.</p>
+      <ul class="checks">
+        <li>Kétoldalas útmutató és a hiperfókusz előhívása 6 lépésben</li>
+        <li>Matricás heti tervező és 40 vicces, nyomtatható matrica</li>
+        <li>Napi és heti értékelő, káoszkiürítő mindmap</li>
+      </ul>
+      <form class="wlform" data-src="ajandek" novalidate>
+          <div class="wlrow"><label class="sr" for="wl-ajandek">E-mail-cím</label><input id="wl-ajandek" type="email" name="email" placeholder="E-mail-címed" autocomplete="email" required><button class="btn" type="submit">Feliratkozom</button></div>
+          <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+          <label class="wlcons"><input type="checkbox" name="consent" required> <span>Feliratkozom a várólistára. Az e-mail-címemet a Polymaind csak az indulásról szóló értesítéshez és az ajándék elküldéséhez használja; bármikor kérhetem a törlését (hello@polymaind.hu).</span></label>
+          <p class="wlmsg" role="status" aria-live="polite"></p>
+        </form>
+    </div>
+  </div>
+</section>
+
 <!-- ZÁRÓ CTA -->
 <section class="final">
   <div class="in">
     <h2>Holnap reggel már tudni fogod, mi a dolgod.</h2>
-    <p>Kezdd el ma, ingyen. Egy perc az egész.</p>
+    <p class="when-open">Kezdd el ma, ingyen. Egy perc az egész.</p>
+    <p class="when-closed">Hétvégén nyitunk. Iratkozz fel, és elsőként szólunk.</p>
     <div class="ctas c">
-      <a class="btn lg light" href="/app?regisztracio">Regisztrálok ingyen</a>
+      <a class="btn lg light" href="#varolista" data-open-href="/app?regisztracio" data-open-text="Regisztrálok ingyen">Feliratkozom a várólistára</a>
       <a class="btn lg ghost-light" href="/app?bemutato">Bemutató megnyitása</a>
     </div>
   </div>

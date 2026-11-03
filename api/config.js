@@ -4,6 +4,7 @@ const L = require("./_lib");
 const B = require("./_brands");
 const P = require("./_polyos");
 const STR = require("./_stripe");
+const W = require("./_waitlist");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") return L.send(res, 405, { error: "method_not_allowed" });
@@ -13,6 +14,7 @@ module.exports = async function handler(req, res) {
     supabase: L.supabaseReady() ? { url: L.SB_URL(), anonKey: L.SB_ANON() } : null,
     polyos: { enabled: P.enabled(), mock: P.mockOn(), baseUrl: P.publicUrl() },
     billing: { enabled: STR.ready() },
+    signup: { open: await W.signupOpen() },
     email: { enabled: !!((L.env("BREVO_API_KEY") || L.env("RESEND_API_KEY")) && L.env("EMAIL_FROM")) },
     legal: { terms: L.env("TERMS_URL"), privacy: L.env("PRIVACY_URL") },
   });

@@ -323,3 +323,37 @@ mark{background:linear-gradient(transparent 58%,var(--hl-300) 58%,var(--hl-300) 
 .mock-phone{bottom:0;right:-18px}
 @media (max-width:760px){.mock{padding-bottom:60px}.mock-phone{right:-4px}}
 @media (max-width:420px){.mock{padding-bottom:20px}}
+
+/* ================= VÁRÓLISTA ================= */
+html:not(.signup-open) .when-open{display:none!important}
+html.signup-open .when-closed{display:none!important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.wlform{max-width:540px;margin:4px 0 0}
+.wlrow{display:flex;gap:8px;background:var(--surface);border:1.5px solid var(--ink);border-radius:999px;padding:6px;box-shadow:var(--shadow)}
+.wlrow input{flex:1;min-width:0;border:0;background:transparent;font:inherit;font-size:16px;padding:10px 14px;outline:none;color:var(--ink)}
+.wlrow .btn{padding:12px 22px}
+.wlrow:focus-within{outline:3px solid var(--accent-tint)}
+.wlcons{display:flex;gap:9px;align-items:flex-start;margin-top:12px;font-size:13px;color:var(--muted);line-height:1.5;cursor:pointer}
+.wlcons input{margin-top:2px;width:17px;height:17px;flex:none;accent-color:var(--ink)}
+.wlmsg{margin:10px 0 0;font-size:14px;font-weight:600;min-height:0}
+.wlmsg.err{color:#B42318}
+.wlok{background:var(--surface);border:1.5px solid var(--line);border-radius:20px;padding:20px 22px;max-width:540px;box-shadow:var(--shadow)}
+.wlok b{display:block;font-size:18px;margin-bottom:4px}
+.wlok p{color:var(--muted);margin:0 0 14px;font-size:15px}
+.gift{margin:16px 0 0;font-size:14.5px;color:var(--muted);max-width:540px}
+.gift a{color:var(--ink);font-weight:600}
+.gift .demo{display:inline-block;margin-left:2px;font-weight:500;color:var(--muted)}
+.gift-sec{background:linear-gradient(180deg,var(--bg),var(--hl-200) 160%)}
+.gift-art{position:relative;height:460px;max-width:460px;margin:0 auto;width:100%}
+.gift-art img{position:absolute;width:62%;height:auto;border-radius:10px;box-shadow:0 20px 50px rgba(31,32,36,.25)}
+.gift-art .g1{left:4%;top:0;transform:rotate(-5deg)}
+.gift-art .g2{right:4%;top:40px;transform:rotate(6deg)}
+.gift-art .gtag{position:absolute;left:50%;bottom:6px;transform:translateX(-50%) rotate(-3deg);background:var(--hl-bright);font-weight:800;padding:8px 18px;border-radius:999px;box-shadow:var(--shadow)}
+.motion .gift-art .g1{animation:float 7s ease-in-out infinite}
+.gift-sec .checks{margin-bottom:24px}
+@media (max-width:760px){
+  .wlrow{flex-direction:column;border-radius:18px;padding:8px}
+  .wlrow .btn{width:100%}
+  .gift-art{height:340px}
+}

@@ -58,13 +58,23 @@
   function setFoot(t) { const f = $("#foot"); if (f) f.innerHTML = t; }
 
   /* ---------- belépés / regisztráció ---------- */
+  let wlDone = "";
   function authScreen(tab, msg) {
     tab = tab || "belepes";
     const eb = TH.effectiveBrand(brandRaw), legal = config.legal || {};
     const link = (u, t) => (u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${t}</a>` : t);
-    const tabs = `<div class="tabs" role="tablist">${[["belepes", "Belépés"], ["regisztracio", "Regisztráció"]].map(([k, l]) => `<button type="button" data-tab="${k}" aria-pressed="${tab === k}">${l}</button>`).join("")}</div>`;
+    const open = !!(config.signup && config.signup.open);
+    const tabs = `<div class="tabs" role="tablist">${[["belepes", "Belépés"], ["regisztracio", open ? "Regisztráció" : "Várólista"]].map(([k, l]) => `<button type="button" data-tab="${k}" aria-pressed="${tab === k}">${l}</button>`).join("")}</div>`;
     let body;
-    if (tab === "regisztracio") body = `<form class="stack" data-auth="signup" style="gap:12px">
+    if (tab === "regisztracio" && !open) body = wlDone ? `<div class="stack" style="gap:12px"><p style="margin:0"><b>Feliratkoztál, köszönjük!</b> Amint megnyitjuk a ${esc(eb.productName)}-t, elsőként szólunk.</p>
+        <p class="sub" style="margin:0">Addig itt az ajándékod, a Káoszmanager nyomtatható csomag. A linket e-mailben is elküldtük.</p>
+        <a class="btn" href="${esc(wlDone)}">Letöltöm a Káoszmanagert</a></div>`
+      : `<form class="stack" data-auth="waitlist" style="gap:12px"><p class="sub" style="margin:0"><b>Hamarosan nyitunk!</b> Iratkozz fel, és elsőként szólunk. Ajándékba most letöltheted a <b>Káoszmanagert</b>, a nyomtatható tervező- és matricacsomagunkat.</p>
+        <label class="f">E-mail-cím<input type="email" name="email" autocomplete="email" required></label>
+        <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
+        <label class="row" style="gap:8px;font-size:12.5px;flex-wrap:nowrap;align-items:flex-start"><input type="checkbox" name="consent" required style="margin-top:3px"><span>Feliratkozom a várólistára: az e-mail-címemet a Polymaind csak az indulásról szóló értesítéshez és az ajándék elküldéséhez használja. Bármikor kérhetem a törlését a hello@polymaind.hu címen.${legal.privacy ? " " + link(legal.privacy, "Adatkezelési tájékoztató") : ""}</span></label>
+        <button class="btn">Feliratkozom és letöltöm</button></form>`;
+    else if (tab === "regisztracio") body = `<form class="stack" data-auth="signup" style="gap:12px">
         <label class="f">Neved<input type="text" name="name" autocomplete="name" required maxlength="60"></label>
         <label class="f">E-mail-cím<input type="email" name="email" autocomplete="email" required></label>
         <label class="f">Jelszó (legalább 8 karakter)<input type="password" name="password" autocomplete="new-password" minlength="8" required style="width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 11px"></label>
@@ -93,7 +103,7 @@
     const f = $("#boot input"); if (f) f.focus();
   }
   const HU_ERR = { "Invalid login credentials": "Hibás e-mail-cím vagy jelszó.", "Email not confirmed": "Még nem erősítetted meg az e-mail-címed. Nézd meg a postafiókodat.", "User already registered": "Ezzel az e-mail-címmel már van fiók. Lépj be, vagy kérj új jelszót." };
-  const errText = (e) => HU_ERR[e && e.message] || (e && /rate|seconds/i.test(e.message) ? "Túl sok próbálkozás. Várj egy percet, és próbáld újra." : e && /sending|email/i.test(e.message) ? "Most nem sikerült elküldeni a levelet. Próbáld újra néhány perc múlva, vagy írj nekünk: hello@polymaind.hu." : "Valami nem sikerült. Próbáld újra.");
+  const errText = (e) => HU_ERR[e && e.message] || (e && e.message === "wl_email" ? "Ez nem tűnik érvényes e-mail-címnek." : e && e.message === "wl_fail" ? "Most nem sikerült feliratkozni. Próbáld újra pár perc múlva." : e && /signup|saving new user|not allowed/i.test(e.message) ? "Most még nem lehet regisztrálni: iratkozz fel a Várólista fülön, és szólunk, amint nyitunk." : "") || (e && /rate|seconds/i.test(e.message) ? "Túl sok próbálkozás. Várj egy percet, és próbáld újra." : e && /sending|email/i.test(e.message) ? "Most nem sikerült elküldeni a levelet. Próbáld újra néhány perc múlva, vagy írj nekünk: hello@polymaind.hu." : "Valami nem sikerült. Próbáld újra.");
 
   document.addEventListener("click", async (e) => {
     const t = e.target.closest("[data-tab]"); if (t && $("#boot") && !$("#boot").hidden) { authScreen(t.dataset.tab); return; }
@@ -109,6 +119,12 @@
     e.preventDefault();
     const v = Object.fromEntries(new FormData(f).entries()), btn = f.querySelector(".btn"); if (btn) btn.disabled = true;
     try {
+      if (f.dataset.auth === "waitlist") {
+        const r = await fetch("/api/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: (v.email || "").trim(), consent: !!v.consent, website: v.website || "", source: "app" }) });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok || !j.ok) throw new Error(j.error === "bad_email" ? "wl_email" : j.error === "rate_limited" ? "rate" : "wl_fail");
+        wlDone = j.download || "/"; authScreen("regisztracio"); return;
+      }
       if (f.dataset.auth === "login") {
         if (!v.password) { await store.signIn(v.email.trim()); authScreen("belepes", "Elküldtük a belépő linket. Nyisd meg az e-mailt ezen az eszközön."); return; }
         await store.signInPassword(v.email.trim(), v.password); await launch(store.userInfo());
@@ -122,7 +138,7 @@
       } else if (f.dataset.auth === "newpw") {
         await store.updatePassword(v.password); history.replaceState(null, "", location.pathname); await launch(store.userInfo());
       }
-    } catch (err) { if (btn) btn.disabled = false; authScreen(f.dataset.auth === "signup" ? "regisztracio" : f.dataset.auth === "newpw" ? "ujjelszo" : f.dataset.auth === "reset" ? "elfelejtett" : "belepes", errText(err)); }
+    } catch (err) { if (btn) btn.disabled = false; authScreen(f.dataset.auth === "signup" || f.dataset.auth === "waitlist" ? "regisztracio" : f.dataset.auth === "newpw" ? "ujjelszo" : f.dataset.auth === "reset" ? "elfelejtett" : "belepes", errText(err)); }
   });
 
   /* ---------- márka-jogosultság és PolyOS-állapot (csak belépve) ---------- */
@@ -184,7 +200,7 @@
       logout: async () => { await store.signOut(); sessionStorage.removeItem(DEMO_CHOSEN); location.hash = ""; location.reload(); },
       // bemutató módban a csomag kézzel váltható: ingyenes / pro / white label (csak a kinézet és a zárolások; a szerver semmit nem enged ezzel)
       setDemoPlan: (p) => { ls.set(DEMO_PLAN_KEY, ["ingyenes", "pro", "whitelabel"].includes(p) ? p : "pro"); location.reload(); },
-      plan: userPlan, planSource, payResult,
+      plan: userPlan, planSource, payResult, signupOpen: !!(config.signup && config.signup.open),
       saveBrand: async (draft) => {
         if (demo) { ls.set(DEMO_BRAND_KEY, JSON.stringify(draft)); return; }
         try { await api("/api/brand", { method: "PUT", body: JSON.stringify({ brand: draft }) }); }
@@ -196,7 +212,7 @@
     $("#boot").hidden = true; $("#appshell").hidden = false;
     // kilépés a bemutatóból / kijelentkezés: mindig látható helyen (az app kattintás-kezelője fogja meg a data-act-et)
     setFoot(demo
-      ? `<div class="stack" style="gap:8px">Bemutató mód: amit beírsz, csak ebben a böngészőben marad meg.${store.cloudAvailable() ? '<button class="btn small footbtn" data-act="signup">Regisztrálok</button>' : ""}</div>`
+      ? `<div class="stack" style="gap:8px">Bemutató mód: amit beírsz, csak ebben a böngészőben marad meg.${store.cloudAvailable() ? `<button class="btn small footbtn" data-act="signup">${config.signup && config.signup.open ? "Regisztrálok" : "Feliratkozom a várólistára"}</button>` : ""}</div>`
       : `<div class="stack" style="gap:6px"><span class="syncdot" id="sync">Mentve</span><span class="footmail">${esc((user && user.email) || "")}</span><button class="btn small footbtn ghostside" data-act="logout">Kijelentkezés</button></div>`);
     app = ST.start(ctx);
   }

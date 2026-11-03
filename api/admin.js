@@ -13,8 +13,11 @@
 //   { action:"brand.admin.add" | "brand.admin.remove", slug, email }
 //   { action:"platform.get" | "platform.set", config }    az app alap-arculata (név, logó, színek, betűk…)
 //   { action:"audit" }                                    -> utolsó 100 napló-esemény
+//   { action:"waitlist" }                                 -> várólista (e-mail, forrás, dátum, letöltések) + regisztráció állapota
+//   { action:"signup.set", open }                         -> a regisztráció nyitása / zárása (az adatbázis kényszeríti ki)
 const L = require("./_lib");
 const B = require("./_brands");
+const W = require("./_waitlist");
 
 const PLANS = ["ingyenes", "pro"];
 const STATUSES = ["probaido", "aktiv", "lejart", "lemondva", "ajandek"];
@@ -153,6 +156,17 @@ module.exports = async function handler(req, res) {
       else await L.sb(`sikertervezo_brand_admins?slug=eq.${encodeURIComponent(b.slug)}&user_id=eq.${target.id}`, { method: "DELETE" });
       await audit(user, action, b.slug, { email });
       return L.send(res, 200, { ok: true });
+    }
+    if (action === "waitlist") {
+      const rows = await safe(L.sb("sikertervezo_waitlist?select=email,source,created_at,downloads,notified_at&order=created_at.desc&limit=5000"), null);
+      return L.send(res, 200, { ok: true, waitlist: rows || [], missing: rows === null, signupOpen: await W.signupOpen(true) });
+    }
+    if (action === "signup.set") {
+      const open = b.open === true;
+      await L.sb("sikertervezo_flags?on_conflict=id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ id: "default", signup_open: open, updated_by: user.id, updated_at: new Date().toISOString() }) });
+      await W.signupOpen(true);
+      await audit(user, "signup.set", "default", { open });
+      return L.send(res, 200, { ok: true, signupOpen: open });
     }
     if (action === "audit") {
       const rows = await safe(L.sb("sikertervezo_audit?select=at,actor_email,action,target,detail&order=at.desc&limit=100"), null);
