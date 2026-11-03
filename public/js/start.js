@@ -83,7 +83,7 @@
   root.classList.add("motion");
 
   /* ---- görgetésre beúszás (lépcsőzetesen a testvérek között) ---- */
-  var groups = [".hero .copy > *", ".gift-art", ".band h2", ".pain", ".answer", ".sec h2", ".kicker", ".sec .lead", ".feat", ".checks li", ".phone-big", ".steps li", ".price", ".mods a", ".faq details", ".final h2", ".final p", ".final .ctas"];
+  var groups = [".hero .copy > *", ".hero-side", ".gift-art", ".band h2", ".pain", ".answer", ".sec h2", ".kicker", ".sec .lead", ".feat", ".checks li", ".phone-big", ".steps li", ".price", ".mods a", ".faq details", ".final h2", ".final p", ".final .ctas"];
   var items = [];
   groups.forEach(function (sel) { $$(sel).forEach(function (el, i) { if (el.classList.contains("rv")) return; el.classList.add("rv"); el.style.setProperty("--d", (Math.min(i, 8) * 70) + "ms"); items.push(el); }); });
   if ("IntersectionObserver" in window) {

@@ -56,20 +56,6 @@
       <h1>A vállalkozásod napi terve. <mark>Egy helyen.</mark></h1>
       <p class="lead">Teendők, naptár, kapcsolatok, ügyfelek, tartalom és célok – nem öt appban és tíz cetlin, hanem egy nyugodt felületen, amit reggel kinyitsz, és tudod, mi a dolgod.</p>
       <div class="when-closed">
-        <div class="wlcard">
-          <img class="wlthumb" src="/img/km/1.webp" alt="" width="380" height="537">
-          <div class="wlbody">
-            <p class="wlkick"><span>🎁</span> Ingyenes ajándék a feliratkozóknak</p>
-            <p class="wltitle">Kérd most a <b>Káoszmanagert</b>, és a nyitáskor elsőként szólunk.</p>
-            <form class="wlform" data-src="hero" novalidate>
-              <div class="wlrow"><label class="sr" for="wl-hero">E-mail-cím</label><input id="wl-hero" type="email" name="email" placeholder="E-mail-címed" autocomplete="email" required><button class="btn gold" type="submit">Kérem ingyen <span aria-hidden="true">→</span></button></div>
-              <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
-              <label class="wlcons"><input type="checkbox" name="consent" required> <span>Kérem a nyitásról szóló értesítést és az ajándékot. A Polymaind csak erre használja a címemet, és bármikor kérhetem a törlését (hello@polymaind.hu).</span></label>
-              <p class="wlmsg" role="status" aria-live="polite"></p>
-            </form>
-            <ul class="wltrust"><li>Azonnal letölthető PDF</li><li>9 nyomtatható oldal</li><li>Nincs spam</li></ul>
-          </div>
-        </div>
         <p class="gift"><a class="demo" href="/app?bemutato">Addig is nézz körül a bemutatóban →</a></p>
       </div>
       <div class="when-open">
@@ -85,7 +71,24 @@
       </div>
     </div>
 
-    <div class="mock" id="mock" aria-hidden="true">
+    <div class="hero-side when-closed">
+      <div class="wlcard">
+        <img class="wlthumb" src="/img/km/1.webp" alt="" width="380" height="537">
+        <div class="wlbody">
+          <p class="wlkick"><span>🎁</span> Ingyenes ajándék a feliratkozóknak</p>
+          <p class="wltitle">Kérd most a <b>Káoszmanagert</b>, és a nyitáskor elsőként szólunk.</p>
+          <form class="wlform" data-src="hero" novalidate>
+            <div class="wlrow"><label class="sr" for="wl-hero">E-mail-cím</label><input id="wl-hero" type="email" name="email" placeholder="E-mail-címed" autocomplete="email" required><button class="btn gold" type="submit">Kérem ingyen <span aria-hidden="true">→</span></button></div>
+            <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+            <label class="wlcons"><input type="checkbox" name="consent" required> <span>Kérem a nyitásról szóló értesítést és az ajándékot. A Polymaind csak erre használja a címemet, és bármikor kérhetem a törlését (hello@polymaind.hu).</span></label>
+            <p class="wlmsg" role="status" aria-live="polite"></p>
+          </form>
+          <ul class="wltrust"><li>Azonnal letölthető PDF</li><li>9 nyomtatható oldal</li><li>Nincs spam</li></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="mock when-open" id="mock" aria-hidden="true">
       <div class="mock-win">
         <div class="mock-side">
           <img class="ms-logo" src="/logo.svg" alt="">

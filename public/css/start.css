@@ -415,3 +415,24 @@ html.signup-open .when-closed{display:none!important}
   .wltitle{font-size:16px}
 }
 @media (max-width:420px){.wlthumb{display:none}}
+
+/* hero: zárt regisztrációnál a jobb oldalon az ajándékkártya áll (a minta-felület helyett) */
+.hero-side{align-self:center;position:relative}
+.hero-side .wlcard{max-width:none;padding:28px 26px 24px;gap:22px}
+.hero-side .wlthumb{width:118px}
+.hero-side .wltitle{font-size:20px}
+.hero .copy .gift{margin-top:0}
+@media (max-width:980px){
+  .hero-side{order:-1}            /* mobilon a feliratkozás az első */
+  .hero .grid2{gap:32px}
+}
+@media (max-width:760px){
+  .hero-side .wlcard{padding:18px 16px;gap:14px}
+  .hero-side .wlthumb{width:70px}
+  .hero-side .wltitle{font-size:17px}
+}
+html:not(.signup-open) .hero .grid2{grid-template-columns:1.12fr .88fr;gap:44px}
+html:not(.signup-open) .hero h1{font-size:clamp(36px,4.6vw,56px)}
+.hero-side .wlthumb{width:96px}
+.hero-side .wlcard{padding:24px 22px 22px;gap:18px}
+@media (max-width:980px){html:not(.signup-open) .hero .grid2{grid-template-columns:1fr;gap:28px}}
