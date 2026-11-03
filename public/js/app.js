@@ -304,7 +304,7 @@ function vMa(){
   const cont=S.content.filter(c=>c.date===T);
   const st=monthStats(ym(TODAY));
   const done=day(T).steps.filter(Boolean).length;
-  return installCard("ma")+head("Szia,",longDate(T),BR.founder.enabled&&S.settings.founder?'<button class="chip founderchip" data-act="cert" data-id="alapito" title="Alapító oklevél">Alapító tag</button>':"",S.settings.name+"!")+(()=>{const q=quoteOfDay();return `<p class="qday">„${esc(q.t)}”${q.a?` <span class="qday-a">${esc(q.a)}</span>`:""}</p>`})()+nextCard()+`
+  return installCard("ma")+head("Szia,",longDate(T),BR.founder.enabled&&S.settings.founder?'<button class="chip founderchip" data-act="cert" data-id="alapito" title="Alapító oklevél">Alapító tag</button>':"",(greetName()||"")+"!")+(()=>{const q=quoteOfDay();return `<p class="qday">„${esc(q.t)}”${q.a?` <span class="qday-a">${esc(q.a)}</span>`:""}</p>`})()+checklistCard()+nextCard()+`
   <div class="grid herogrid">
   <div class="card hero page"><div class="row between" style="align-items:flex-start"><div class="stack" style="gap:4px;max-width:60ch">
     <div class="eyebrow">A mai napi lépéseid</div><div class="big">${done===5?"Mind az 5 megvan. Büszke lehetsz Magadra!":done?`${done} / 5 kész, így tovább!`:"Ma is közelebb kerülhetsz a céljaidhoz."}</div></div>
@@ -536,8 +536,8 @@ function vBeall(){
   <div class="grid g2">
     <div class="card stack"><h3>Rólad</h3>
       <label class="f">A neved<input type="text" id="set-name" data-set="name" value="${esc(S.settings.name)}"></label>
-      <label class="f">Pénznem<input type="text" id="set-cur" data-set="cur" value="${esc(S.settings.cur)}"></label></div>
-    <div class="card stack"><h3>Pontrendszer</h3><p class="muted" style="margin:0;font-size:12.5px">Minden cégnél másképp hívják. Írd be, nálad hogy szerepel, és mik a havi céljaid.</p>
+      <label class="f">Így szólíts (nem kötelező)<input type="text" id="set-nick" data-set="nick" value="${esc(S.settings.nick||"")}" maxlength="30"></label><label class="f">Pénznem<input type="text" id="set-cur" data-set="cur" value="${esc(S.settings.cur)}"></label><button class="chip" data-act="obstart" style="align-self:flex-start">Bevezető újra</button></div>
+    <div class="card stack"><div class="row between"><h3 style="margin:0">Pontrendszer</h3><button class="chip" data-act="pttoggle">${S.settings.ptOff?"Bekapcsolom":"Nincs rá szükségem"}</button></div><p class="muted" style="margin:0;font-size:12.5px">Minden cégnél másképp hívják. Írd be, nálad hogy szerepel, és mik a havi céljaid.</p>
       <label class="f">A pont neve a cégednél (pl. BP, PV, CC)<input type="text" id="set-ptname" data-set="ptName" value="${esc(S.settings.ptName||"")}" placeholder="pont"></label>
       <div class="row" style="flex-wrap:nowrap;gap:8px"><label class="f" style="flex:1">Havi személyes cél<input type="number" id="set-ptgoal" data-set="ptGoal" value="${esc(S.settings.ptGoal||"")}"></label><label class="f" style="flex:1">Havi csoportcél<input type="number" id="set-gpgoal" data-set="gpGoal" value="${esc(S.settings.gpGoal||"")}"></label></div>
       <label class="f">A következő szinted neve (nem kötelező)<input type="text" id="set-lvl" data-set="lvlName" value="${esc(S.settings.lvlName||"")}" placeholder="Például: Vezető"></label></div>
@@ -713,6 +713,7 @@ function needLine(have,goal,left){if(!goal)return"";const miss=Math.max(0,goal-h
 function periodHead(p){return p?`${esc(p.name)} · ${fmtDate(p.start)} – ${fmtDate(p.end)}`:"Nincs aktív periódus"}
 function countdownHTML(p,big){if(!p)return `<span class="muted">Adj meg periódust a Beállításokban.</span>`;const c=cdParts(p.end),urgent=c&&c.d<3;return `<span class="cd${big?" big":""}${urgent?" urgent":""}" data-countdown="${p.end}">${cdText(p.end)}</span>`}
 function bpStrip(){
+  if(S.settings.ptOff)return "";
   const b=bpPeriod(),p=b.p,pg=+S.settings.ptGoal||0,gg=+S.settings.gpGoal||0,pn=ptName();
   const pp=pg?Math.min(100,b.personal/pg*100):0,gp=gg?Math.min(100,b.group/gg*100):0;
   return `<div class="card bpstrip"><div class="row between" style="gap:12px"><div class="eyebrow">Napi állás · ${periodHead(p)}</div><a class="btn ghost small" href="#szamok" data-act="toallas">Mai állás rögzítése</a></div>
@@ -721,6 +722,7 @@ function bpStrip(){
   <div><div class="bpl">Zárásig</div><div class="bpv cdwrap">${countdownHTML(p)}</div><div class="bps">${S.settings.lvlName?`Cél: ${esc(S.settings.lvlName)}`:""}</div></div></div></div>`;
 }
 function bpSection(){
+  if(S.settings.ptOff)return "";
   const b=bpPeriod(),p=b.p,pg=+S.settings.ptGoal||0,gg=+S.settings.gpGoal||0,pn=ptName(),today=(S.bp||{})[T]||{};
   const W=560,H=210,pl=46,pb=24,pt=12,max=Math.max(pg,b.personal,1)*1.08,N=Math.max(2,b.n);
   const x=i=>pl+i/(N-1)*(W-pl-10),y=v=>H-pb-(H-pb-pt)*v/max;
@@ -1071,6 +1073,88 @@ function installCard(where){
     :`<span class="s">Safariban koppints a <b>Megosztás</b> ikonra <span aria-hidden="true">(négyzet felfelé nyíllal)</span>, majd a <b>Főképernyőhöz adás</b> pontra.</span>`;
   return `<div class="card installcard"><span class="ic" aria-hidden="true">${TH.svg(TH.MARK).replace('width="48" height="48"','width="40" height="40"')}</span><div class="grow"><span class="t">Tedd ki a kezdőképernyőre</span>${body}</div><div class="row" style="gap:8px">${mode==="prompt"?'<button class="btn small" data-act="install">Telepítés</button>':""}${where==="ma"?'<button class="nc-skip" style="color:var(--muted)" data-act="installhide">Most nem</button>':""}</div></div>`;
 }
+/* ---------- bevezető (első belépés) és „Első lépések" lista ---------- */
+const PROFILES=[
+  {k:"mlm",l:"Közvetlen értékesítés, csapatépítés",d:"Termékeket ajánlasz, ügyfélkört és csapatot építesz (pl. kozmetikum, étrend-kiegészítő).",steps:["Poszt","Sztori","Új kapcsolat","Utánkövetés","Csapat"],pt:true},
+  {k:"szolg",l:"Saját szolgáltatás vagy termék",d:"Szolgáltatást nyújtasz vagy saját terméket árulsz (pl. coach, szépségipar, kézműves).",steps:["Tartalom","Új érdeklődő","Utánkövetés","Ügyfélmunka","Tanulás"],pt:false},
+  {k:"tartalom",l:"Tartalomgyártás, személyes márka",d:"A közösségi médiában építed a márkádat és a közösségedet.",steps:["Poszt","Sztori","Közösség","Új kapcsolat","Ötletgyűjtés"],pt:false},
+  {k:"egyeb",l:"Valami más",d:"Egyszerűen jól akarod szervezni a napjaidat és a kapcsolataidat.",steps:["Tervezés","Új kapcsolat","Utánkövetés","Tartalom","Önfejlesztés"],pt:false}
+];
+const greetName=()=>{const n=(S.settings.nick||"").trim();return n||firstName(S.settings.name)||""};
+function obSteps(d){return ["udv","nev","profil","lepesek"].concat(d.pt?["pont"]:[]).concat(["kulonbseg","kapcsolat","ugyfel","kesz"])}
+function obOpen(){
+  const prof=PROFILES.find(p=>p.k===S.settings.profile)||null;
+  ui.ob={i:0,d:{name:S.settings.name||"",nick:S.settings.nick||"",profile:prof?prof.k:"",pt:prof?prof.pt:true,steps:S.settings.steps.slice(),ptName:S.settings.ptName||"pont",ptGoal:S.settings.ptGoal||"",gpGoal:S.settings.gpGoal||"",perEnd:(curPeriod()||{}).end||iso(addDays(TODAY,27)),contact:{name:"",src:"",next:"",nextDate:iso(addDays(TODAY,1))},client:{name:"",fav:"",last:""}}};
+  obRender();
+}
+function obClose(){const el=$("#onboard");if(el)el.remove();ui.ob=null;document.body.classList.remove("ob-open")}
+function obField(k,label,v,type,extra){return `<label class="f">${label}<input type="${type||"text"}" data-ob="${k}" value="${esc(v)}" ${extra||""}></label>`}
+function obBody(step,d){
+  if(step==="udv")return `<div class="ob-hero">${TH.svg(TH.MARK).replace('width="48" height="48"','width="64" height="64"')}</div><h2>Szia! Állítsuk be együtt a tervezőt.</h2><p class="lead">Pár rövid kérdés, nagyjából 2 perc. Utána a ${esc(BR.productName)} pontosan rád szabva indul, és megmutatjuk, hol mit találsz.</p><ul class="ob-list"><li>Hogyan szólítsunk</li><li>Mivel foglalkozol, és mik a napi lépéseid</li><li>Mi a különbség a kapcsolat és az ügyfél között</li><li>Az első kapcsolatod és ügyfeled felvétele</li></ul>`;
+  if(step==="nev")return `<h2>Hogyan szólíthatunk?</h2><p class="lead">Ezzel köszönünk minden reggel, és ez kerül az okleveleidre és az üzenetvázlataid aláírásába.</p>${obField("name","A teljes neved",d.name,"text",'autocomplete="name" maxlength="60" placeholder="Például: Minta Anna"')}${obField("nick","Így szólíts (nem kötelező)",d.nick,"text",'maxlength="30" placeholder="Például: Anna"')}`;
+  if(step==="profil")return `<h2>Mivel foglalkozol?</h2><p class="lead">Ez alapján javaslunk napi lépéseket. Később bármit átírhatsz.</p><div class="ob-choices">${PROFILES.map(p=>`<button type="button" class="ob-choice" data-act="obprof" data-k="${p.k}" aria-pressed="${d.profile===p.k}"><b>${esc(p.l)}</b><span>${esc(p.d)}</span></button>`).join("")}</div>`;
+  if(step==="lepesek")return `<h2>Az 5 napi lépésed</h2><p class="lead">Ez az öt dolog visz előre minden nap. A Ma oldalon pipálod ki őket, és ha mind az öt megvan, az „arany nap”.</p><div class="stack" style="gap:10px">${d.steps.map((s,i)=>`<label class="f">${i+1}. lépés<input type="text" data-ob="step${i}" value="${esc(s)}" maxlength="24"></label>`).join("")}</div>`;
+  if(step==="pont")return `<h2>Pontrendszer és periódus</h2><p class="lead">Ha a cégednél pontokat gyűjtesz egy elszámolási időszakban, a tervező napi bontásban mutatja, mennyi hiányzik még. Ha nem kell, a „Nincs pontrendszerem” gombbal kikapcsolhatod.</p>${obField("ptName","A pont neve a cégednél",d.ptName,"text",'maxlength="12" placeholder="pl. BP, PV, CC"')}<div class="grid g2">${obField("ptGoal","Havi személyes cél",d.ptGoal,"number",'inputmode="numeric"')}${obField("gpGoal","Havi csoportcél (nem kötelező)",d.gpGoal,"number",'inputmode="numeric"')}</div>${obField("perEnd","Mikor zárul az aktuális periódus?",d.perEnd,"date")}<button type="button" class="chip" data-act="obnopt" style="align-self:flex-start">Nincs pontrendszerem</button>`;
+  if(step==="kulonbseg")return `<h2>Kapcsolat vagy ügyfél?</h2><p class="lead">A tervezőben két külön helyen vezeted az embereket, mert mással kell foglalkoznod velük.</p>
+    <div class="ob-two"><div class="ob-card"><div class="ob-ic">${nicon("kapcsolatok")}</div><b>Kapcsolat</b><p>Akivel <b>még ismerkedsz</b>: érdeklődő, leendő ügyfél vagy leendő csapattag. Négy lépcsőn viszed végig (kapcsolatfelvétel, beszélgetés, bemutató, döntés), és a tervező szól, mikor kell utánakövetned.</p></div>
+    <div class="ob-arrow" aria-hidden="true">→</div>
+    <div class="ob-card"><div class="ob-ic">${nicon("ugyfelek")}</div><b>Ügyfél</b><p>Aki <b>már vásárolt</b> tőled. Itt a rendeléseit, a kedvenc termékeit és a születésnapját látod, és a tervező szól, mikor fogyhat el a terméke.</p></div></div>
+    <p class="ob-note">Röviden: a kapcsolatból ügyfél lesz. Amikor valaki először vásárol, vedd fel az Ügyfelek közé.</p>`;
+  if(step==="kapcsolat")return `<h2>Vedd fel az első kapcsolatod</h2><p class="lead">Gondolj valakire, akivel mostanában beszéltél, vagy akit szeretnél megkeresni. Később a <b>Kapcsolatok</b> oldalon az <b>Új kapcsolat</b> gombbal veszel fel újat.</p>${obField("c.name","Név",d.contact.name,"text",'maxlength="60" placeholder="Például: Minta Kata"')}${obField("c.src","Honnan ismered?",d.contact.src,"text",'maxlength="60" placeholder="Például: Instagram, ajánlás"')}<div class="grid g2">${obField("c.next","Mi a következő lépés?",d.contact.next,"text",'maxlength="60" placeholder="Például: Első üzenet"')}${obField("c.nextDate","Mikor?",d.contact.nextDate,"date")}</div>`;
+  if(step==="ugyfel")return `<h2>És az első ügyfeled</h2><p class="lead">Ha már van, aki vásárolt tőled, vedd fel. Ha még nincs, nyugodtan hagyd ki. Később az <b>Ügyfelek</b> oldalon az <b>Új ügyfél</b> gombbal veszel fel újat.</p>${obField("u.name","Név",d.client.name,"text",'maxlength="60" placeholder="Például: Minta Éva"')}${obField("u.fav","Mit szokott venni?",d.client.fav,"text",'maxlength="80" placeholder="Például: arckrém, vitamin"')}${obField("u.last","Mikor vásárolt utoljára?",d.client.last,"date")}`;
+  const inst=ctx.install&&ctx.install.mode();
+  return `<div class="ob-hero">🎉</div><h2>Kész is vagy${greetName()||d.nick||firstName(d.name)?", "+esc(d.nick||firstName(d.name)):""}!</h2><p class="lead">Így találsz meg mindent:</p><ul class="ob-list"><li><b>Ma:</b> a napi lépéseid, kit keress meg, mai teendők</li><li><b>Naptár:</b> havi, heti és napi nézet az időpontjaiddal</li><li><b>Kapcsolatok és Ügyfelek:</b> az embereid, emlékeztetőkkel</li><li><b>Tartalom:</b> mit posztolsz és mikor</li></ul><p class="lead">A Ma oldalon egy <b>Első lépések</b> lista vár, amivel végigjárhatod az alapokat.</p>${inst==="prompt"?'<button type="button" class="btn ghost" data-act="install">Telepítem a kezdőképernyőre</button>':inst==="ios"?'<p class="ob-note">Tipp: Safariban a Megosztás ikon, majd a „Főképernyőhöz adás” után appként indul a tervező.</p>':""}`;
+}
+function obRender(){
+  const o=ui.ob;if(!o)return;const steps=obSteps(o.d),step=steps[o.i],last=o.i===steps.length-1;
+  let el=$("#onboard");if(!el){el=document.createElement("div");el.id="onboard";document.body.appendChild(el);document.body.classList.add("ob-open")}
+  const canNext=step!=="profil"||!!o.d.profile;const optional=step==="kapcsolat"||step==="ugyfel";
+  el.innerHTML=`<div class="ob" role="dialog" aria-modal="true" aria-label="Bevezető"><div class="ob-top"><div class="ob-prog" aria-hidden="true"><i style="width:${Math.round((o.i+1)/steps.length*100)}%"></i></div><span class="ob-count">${o.i+1} / ${steps.length}</span>${last?"":`<button type="button" class="nc-skip" data-act="obskip">Kihagyom a bevezetőt</button>`}</div>
+  <form class="ob-body" data-form="ob">${obBody(step,o.d)}</form>
+  <div class="ob-nav">${o.i>0&&!last?'<button type="button" class="btn ghost" data-act="obback">Vissza</button>':"<span></span>"}<span class="row" style="gap:8px">${optional?'<button type="button" class="btn ghost" data-act="obnext" data-skip="1">Kihagyom</button>':""}<button type="button" class="btn" data-act="obnext" ${canNext?"":"disabled"}>${last?"Kezdjük!":o.i===0?"Kezdjük el":optional?"Hozzáadom":"Tovább"}</button></span></div></div>`;
+  const f=el.querySelector(".ob-body input");if(f&&!matchMedia("(max-width:860px)").matches)f.focus();
+}
+function obInput(t){const o=ui.ob;if(!o)return;const k=t.dataset.ob,v=t.value;
+  if(k.startsWith("step"))o.d.steps[+k.slice(4)]=v;else if(k.startsWith("c."))o.d.contact[k.slice(2)]=v;else if(k.startsWith("u."))o.d.client[k.slice(2)]=v;else o.d[k]=v}
+function obNext(skip){
+  const o=ui.ob,steps=obSteps(o.d),step=steps[o.i];
+  if(step==="nev"&&!o.d.name.trim()){toast("Írd be a neved, hogy tudjuk, hogyan szólítsunk.");return}
+  if(step==="kapcsolat"&&!skip&&!o.d.contact.name.trim()){toast("Írj be egy nevet, vagy hagyd ki ezt a lépést.");return}
+  if(step==="ugyfel"&&!skip&&!o.d.client.name.trim()){toast("Írj be egy nevet, vagy hagyd ki ezt a lépést.");return}
+  if(skip&&step==="kapcsolat")o.d.contact.name="";if(skip&&step==="ugyfel")o.d.client.name="";
+  if(o.i<steps.length-1){o.i++;obRender();const b=$("#onboard .ob");if(b)b.scrollTop=0;return}
+  obFinish(false);
+}
+function obFinish(skipped){
+  const o=ui.ob;
+  if(!skipped&&o){const d=o.d;
+    S.settings.name=d.name.trim();S.settings.nick=d.nick.trim();S.settings.profile=d.profile||"egyeb";
+    S.settings.steps=d.steps.map((s,i)=>s.trim()||S.settings.steps[i]);
+    S.settings.ptOff=!d.pt;
+    if(d.pt){S.settings.ptName=(d.ptName||"pont").trim();S.settings.ptGoal=+d.ptGoal||0;S.settings.gpGoal=+d.gpGoal||0;
+      const p=curPeriod();if(p&&/^\d{4}-\d{2}-\d{2}$/.test(d.perEnd)&&d.perEnd>=p.start)p.end=d.perEnd}
+    if(d.contact.name.trim()){S.contacts.push({id:uid(),name:d.contact.name.trim(),src:d.contact.src.trim(),interest:"Mindkettő",stage:0,next:d.contact.next.trim()||"Első üzenet",nextDate:d.contact.nextDate||"",note:"",created:T});logPt("contact")}
+    if(d.client.name.trim()){S.clients.push({id:uid(),name:d.client.name.trim(),phone:"",bday:"",fav:d.client.fav.trim(),last:d.client.last||"",cycle:30,created:T})}
+  }
+  S.onboarded=T;save();obClose();if(route!=="ma")location.hash="ma";else render();
+  if(!skipped)toast("Minden be van állítva. Jó tervezést!");
+}
+/* Első lépések lista a Ma oldalon, amíg be nem járja az alapokat */
+function checklistCard(){
+  if(!S.onboarded||(S.prefs&&S.prefs.checklistHide))return "";
+  const items=[
+    ["Beállítottad a tervezőt",true,""],
+    ["Felvetted az első kapcsolatod",S.contacts.length>0,'<button class="btn small ghost" data-act="new" data-type="contact">Új kapcsolat</button>'],
+    ["Felvetted az első ügyfeled",S.clients.length>0,'<button class="btn small ghost" data-act="new" data-type="client">Új ügyfél</button>'],
+    ["Kipipáltad az első napi lépésed",Object.values(S.days).some(d=>d.steps&&d.steps.some(Boolean)),'<span class="muted" style="font-size:12px">Fent, a napi lépéseknél</span>'],
+    ["Betervezted az első tartalmad",S.content.length>0,'<button class="btn small ghost" data-act="newcontent" data-k="">Új tartalom</button>'],
+    ["Lezártad az első napod este",closedDays()>0,'<button class="btn small ghost" data-act="ncanchor" data-k="estizaras">Esti zárás</button>']
+  ];
+  const done=items.filter(x=>x[1]).length;if(done===items.length)return "";
+  return `<div class="card checklist"><div class="row between"><div><div class="eyebrow">Első lépések</div><h3 style="margin:4px 0 0">${done} / ${items.length} kész</h3></div><button class="nc-skip" style="color:var(--muted)" data-act="checkhide">Elrejtés</button></div>
+  <div class="prog" style="margin:10px 0 6px"><i style="width:${done/items.length*100}%"></i></div>
+  <div class="list">${items.map(([l,ok,act])=>`<div class="li ${ok?"done":""}"><span class="cbx" aria-hidden="true" ${ok?'aria-pressed="true"':""}>${ok?"✓":""}</span><div class="grow t">${l}</div>${ok?"":act}</div>`).join("")}</div></div>`;
+}
 /* ---------- render ---------- */
 const RENDER={ma:vMa,bovitesek:vBovitesek,olvasas:vOlvasas,szokasok:vSzokasok,terkep:vTerkep,matricak:vMatricak,naptar:vNaptar,kapcsolatok:vKapcsolatok,ugyfelek:vUgyfelek,tartalom:vTartalom,csapat:vCsapat,szamok:vSzamok,beallitasok:vBeall};
 function render(){
@@ -1205,6 +1289,14 @@ document.addEventListener("click",e=>{
     case"brandlogodel":ui.brand.logo="";repaint();render();break;
     case"brandreset":ui.brand=null;repaint();render();toast("Visszaállítva a mentett márkára.");break;
     case"brandsave":{const d=ui.brand;if(!d)break;b.disabled=true;ctx.saveBrand(d).then(()=>{toast("Márka mentve. Újratöltöm…");setTimeout(()=>location.reload(),700)},e=>{b.disabled=false;toast(e&&e.message==="forbidden"?"Ehhez nincs jogosultságod.":"Nem sikerült menteni. Próbáld újra.")});break}
+    case"obstart":obOpen();break;
+    case"obnext":obNext(!!b.dataset.skip);break;
+    case"obback":if(ui.ob&&ui.ob.i>0){ui.ob.i--;obRender()}break;
+    case"obskip":obFinish(true);break;
+    case"obprof":{const p=PROFILES.find(x=>x.k===b.dataset.k);if(p&&ui.ob){ui.ob.d.profile=p.k;ui.ob.d.pt=p.pt;ui.ob.d.steps=p.steps.slice();obRender()}break}
+    case"obnopt":if(ui.ob){ui.ob.d.pt=false;obNext()}break;
+    case"pttoggle":S.settings.ptOff=!S.settings.ptOff;save();render();break;
+    case"checkhide":S.prefs=S.prefs||{};S.prefs.checklistHide=true;save();render();break;
     case"more":openMore();break;
     case"install":ctx.install.prompt().then(ok=>{if(ok)toast("Telepítve. Mostantól a kezdőképernyőről indíthatod.");render()});break;
     case"installhide":S.prefs=S.prefs||{};S.prefs.installHide=true;save();render();break;
@@ -1227,6 +1319,7 @@ document.addEventListener("drop",e=>{const c=e.target.closest&&e.target.closest(
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeForm();if(trayOpen||ui.sel){trayOpen=false;ui.sel=null;markSel();drawer()}}});
 document.addEventListener("submit",e=>{
   e.preventDefault();const f=e.target;
+  if(f.dataset.form==="ob"){obNext();return}
   if(f.dataset.form==="book"){const t=$("#book-title").value.trim(),a=$("#book-author").value.trim(),st=$("#book-status").value;if(!t){toast("Írd be a könyv címét.");return}S.books=S.books||[];S.books.unshift({id:uid(),title:t,author:a,status:st,progress:st==="kesz"?100:0,started:st==="olvasom"?T:"",finished:st==="kesz"?T:""});save();toast("Könyv hozzáadva.");render();return}
   if(f.dataset.form==="todo"){const k=f.dataset.k,inp=f.querySelector("input"),v=inp.value.trim();if(!v)return;S.todos=S.todos||{};(S.todos[k]=S.todos[k]||[]).push({id:uid(),t:v,done:false});save();render();const n=document.getElementById("todo-"+k);n&&n.focus();return}
   if(f.dataset.form==="mq"){const t=$("#mq-text").value.trim(),a=$("#mq-a").value.trim();if(!t){toast("Írd be az idézetet.");return}S.myquotes=S.myquotes||[];
@@ -1246,6 +1339,7 @@ document.addEventListener("submit",e=>{
 });
 document.addEventListener("input",e=>{
   const t=e.target;
+  if(t.dataset.ob){obInput(t);return}
   if(t.dataset.hour||t.dataset.loc){const k=t.dataset.day,h=t.dataset.hour||t.dataset.loc,dd=day(k);
     if(t.dataset.hour){dd.hours=dd.hours||{};if(t.value.trim())dd.hours[h]=t.value;else delete dd.hours[h]}
     else{dd.locs=dd.locs||{};if(t.value.trim())dd.locs[h]=t.value;else delete dd.locs[h]}
@@ -1283,6 +1377,7 @@ document.addEventListener("change",e=>{
 if(!S.unlocked){S.unlocked={};checkAch(true)}
 if(!S.maps){S.maps=[S.blank?{id:uid(),title:"Első térképem",nodes:[{id:uid(),x:700,y:450,t:"A céljaim",p:null}]}:sampleMap()];save()}
 go();
+if((S.blank&&!S.onboarded&&!DEMO)||/[?&]bevezeto\b/.test(location.search))obOpen();
 return {render,replace(st){S=st&&st.v?st:S;migrate();render()},get state(){return S}};
 };
 })();
