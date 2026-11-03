@@ -226,8 +226,12 @@ function bindBoards(){
         if(!el.hasPointerCapture(e.pointerId))return;
         if(Math.abs(e.clientX-sx)+Math.abs(e.clientY-sy)>3)moved=true;
         if(!moved)return;
-        const x=Math.min(98,Math.max(2,(e.clientX-rect.left)/rect.width*100));
-        const y=Math.min(98,Math.max(2,(e.clientY-rect.top)/rect.height*100));
+        // a Vezérlőpulton a matrica a teljes tartalmi területen mozoghat (a blokkokon kívül is), máshol a táblán belül
+        const free=b.parentNode&&b.parentNode.id==="dash",area=free?(document.querySelector(".main")||b).getBoundingClientRect():rect;
+        const xmin=free?(area.left+12-rect.left)/rect.width*100:2,xmax=free?(area.right-12-rect.left)/rect.width*100:98;
+        const ymin=free?(area.top+12-rect.top)/rect.height*100:2,ymax=free?(Math.max(area.bottom,rect.bottom)-12-rect.top)/rect.height*100:98;
+        const x=Math.min(xmax,Math.max(xmin,(e.clientX-rect.left)/rect.width*100));
+        const y=Math.min(ymax,Math.max(ymin,(e.clientY-rect.top)/rect.height*100));
         el.style.left=x+"%";el.style.top=y+"%";
       });
       el.addEventListener("pointerup",e=>{
