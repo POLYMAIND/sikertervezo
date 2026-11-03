@@ -49,7 +49,8 @@
     const logo = eb.logo ? `<img class="logo" src="${esc(eb.logo)}" alt="${esc(eb.productName)} logó">` : `<span class="logo" aria-hidden="true">${TH.svg(TH.MARK).replace('width="48" height="48"', 'width="72" height="72"')}</span>`;
     $("#brandrow").innerHTML = `${logo}<div class="brand">${esc(eb.productName)}<small>${esc(eb.tagline)}</small></div>`;
     document.title = eb.productName;
-    const fi = document.querySelector('link[rel="icon"]'); if (fi) fi.setAttribute("href", eb.logo || "/favicon.svg");
+    // a böngészőfül ikonja a márka színeit követi (logó nélkül a jel a kiemelőszínnel), szerkesztés közben is élőben
+    const fi = document.querySelector('link[rel="icon"]'); if (fi) { fi.setAttribute("type", eb.logo ? "" : "image/svg+xml"); fi.setAttribute("href", eb.logo || "data:image/svg+xml;charset=utf-8," + encodeURIComponent(TH.svg(TH.MARK))); }
     const at = document.querySelector('meta[name="apple-mobile-web-app-title"]'); if (at) at.setAttribute("content", eb.productName);
     const mf = $("#manifest"); if (mf) mf.setAttribute("href", "/api/manifest" + location.search);
     const ai = $("#appleicon"); if (ai) ai.setAttribute("href", eb.logo ? "/api/icon?size=180" + (location.search ? "&" + location.search.slice(1) : "") : "/icons/apple-touch-icon.png");
@@ -67,6 +68,7 @@
         <label class="f">Neved<input type="text" name="name" autocomplete="name" required maxlength="60"></label>
         <label class="f">E-mail-cím<input type="email" name="email" autocomplete="email" required></label>
         <label class="f">Jelszó (legalább 8 karakter)<input type="password" name="password" autocomplete="new-password" minlength="8" required style="width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 11px"></label>
+        ${eb.plan === "whitelabel" ? `<label class="row" style="gap:8px;font-size:12.5px;flex-wrap:nowrap;align-items:flex-start"><input type="checkbox" name="brandok" required style="margin-top:3px"><span>Tudomásul veszem, hogy a tervező gazdája (${esc(eb.ownerName || eb.productName)}) látja a nevemet, e-mail-címemet, a regisztrációm és az utolsó aktivitásom dátumát. A tervem tartalmát nem látja.</span></label>` : ""}
         <label class="row" style="gap:8px;font-size:12.5px;flex-wrap:nowrap;align-items:flex-start"><input type="checkbox" name="terms" required style="margin-top:3px"><span>Elfogadom az ${link(legal.terms, "Általános Szerződési Feltételeket")} és az ${link(legal.privacy, "Adatkezelési tájékoztatót")}.</span></label>
         <button class="btn">Fiók létrehozása</button></form>`;
     else if (tab === "elfelejtett") body = `<form class="stack" data-auth="reset" style="gap:12px"><p class="sub">Megadod az e-mail-címed, és küldünk egy linket, amivel új jelszót állíthatsz be.</p>
@@ -111,7 +113,9 @@
         if (!v.password) { await store.signIn(v.email.trim()); authScreen("belepes", "Elküldtük a belépő linket. Nyisd meg az e-mailt ezen az eszközön."); return; }
         await store.signInPassword(v.email.trim(), v.password); await launch(store.userInfo());
       } else if (f.dataset.auth === "signup") {
-        const r = await store.signUp(v.email.trim(), v.password, v.name.trim());
+        const eb = TH.effectiveBrand(brandRaw);
+        const extra = eb.plan === "whitelabel" && v.brandok ? { brand_consent: { [eb.slug]: { ok: true, at: new Date().toISOString() } } } : null;
+        const r = await store.signUp(v.email.trim(), v.password, v.name.trim(), extra);
         if (r.needsConfirm) authScreen("belepes", "Majdnem kész: küldtünk egy megerősítő e-mailt. A linkre kattintva be is léptetünk."); else await launch(store.userInfo());
       } else if (f.dataset.auth === "reset") {
         await store.resetPassword(v.email.trim()); authScreen("belepes", "Ha van fiók ezzel a címmel, elküldtük a linket az új jelszóhoz.");
@@ -154,7 +158,7 @@
     const payResult = new URLSearchParams(location.search).get("fizetes");
     if (payResult) { const q = new URLSearchParams(location.search); q.delete("fizetes"); history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "") + location.hash); }
     if (!demo) {
-      try { brandAdmin = !!(await api("/api/brand")).admin; } catch (e) {}
+      try { brandAdmin = !!(await api("/api/brand" + location.search)).admin; } catch (e) {}
       try { superadmin = !!(await api("/api/admin", { method: "POST", body: JSON.stringify({ action: "whoami" }) })).superadmin; } catch (e) {}
     }
     // belépve a valódi állapot; bemutató módban csak a fejlesztői mock (élesben a szerver sosem kapcsolja be)
@@ -167,6 +171,10 @@
       mode: demo ? "demo" : "cloud", cloud: store.cloudAvailable(), user, state: st,
       brand: TH.effectiveBrand(brandRaw), brandRaw, brandAdmin, paintChrome, install, superadmin,
       // superadmin hívás: a jogosultságot a szerver MINDEN kérésnél újra ellenőrzi, ez csak a felület kapuja
+      emailReady: !!(config.email && config.email.enabled),
+      brandConsent: () => store.brandConsent(TH.effectiveBrand(brandRaw).slug),
+      setBrandConsent: (ok) => store.setBrandConsent(TH.effectiveBrand(brandRaw).slug, ok),
+      brandMembers: async () => api("/api/brand" + location.search, { method: "POST", body: JSON.stringify({ action: "members" }) }),
       email: async (payload) => api("/api/email" + location.search, { method: "POST", body: JSON.stringify(payload) }),
       billing: async (action) => api("/api/billing" + location.search, { method: "POST", body: JSON.stringify({ action }) }),
       billingReady: !!(config.billing && config.billing.enabled),

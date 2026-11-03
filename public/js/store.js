@@ -54,9 +54,9 @@
     return data.user;
   }
   // regisztráció: a név és az ÁSZF-elfogadás időpontja a user_metadata-ba kerül
-  async function signUp(email, password, name) {
+  async function signUp(email, password, name, extra) {
     need();
-    const { data, error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: back(), data: { full_name: name, terms_accepted_at: new Date().toISOString() } } });
+    const { data, error } = await sb.auth.signUp({ email, password, options: { emailRedirectTo: back(), data: Object.assign({ full_name: name, terms_accepted_at: new Date().toISOString() }, extra || {}) } });
     if (error) throw error;
     if (data.session) { session = data.session; mode = "cloud"; }
     return { needsConfirm: !data.session };
@@ -66,6 +66,15 @@
     const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: back() + "#uj-jelszo" });
     if (error) throw error;
   }
+  // hozzájárulás a márka gazdájának (white label): a user_metadata.brand_consent[slug] = { ok, at }
+  async function setBrandConsent(slug, ok) {
+    need();
+    const cur = (session && session.user && session.user.user_metadata && session.user.user_metadata.brand_consent) || {};
+    const { data, error } = await sb.auth.updateUser({ data: { brand_consent: Object.assign({}, cur, { [slug]: { ok: !!ok, at: new Date().toISOString() } }) } });
+    if (error) throw error;
+    if (data && data.user && session) session.user = data.user;
+  }
+  const brandConsent = (slug) => { const c = session && session.user && session.user.user_metadata && session.user.user_metadata.brand_consent; return c && c[slug] ? c[slug] : null; };
   async function updatePassword(password) {
     need();
     const { error } = await sb.auth.updateUser({ password });
@@ -117,5 +126,5 @@
   function onStatus(fn) { listeners.push(fn); }
 
   const userInfo = () => (session ? { id: session.user.id, email: session.user.email, name: (session.user.user_metadata || {}).full_name || "" } : null);
-  ST.store = { init, signIn, signInPassword, signUp, resetPassword, updatePassword, isRecovery: () => recovery || /uj-jelszo/.test(location.hash), userInfo, signOut, token, user, load, save, flush, onStatus, mode: () => mode, cloudAvailable: () => !!sb, readLocal };
+  ST.store = { init, signIn, signInPassword, signUp, setBrandConsent, brandConsent, resetPassword, updatePassword, isRecovery: () => recovery || /uj-jelszo/.test(location.hash), userInfo, signOut, token, user, load, save, flush, onStatus, mode: () => mode, cloudAvailable: () => !!sb, readLocal };
 })();

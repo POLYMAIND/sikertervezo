@@ -16,6 +16,7 @@ module.exports = async function handler(req, res) {
   const icons = wl && b.logo
     ? [192, 512].map((s) => ({ src: `/api/icon?size=${s}${q ? "&" + q.slice(1) : ""}`, sizes: `${s}x${s}`, type: "image/png", purpose: "any" }))
     : [
+        { src: "/api/icon?format=svg" + (q ? "&" + q.slice(1) : ""), sizes: "any", type: "image/svg+xml", purpose: "any" },
         { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
         { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
         { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },

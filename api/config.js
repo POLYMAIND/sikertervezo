@@ -13,6 +13,7 @@ module.exports = async function handler(req, res) {
     supabase: L.supabaseReady() ? { url: L.SB_URL(), anonKey: L.SB_ANON() } : null,
     polyos: { enabled: P.enabled(), mock: P.mockOn(), baseUrl: P.publicUrl() },
     billing: { enabled: STR.ready() },
+    email: { enabled: !!(L.env("RESEND_API_KEY") && L.env("EMAIL_FROM")) },
     legal: { terms: L.env("TERMS_URL"), privacy: L.env("PRIVACY_URL") },
   });
 };

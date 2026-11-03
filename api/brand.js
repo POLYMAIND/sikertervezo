@@ -1,6 +1,9 @@
 // /api/brand — a white label márka kezelése.
 //   GET  (belépve)            -> { ok, admin }          admin-e az aktuális márkánál
 //   PUT  (belépve, admin) { brand } -> { ok }           a márka mentése (a csomag NEM változtatható innen)
+//   POST (belépve, admin) { action:"members" } -> { ok, stats, members }
+//        A partner CSAK a saját márkája felhasználóit látja, és névvel CSAK azokat, akik ehhez hozzájárultak
+//        (user_metadata.brand_consent[slug]). A tervük tartalmát soha. Minden megtekintés naplózva.
 // Admin = sor a `sikertervezo_brand_admins` táblában (slug, user_id) — ezt a Polymaind állítja be.
 const L = require("./_lib");
 const B = require("./_brands");
@@ -17,6 +20,23 @@ module.exports = async function handler(req, res) {
   const slug = B.resolveSlug(req);
   try {
     if (req.method === "GET") return L.send(res, 200, { ok: true, admin: await isAdmin(slug, user.id) });
+    if (req.method === "POST") {
+      if (!(await isAdmin(slug, user.id))) return L.send(res, 403, { error: "forbidden" });
+      const b = await L.body(req);
+      if (b.action !== "members") return L.send(res, 400, { error: "bad_action" });
+      const states = await L.sb(`sikertervezo_state?brand_slug=eq.${encodeURIComponent(slug)}&select=user_id,updated_at`);
+      const st = {}; (states || []).forEach((r) => { st[r.user_id] = r.updated_at; });
+      const users = [];
+      for (let page = 1; page <= 20; page++) { const j = await L.authAdmin(`users?page=${page}&per_page=200`); const l = (j && j.users) || []; users.push(...l); if (l.length < 200) break; }
+      const consent = (u) => { const c = u.user_metadata && u.user_metadata.brand_consent; return c && c[slug] && c[slug].ok ? c[slug].at : null; };
+      const inBrand = users.filter((u) => st[u.id] || consent(u));
+      const week = Date.now() - 7 * 864e5;
+      const members = inBrand.filter((u) => consent(u)).map((u) => ({ name: (u.user_metadata && u.user_metadata.full_name) || "", email: u.email, created_at: u.created_at, last_active: st[u.id] || u.last_sign_in_at || null, consent_at: consent(u) }))
+        .sort((a, c) => String(c.last_active || "").localeCompare(String(a.last_active || "")));
+      const stats = { total: inBrand.length, active7: inBrand.filter((u) => st[u.id] && Date.parse(st[u.id]) > week).length, named: members.length };
+      await L.sb("sikertervezo_audit", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ actor_id: user.id, actor_email: user.email, action: "brand.members.view", target: slug, detail: { named: members.length } }) }).catch(() => {});
+      return L.send(res, 200, { ok: true, stats, members });
+    }
     if (req.method !== "PUT") return L.send(res, 405, { error: "method_not_allowed" });
     if (!(await isAdmin(slug, user.id))) return L.send(res, 403, { error: "forbidden" });
     const current = await B.loadBrand(slug);

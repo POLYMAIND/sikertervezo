@@ -27,7 +27,9 @@ if (mock) {
   await p.waitForSelector(".toast"); const t = await p.textContent(".toast");
   if (!/Átküldve/.test(t)) errs.push("PolyOS-átküldés: " + t);
 }
-await p.goto(BASE + "/#beallitasok"); await p.click('[data-act="demoplan"][data-k="whitelabel"]'); await p.waitForSelector("#markaszerk");
+await p.goto(BASE + "/#beallitasok"); await p.click('[data-act="demoplan"][data-k="whitelabel"]'); await p.waitForTimeout(500);
+await p.goto(BASE + "/?wl=1#markam"); await p.waitForSelector("#markaszerk");
+await p.goto(BASE + "/?wl=1#beallitasok"); await p.waitForSelector('[data-act="demoplan"][data-k="ingyenes"]');
 await p.click('[data-act="demoplan"][data-k="ingyenes"]'); await p.waitForSelector("#view .head");
 await b.close();
 console.log(errs.length ? "HIBÁK:\n" + errs.join("\n") : `OK — minden nézet hibátlan${mock ? ", PolyOS-átküldés (mock) működik" : ""}`);

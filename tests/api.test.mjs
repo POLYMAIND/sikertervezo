@@ -225,3 +225,29 @@ test("Stripe webhook: csak érvényes, friss aláírás", () => {
   assert.equal(S.verify(raw, `t=${t - 3600},v1=${c.createHmac("sha256", "whsec_x").update((t - 3600) + "." + raw).digest("hex")}`, "whsec_x"), false);
   assert.equal(S.mapStatus("active"), "aktiv"); assert.equal(S.mapStatus("canceled"), "lemondva"); assert.equal(S.mapStatus("trialing"), "probaido");
 });
+
+test("Márkám névsor: nem márka-admin nem kérheti le, a hozzájárulás nélküliek névvel nem jelennek meg", async () => {
+  Object.assign(process.env, { SUPABASE_URL: "https://pelda.supabase.co", SUPABASE_ANON_KEY: "anon", SUPABASE_SERVICE_ROLE_KEY: "svc" });
+  const realFetch = globalThis.fetch; let isAdminRow = false;
+  globalThis.fetch = async (url) => {
+    const u = String(url);
+    if (u.endsWith("/auth/v1/user")) return new Response(JSON.stringify({ id: "p1", email: "partner@pelda.hu", email_confirmed_at: "2026-11-01" }));
+    if (u.includes("sikertervezo_brand_admins")) return new Response(JSON.stringify(isAdminRow ? [{ user_id: "p1" }] : []));
+    if (u.includes("sikertervezo_state")) return new Response(JSON.stringify([{ user_id: "a", updated_at: "2026-11-03T08:00:00Z" }, { user_id: "b", updated_at: "2026-11-02T08:00:00Z" }]));
+    if (u.includes("/auth/v1/admin/users")) return new Response(JSON.stringify({ users: [
+      { id: "a", email: "kata@pelda.hu", created_at: "2026-10-01", user_metadata: { full_name: "Minta Kata", brand_consent: { minta: { ok: true, at: "2026-10-01" } } } },
+      { id: "b", email: "eva@pelda.hu", created_at: "2026-10-02", user_metadata: { full_name: "Minta Éva" } },
+      { id: "c", email: "mas@pelda.hu", created_at: "2026-10-03", user_metadata: { brand_consent: { masik: { ok: true } } } } ] }));
+    return new Response("[]");
+  };
+  try {
+    fresh("../api/_lib.js"); fresh("../api/_brands.js"); const handler = fresh("../api/brand.js");
+    const call = async () => { const res = fakeRes(); await handler({ method: "POST", url: "/api/brand?brand=minta", headers: { authorization: "Bearer t" + Math.random() }, body: { action: "members" } }, res); return { status: res.statusCode, body: JSON.parse(res.body || "{}") }; };
+    assert.equal((await call()).status, 403);
+    isAdminRow = true;
+    const r = await call();
+    assert.equal(r.status, 200);
+    assert.deepEqual(r.body.members.map((m) => m.email), ["kata@pelda.hu"]);
+    assert.equal(r.body.stats.total, 2); assert.equal(r.body.stats.named, 1);
+  } finally { globalThis.fetch = realFetch; ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"].forEach((k) => delete process.env[k]); }
+});

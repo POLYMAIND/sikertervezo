@@ -233,6 +233,7 @@ function bindBoards(){
 
 /* ---------- nav ---------- */
 const VIEWS=[["ma","Vezérlőpult"],["naptar","Naptár"],["szokasok","Szokások"],["terkep","Gondolattérkép"],["olvasas","Olvasás"],["kapcsolatok","Kapcsolatok"],["ugyfelek","Ügyfelek"],["tartalom","Tartalom"],["csapat","Csapat"],["szamok","Számok"],["ertekelesek","Értékelések"],["matricak","Matricák"],["bovitesek","Bővítések"],["beallitasok","Beállítások"]];
+if(BR.plan==="whitelabel"&&(ctx.brandAdmin||ctx.mode!=="cloud"))VIEWS.push(["markam","Márkám"]);
 if(ctx.superadmin)VIEWS.push(["admin","Admin"]);
 let route="ma";
 let ui={calMonth:ym(TODAY),selDay:T,calMode:"honap",ccMonth:ym(TODAY),cTab:"naptar",kFilter:"all",pFilter:-1,sel:null,mq:{t:"",a:"",editId:null},mqdel:null,skip:[],hdel:null,mapId:null,mapSel:null,mk:{type:"pill",text:"Bemutató 18:00",color:0,editId:null},cdel:null};
@@ -258,6 +259,7 @@ const NICON={
   szamok:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',matricak:'<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
   bovitesek:'<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><path d="M16.5 13v7M13 16.5h7"/>',
   ertekelesek:'<path d="M5 4h11l3 3v13H5z"/><path d="M8.5 12.5l2 2 4-4.5M8.5 8h5"/>',
+  markam:'<path d="M4 10.5 12 4l8 6.5V20H4z"/><path d="M9.5 20v-5.5h5V20"/>',
   admin:'<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
   beallitasok:'<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>'
 };
@@ -330,7 +332,7 @@ function vMa(){
   const cont=S.content.filter(c=>c.date===T);
   const st=monthStats(ym(TODAY));
   const done=day(T).steps.filter(Boolean).length;
-  return installCard("ma")+head("Szia,",longDate(T),BR.founder.enabled&&S.settings.founder?'<button class="chip founderchip" data-act="cert" data-id="alapito" title="Alapító oklevél">Alapító tag</button>':"",(greetName()||"")+"!")+(()=>{const q=quoteOfDay();return `<p class="qday">„${esc(q.t)}”${q.a?` <span class="qday-a">${esc(q.a)}</span>`:""}</p>`})()+revBanner()+checklistCard()+nextCard()+`
+  return installCard("ma")+head("Szia,",longDate(T),BR.founder.enabled&&S.settings.founder?'<button class="chip founderchip" data-act="cert" data-id="alapito" title="Alapító oklevél">Alapító tag</button>':"",(greetName()||"")+"!")+(()=>{const q=quoteOfDay();return `<p class="qday">„${esc(q.t)}”${q.a?` <span class="qday-a">${esc(q.a)}</span>`:""}</p>`})()+consentCard()+revBanner()+checklistCard()+nextCard()+`
   <div class="grid herogrid">
   <div class="card hero page"><div class="row between" style="align-items:flex-start"><div class="stack" style="gap:4px;max-width:60ch">
     <div class="eyebrow">A mai napi lépéseid</div><div class="big">${done===5?"Mind az 5 megvan. Büszke lehetsz Magadra!":done?`${done} / 5 kész, így tovább!`:"Ma is közelebb kerülhetsz a céljaidhoz."}</div></div>
@@ -630,9 +632,9 @@ const firstName=n=>{const p=String(n||"").trim().split(/\s+/);return p.length>1?
 function fillTpl(k,v){return tpl(k).replace(/\{nev\}/g,v.nev||"").replace(/\{termek\}/g,v.termek||"a kedvenc termékeid").replace(/\{sajat\}/g,S.settings.name||"")}
 function openMsg(k,v,done){
   $("#layer").innerHTML=`<div class="modal" data-act="close"><div class="sheet" role="dialog" aria-label="Üzenet"><div class="row between"><div><div class="eyebrow">Üzenetvázlat</div><h2>${esc(TPL_DEFAULT[k][0])}${v.full?": "+esc(v.full):""}</h2></div><button type="button" class="iconbtn" data-act="close" aria-label="Bezárás">×</button></div>
-  ${PRO&&!DEMO?`<div class="grid g2"><label class="f">E-mail-cím${v.email?"":" (nincs megadva)"}<input type="email" id="msgto" value="${esc(v.email||"")}" placeholder="pelda@pelda.hu"></label><label class="f">Tárgy<input type="text" id="msgsubj" maxlength="150" value="${esc(TPL_DEFAULT[k][0])}"></label></div>`:""}
-  <label class="f">Igazítsd a saját szavaidra, aztán ${PRO&&!DEMO?"küldd el e-mailben, vagy ":""}másold be Messengerbe vagy SMS-be.<textarea id="msgtext" rows="6">${esc(fillTpl(k,v))}</textarea></label>
-  <div class="row between"><span class="muted" style="font-size:12px">A sablonokat a Beállításokban írhatod át.</span><span class="row">${PRO&&!DEMO?'<button class="btn" data-act="msgsend">Küldés e-mailben</button><button class="btn ghost" data-act="msgcopy">Másolás</button>':!PRO?'<button class="btn" data-act="msgcopy">Másolás</button><a class="chip" href="#kapcsolatok" title="E-mail küldése a Pro csomagban">E-mail: Pro</a>':'<button class="btn" data-act="msgcopy">Másolás</button>'}${done?`<button class="btn ghost" data-act="${done.act}" data-id="${done.id}">${esc(done.label)}</button>`:""}</span></div></div></div>`;
+  ${PRO&&!DEMO&&ctx.emailReady?`<div class="grid g2"><label class="f">E-mail-cím<input type="email" id="msgto" value="${esc(v.email||"")}" placeholder="pelda@pelda.hu"></label><label class="f">Tárgy<input type="text" id="msgsubj" maxlength="150" value="${esc(TPL_DEFAULT[k][0])}"></label></div>`:""}
+  <label class="f">Igazítsd a saját szavaidra, aztán ${PRO&&!DEMO&&ctx.emailReady?"küldd el e-mailben, vagy ":""}másold be Messengerbe vagy SMS-be.<textarea id="msgtext" rows="6">${esc(fillTpl(k,v))}</textarea></label>
+  <div class="row between"><span class="muted" style="font-size:12px">A sablonokat a Beállításokban írhatod át.</span><span class="row">${PRO&&!DEMO&&!ctx.emailReady?'<button class="btn" data-act="msgcopy">Másolás</button><span class="chip" title="Az e-mail-küldés bekapcsolása folyamatban">E-mail: hamarosan</span>':PRO&&!DEMO?'<button class="btn" data-act="msgsend">Küldés e-mailben</button><button class="btn ghost" data-act="msgcopy">Másolás</button>':!PRO?'<button class="btn" data-act="msgcopy">Másolás</button><a class="chip" href="#kapcsolatok" title="E-mail küldése a Pro csomagban">E-mail: Pro</a>':'<button class="btn" data-act="msgcopy">Másolás</button>'}${done?`<button class="btn ghost" data-act="${done.act}" data-id="${done.id}">${esc(done.label)}</button>`:""}</span></div></div></div>`;
 }
 
 /* ---------- következő lépés ---------- */
@@ -1097,8 +1099,7 @@ function brandCard(){
   const cols=TH.BG_COLORS.map(([n,c])=>`<button class="swatch" data-act="bgcol" data-c="${c}" aria-pressed="${bp.bgColor.toUpperCase()===c.toUpperCase()}" style="background:${c}" aria-label="${n}" title="${n}"></button>`).join("");
   let wl="";
   if(BR.plan==="whitelabel"&&(ctx.brandAdmin||DEMO)){
-    const d=ui.brand||(ui.brand=JSON.parse(JSON.stringify(ctx.brandRaw||{})));
-    wl=brandEditor(d,{id:"markaszerk",title:"Márka (white label)",badge:ctx.brandAdmin?"Te kezeled":"Bemutató",note:"Ez minden felhasználódnál megjelenik: név, logó, kiemelőszínek, betűk. A háttérmintát mindenki maga választja.",saveAct:"brandsave",resetAct:"brandreset",saveLabel:"Márka mentése"});
+        ui.brand=null;wl=`<div class="card stack"><h3 style="margin:0">A márkád</h3><p style="margin:0;font-size:13px">A márkád arculatát és a felhasználóidat a <b>Márkám</b> menüben kezeled.</p><a class="btn small" href="#markam" style="align-self:flex-start">Márkám megnyitása</a></div>`;
   }else if(BR.plan!=="whitelabel"&&BR.upsell){
     wl=`<div class="card stack lockcard"><div class="row between"><h3 style="margin:0">Saját márkával szeretnéd?</h3><span class="chip">Hamarosan</span></div><p style="margin:0;font-size:13px">A <b>white label</b> csomagban a tervező a te nevedet, logódat, színeidet és betűidet viseli, és így adhatod tovább a csapatodnak, ügyfeleidnek.</p><a class="btn small ghost" style="align-self:flex-start" href="${esc(PX.upsellUrl("whitelabel",BR.slug))}" target="_blank" rel="noopener">Érdekel a white label</a></div>`;
   }
@@ -1108,7 +1109,7 @@ function accountCard(){
   if(DEMO)return `<div class="card stack"><h3>Bemutató mód</h3><p class="muted" style="margin:0">Most belépés nélkül, mintaadatokkal próbálod a tervezőt: amit beírsz, csak ebben a böngészőben marad meg. Fiókkal minden eszközödön ugyanazt látod.</p>
   <div class="row">${ctx.cloud?'<button class="btn" data-act="signup">Regisztrálok és elkezdem</button>':""}<span id="resetrow" class="row"><button class="btn ghost" data-act="resetask">Mintaadatok visszaállítása</button></span></div>
 </div>`;
-  return `<div class="card stack"><h3>Fiók</h3><div class="row between"><div><b>${esc((ctx.user&&ctx.user.email)||"")}</b><div class="muted" style="font-size:12.5px">A terved a fiókodhoz van mentve, minden eszközödön ugyanaz.</div></div><span class="row"><button class="btn ghost small" data-act="export">Adataim letöltése</button><button class="btn ghost small" data-act="logout">Kijelentkezés</button></span></div></div>`;
+  return `<div class="card stack"><h3>Fiók</h3><div class="row between"><div><b>${esc((ctx.user&&ctx.user.email)||"")}</b><div class="muted" style="font-size:12.5px">A terved a fiókodhoz van mentve, minden eszközödön ugyanaz.</div>${consentRow()}</div><span class="row"><button class="btn ghost small" data-act="export">Adataim letöltése</button><button class="btn ghost small" data-act="logout">Kijelentkezés</button></span></div></div>`;
 }
 
 /* ---------- bemutató mód: regisztrációs felhívás minden oldal tetején ---------- */
@@ -1631,8 +1632,45 @@ function mzApply(){
   if(route!=="terkep")location.hash="terkep";else render();
   toast(z.rerun?"Elkészült az új változat. A régit a fülek között találod, így látszik, mi változott.":"Kész a térképed. Húzd az ágakat, ahová szeretnéd, és bővítsd bátran.");
 }
+/* ---------- Márkám (white label partner: a saját márkája, a saját felhasználói) ---------- */
+const MARKAM=BR.plan==="whitelabel"&&(ctx.brandAdmin||DEMO);
+function inviteUrl(){return location.origin+"/?"+(BR.slug&&BR.slug!=="alap"?"brand="+encodeURIComponent(BR.slug)+"&":"")+"regisztracio"}
+const DEMO_MEMBERS=[["Minta Kata","kata@pelda.hu",-40,0],["Minta Éva","eva@pelda.hu",-21,-1],["Minta Zsófi","zsofi@pelda.hu",-9,-6],["Minta Réka","reka@pelda.hu",-3,-3]];
+function vMarkam(){
+  activeBoard=null;
+  if(!MARKAM)return head("Márkám","Nincs hozzáférés")+'<div class="card empty">Ez az oldal a white label márka gazdájának érhető el.</div>';
+  const tab=ui.mkTab||"arculat";
+  const tabs=`<div class="tabs">${[["arculat","Arculat"],["felhasznalok","Felhasználóim"]].map(([k,l])=>`<button data-act="mktab" data-k="${k}" aria-pressed="${tab===k}">${l}</button>`).join("")}</div>`;
+  let body="";
+  if(tab==="arculat"){
+    const d=ui.brand||(ui.brand=JSON.parse(JSON.stringify(ctx.brandRaw||{})));ui.brandFor="brand";
+    body=brandEditor(d,{id:"markaszerk",title:"A márkád arculata",badge:DEMO?"Bemutató":"Te kezeled",note:"Ez minden felhasználódnál megjelenik: név, logó, kiemelőszínek, betűk, alapító program, saját idézetek. A háttérmintát mindenki maga választja.",saveAct:"brandsave",resetAct:"brandreset",saveLabel:"Mentés minden felhasználómnak"})
+      +`<div class="card lockcard"><b>Hamarosan:</b> design system feltöltése (zip): a színeket, betűket, logókat és matricákat automatikusan behúzza.</div>`;
+  }else{
+    const m=ui.members;
+    if(DEMO&&!m)ui.members={stats:{total:6,active7:4,named:4},members:DEMO_MEMBERS.map(([n,e,c,a])=>({name:n,email:e,created_at:iso(addDays(TODAY,c)),last_active:iso(addDays(TODAY,a)),consent_at:iso(addDays(TODAY,c))}))};
+    const mm=ui.members;
+    if(!mm){if(!ui.membersLoading){ui.membersLoading=true;ctx.brandMembers().then(r=>{ui.members=r;ui.membersLoading=false;render()},()=>{ui.members={err:1};ui.membersLoading=false;render()})}body='<div class="card"><div class="spinner" role="status" aria-label="Betöltés"></div></div>'}
+    else if(mm.err)body='<div class="card"><p style="margin:0">Most nem sikerült betölteni. Próbáld újra később.</p></div>';
+    else body=`<div class="grid g3">${[["Felhasználó",mm.stats.total],["Aktív az elmúlt 7 napban",mm.stats.active7],["Hozzájárult a névsorhoz",mm.stats.named]].map(([l,v])=>`<div class="card kpi"><div class="v num">${v}</div><div class="l">${l}</div></div>`).join("")}</div>
+      <div class="card stack" style="gap:10px"><h3 style="margin:0">Meghívó link</h3><p class="muted" style="margin:0;font-size:12.5px">Ezzel a linkkel a csapatod és az ügyfeleid a te arculatoddal regisztrálnak, és a te felhasználóid közé kerülnek.</p><div class="row" style="flex-wrap:nowrap;gap:8px"><input type="text" readonly value="${esc(inviteUrl())}" id="inv-url" onfocus="this.select()"><button class="btn small" data-act="invcopy">Másolás</button></div></div>
+      <div class="card"><div class="row between" style="margin-bottom:8px"><h3 style="margin:0">Névsor</h3><span class="muted" style="font-size:12px">Csak azok, akik hozzájárultak · a tervük tartalmát nem látod</span></div>
+      <div class="tablewrap"><table><thead><tr><th>Név</th><th>E-mail</th><th>Regisztrált</th><th>Utoljára aktív</th></tr></thead><tbody>${mm.members.map(u=>`<tr><td><strong>${esc(u.name||"–")}</strong></td><td>${esc(u.email)}</td><td class="num">${fmtDate(String(u.created_at).slice(0,10))}</td><td class="num">${u.last_active?fmtDate(String(u.last_active).slice(0,10)):"–"}</td></tr>`).join("")||'<tr><td colspan="4" class="empty">Még senki nem járult hozzá, hogy a névsorban látszódjon.</td></tr>'}</tbody></table></div>
+      ${mm.stats.total>mm.stats.named?`<p class="muted" style="margin:8px 0 0;font-size:12px">További ${mm.stats.total-mm.stats.named} felhasználó nem járult hozzá, ők csak a létszámban szerepelnek.</p>`:""}</div>`;
+  }
+  return head("Márkám",esc(BR.productName))+tabs+body;
+}
+/* hozzájárulás: a white label márka gazdája lássa-e a nevet, e-mailt, regisztrációt, utolsó aktivitást */
+function consentCard(){
+  if(DEMO||BR.plan!=="whitelabel"||!ctx.brandConsent||ctx.brandConsent())return "";
+  return `<div class="card revbanner"><span class="ic" aria-hidden="true">🤝</span><div class="grow"><span class="t">Láthatja ${esc(BR.ownerName||BR.productName)} a neved a felhasználói között?</span><span class="s">Csak a nevedet, e-mail-címedet, a regisztrációd és az utolsó aktivitásod dátumát. A terved tartalmát nem látja. Bármikor visszavonhatod a Beállításokban.</span></div><div class="row" style="gap:8px"><button class="btn small" data-act="consent" data-k="1">Hozzájárulok</button><button class="btn small ghost" data-act="consent" data-k="0">Nem</button></div></div>`;
+}
+function consentRow(){
+  if(DEMO||BR.plan!=="whitelabel"||!ctx.brandConsent)return "";const c=ctx.brandConsent();
+  return `<div class="row between" style="margin-top:6px"><span style="font-size:13px">${esc(BR.ownerName||BR.productName)} ${c&&c.ok?"<b>látja</b>":"<b>nem látja</b>"} a nevedet és e-mail-címedet a felhasználói között.</span><button class="chip" data-act="consent" data-k="${c&&c.ok?0:1}">${c&&c.ok?"Visszavonom":"Hozzájárulok"}</button></div>`;
+}
 /* ---------- render ---------- */
-const RENDER={ma:vMa,admin:vAdmin,ertekelesek:vErtekelesek,bovitesek:vBovitesek,olvasas:vOlvasas,szokasok:vSzokasok,terkep:vTerkep,matricak:vMatricak,naptar:vNaptar,kapcsolatok:vKapcsolatok,ugyfelek:vUgyfelek,tartalom:vTartalom,csapat:vCsapat,szamok:vSzamok,beallitasok:vBeall};
+const RENDER={ma:vMa,markam:vMarkam,admin:vAdmin,ertekelesek:vErtekelesek,bovitesek:vBovitesek,olvasas:vOlvasas,szokasok:vSzokasok,terkep:vTerkep,matricak:vMatricak,naptar:vNaptar,kapcsolatok:vKapcsolatok,ugyfelek:vUgyfelek,tartalom:vTartalom,csapat:vCsapat,szamok:vSzamok,beallitasok:vBeall};
 function render(){
   const y=window.scrollY;
   $("#view").innerHTML=demoCta()+(!PRO&&PRO_VIEWS.includes(route)?vPro(route):RENDER[route]()+upStrip(route));
@@ -1652,7 +1690,7 @@ document.addEventListener("click",e=>{
   const find=(coll)=>S[coll].find(x=>x.id===id);
   switch(a){
     case"step":{const dd=day(b.dataset.day);const was=dd.steps.filter(Boolean).length;dd.steps[+b.dataset.i]=!dd.steps[+b.dataset.i];save();render();if(was<5&&dd.steps.filter(Boolean).length===5)crownPop();break}
-    case"msg":{const ty=b.dataset.type;let v={},done=null;
+    case"msg":{const ty=b.dataset.type;let v={},done=null;ui.msgRef={type:ty,id};
       if(ty==="contact"){const c=find("contacts");v={nev:firstName(c.name),full:c.name,email:c.email||""};done={act:"cdone",id:c.id,label:"Megvolt"}}
       else if(ty==="client"){const c=find("clients");v={nev:firstName(c.name),full:c.name,termek:c.fav,email:c.email||(/@/.test(c.phone||"")?(c.phone.match(/[^\s,;]+@[^\s,;]+/)||[""])[0]:"")}}
       else{const t=find("team");v={nev:firstName(t.name),full:t.name};done={act:"talk",id:t.id,label:"Ma beszéltünk"}}
@@ -1819,6 +1857,7 @@ document.addEventListener("click",e=>{
     case"impdel":ui.impDel=null;ctx.calendar("import.remove",{id}).then(()=>{ui.imports=null;ui.ext=null;toast("Naptár leválasztva.");render()},()=>toast("Nem sikerült. Próbáld újra."));break;
     case"msgsend":{const to=($("#msgto").value||"").trim(),subj=($("#msgsubj").value||"").trim(),txt=$("#msgtext").value;
       if(!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(to)){toast("Adj meg egy érvényes e-mail-címet.");break}
+      if(ui.msgRef){const coll={contact:"contacts",client:"clients"}[ui.msgRef.type];const rec=coll&&S[coll].find(x=>x.id===ui.msgRef.id);if(rec&&rec.email!==to){rec.email=to;save()}}
       b.disabled=true;b.textContent="Küldöm…";
       ctx.email({to,subject:subj||"Üzenet",text:txt,senderName:S.settings.name||"",kind:"msg"}).then(()=>{toast("Elküldve. A válasz a te e-mail-címedre érkezik.");closeForm()},e=>{b.disabled=false;b.textContent="Küldés e-mailben";toast({not_configured:"Az e-mail-küldés hamarosan indul. Addig másold ki az üzenetet.",daily_limit:"Ma már elérted a napi 50 e-mailt.",pro_required:"Az e-mail-küldés Pro funkció.",not_confirmed:"Előbb erősítsd meg az e-mail-címed."}[e.message]||"Nem sikerült elküldeni. Próbáld újra.")});break}
     case"buypro":b.disabled=true;ctx.billing("checkout").then(r=>{location.href=r.url},()=>{b.disabled=false;toast("Most nem sikerült elindítani a fizetést. Próbáld újra.")});break;
@@ -1839,6 +1878,9 @@ document.addEventListener("click",e=>{
     case"mzaddb":{ui.mz.tree.branches.push({k:"x"+uid(),t:"Új főág",leaves:[]});mzRender();const all=document.querySelectorAll("#mapquiz .mz-bt");const last=all[all.length-1];if(last){last.focus();last.select()}break}
     case"mzsplit":{const br=ui.mz.tree.branches[+b.dataset.i],j=+b.dataset.j,l=br.leaves[j];br.leaves.splice(j,1,...mzSplitParts(l.t).map(t=>({t,open:l.open})));mzRender();break}
     case"mzapply":mzApply();break;
+    case"mktab":ui.mkTab=b.dataset.k;if(b.dataset.k!=="arculat"&&ui.brand){ui.brand=null;ui.brandFor=null;repaint()}render();break;
+    case"invcopy":{const v=($("#inv-url")||{}).value||"";try{navigator.clipboard.writeText(v).then(()=>toast("Kimásolva."),()=>toast("Jelöld ki és másold ki a linket."))}catch(err){toast("Jelöld ki és másold ki a linket.")}break}
+    case"consent":ctx.setBrandConsent(b.dataset.k==="1").then(()=>{toast(b.dataset.k==="1"?"Köszönjük!":"Rendben, nem látszol a névsorban.");render()},()=>toast("Nem sikerült menteni. Próbáld újra."));break;
     case"more":openMore();break;
     case"install":ctx.install.prompt().then(ok=>{if(ok)toast("Telepítve. Mostantól a kezdőképernyőről indíthatod.");render()});break;
     case"installhide":S.prefs=S.prefs||{};S.prefs.installHide=true;save();render();break;
