@@ -54,7 +54,7 @@ function sample(){
       orders.push({id:uid(),date:iso(dt),client:names[i%names.length],items:["Arcápoló szett","Parfüm","Smink csomag","Vitamin","Testápoló"][i%5],amount:6000+Math.round(Math.random()*24)*1000,paid:m>0||Math.random()<.6});}
   }
   return {
-    v:1,
+    v:1,seed:2,
     settings:{name:"Anna",cur:"Ft",steps:["Poszt","Sztori","Új kapcsolat","Utánkövetés",FEAT("csapat")?"Csapat":"Tanulás"]},
     days,
     contacts:[
@@ -98,6 +98,9 @@ function sample(){
 
 /* ---------- storage ---------- */
 let S=ctx.state&&ctx.state.v?ctx.state:(DEMO?sample():blank());
+// bemutató: ha a böngészőben egy régebbi mintaadat-készlet van elmentve, az újra cseréljük (a mintaadatok változtak)
+const DEMO_SEED=2;
+if(DEMO&&(S.seed||0)<DEMO_SEED){S=sample();S.unlocked={};S.maps=[sampleMap()];setTimeout(save,0)}
 function save(){return ST.store.save(S)}
 function migrate(){
   if(!S.custom)S.custom=[];
