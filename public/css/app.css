@@ -515,10 +515,12 @@ button,a,.tab{touch-action:manipulation}
   body::before{display:none}
   .side .nav,.side .foot{display:none}
   .brandrow{flex:none}
-  .brandrow .brand{display:none}
+  .brandrow{min-width:0;flex:1}
+  .brandrow .brand{display:block;font-size:20px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .brandrow .brand small{display:none}
   .logo{height:34px}
   img.logo{max-width:120px;object-fit:contain}
-  .mtitle{display:block;flex:1;min-width:0;font-family:var(--f-display);font-weight:var(--fw-display);font-size:19px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mtitle{display:none;flex:1;min-width:0;font-family:var(--f-display);font-weight:var(--fw-display);font-size:19px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
   /* alsó menüsor */
   .tabbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:40;
