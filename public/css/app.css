@@ -684,3 +684,22 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:4px 0;width:100%}
 .mapcanvas{will-change:transform}
 .extstatus{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .extstatus .chip{font-weight:500;gap:6px}
+
+/* asztali oldalsáv: alacsony ablakban se lógjon ki semmi (görgethető, és tömörebb a fejléc) */
+@media (min-width:861px){
+  .side{overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--side-ink) 25%,transparent) transparent}
+  .side .foot{padding-bottom:4px}
+}
+@media (min-width:861px) and (max-height:860px){
+  .side{padding-block:18px;gap:14px}
+  .logo{height:72px}
+  .brandrow{gap:8px;padding-bottom:14px}
+  .brand{font-size:24px}
+  .brand small{margin-top:6px}
+  .nav a{padding-block:7px}
+}
+@media (min-width:861px) and (max-height:700px){
+  .logo{height:52px}
+  .brand small{display:none}
+  .nav a{padding-block:5px}
+}
