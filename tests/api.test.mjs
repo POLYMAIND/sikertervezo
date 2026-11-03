@@ -197,3 +197,31 @@ test("csomag: Pro csak aktív / ajándék / érvényes próbaidő esetén", () =
   assert.equal(subActive({ plan: "ingyenes", status: "aktiv" }, T), false);
   assert.equal(subActive(null, T), false);
 });
+
+test("külső naptár: ismétlődés, kivétel, egész napos, időzóna", () => {
+  const P = require("../api/_icsparse.js");
+  const ics = ["BEGIN:VCALENDAR", "BEGIN:VEVENT", "UID:a", "DTSTART;TZID=Europe/Budapest:20261102T090000", "DTEND;TZID=Europe/Budapest:20261102T100000", "RRULE:FREQ=WEEKLY;BYDAY=MO,WE;COUNT=4", "EXDATE;TZID=Europe/Budapest:20261104T090000", "SUMMARY:Hívás", "END:VEVENT",
+    "BEGIN:VEVENT", "UID:b", "DTSTART:20261105T130000Z", "DTEND:20261105T140000Z", "SUMMARY:Ügyfél\\, Kata", "END:VEVENT",
+    "BEGIN:VEVENT", "UID:c", "DTSTART;VALUE=DATE:20261110", "DTEND;VALUE=DATE:20261111", "SUMMARY:Szabadnap", "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+  const ev = P.eventsInRange(ics, "2026-11-01", "2026-11-30");
+  assert.deepEqual(ev.filter((e) => e.title === "Hívás").map((e) => e.date), ["2026-11-02", "2026-11-09", "2026-11-11"]);
+  assert.equal(ev.find((e) => e.title === "Ügyfél, Kata").start, "14:00"); // 13:00 UTC = 14:00 Budapest (téli idő)
+  assert.equal(ev.find((e) => e.title === "Szabadnap").allDay, true);
+});
+test("külső naptár: csak https, nincs belső hálózat (SSRF)", () => {
+  const P = require("../api/_icsparse.js");
+  assert.equal(P.normalizeUrl("webcal://pelda.hu/a.ics"), "https://pelda.hu/a.ics");
+  assert.equal(P.normalizeUrl("http://pelda.hu/a.ics"), null);
+  assert.equal(P.normalizeUrl("https://user:pw@pelda.hu/a.ics"), null);
+  assert.equal(P.normalizeUrl("https://pelda.hu:8443/a.ics"), null);
+  ["127.0.0.1", "10.0.0.5", "192.168.1.1", "172.20.0.1", "169.254.169.254", "::1", "fd00::1"].forEach((ip) => assert.equal(P.privateIp(ip), true, ip));
+  assert.equal(P.privateIp("142.250.1.1"), false);
+});
+test("Stripe webhook: csak érvényes, friss aláírás", () => {
+  const S = require("../api/_stripe.js"); const c = require("node:crypto");
+  const raw = '{"id":"evt"}', t = Math.floor(Date.now() / 1000), sig = c.createHmac("sha256", "whsec_x").update(t + "." + raw).digest("hex");
+  assert.equal(S.verify(raw, `t=${t},v1=${sig}`, "whsec_x"), true);
+  assert.equal(S.verify(raw + " ", `t=${t},v1=${sig}`, "whsec_x"), false);
+  assert.equal(S.verify(raw, `t=${t - 3600},v1=${c.createHmac("sha256", "whsec_x").update((t - 3600) + "." + raw).digest("hex")}`, "whsec_x"), false);
+  assert.equal(S.mapStatus("active"), "aktiv"); assert.equal(S.mapStatus("canceled"), "lemondva"); assert.equal(S.mapStatus("trialing"), "probaido");
+});

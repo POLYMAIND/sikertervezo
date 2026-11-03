@@ -3,11 +3,11 @@
 const L = require("./_lib");
 const P = require("./_polyos");
 
-const TABLES = ["sikertervezo_brands", "sikertervezo_brand_admins", "sikertervezo_state", "sikertervezo_polyos_links", "sikertervezo_polyos_nonces", "sikertervezo_subscriptions", "sikertervezo_audit", "sikertervezo_superadmins", "sikertervezo_platform", "sikertervezo_ical_feeds"];
+const TABLES = ["sikertervezo_brands", "sikertervezo_brand_admins", "sikertervezo_state", "sikertervezo_polyos_links", "sikertervezo_polyos_nonces", "sikertervezo_subscriptions", "sikertervezo_audit", "sikertervezo_superadmins", "sikertervezo_platform", "sikertervezo_ical_feeds", "sikertervezo_cal_imports"];
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") return L.send(res, 405, { error: "method_not_allowed" });
-  const out = { ok: true, supabase: L.supabaseReady(), service: L.serviceReady(), app_url: !!L.env("APP_URL"), polyos: P.enabled(), superadmin_configured: !!L.env("SUPERADMIN_EMAILS"), tables: {} };
+  const out = { ok: true, supabase: L.supabaseReady(), service: L.serviceReady(), app_url: !!L.env("APP_URL"), polyos: P.enabled(), superadmin_configured: !!L.env("SUPERADMIN_EMAILS"), link_enc_key: !!L.env("LINK_ENC_KEY"), email: !!(L.env("RESEND_API_KEY") && L.env("EMAIL_FROM")), stripe: !!(L.env("STRIPE_SECRET_KEY") && L.env("STRIPE_PRICE_ID") && L.env("STRIPE_WEBHOOK_SECRET")), tables: {} };
   if (L.serviceReady()) {
     await Promise.all(TABLES.map(async (t) => {
       try { await L.sb(`${t}?select=*&limit=0`); out.tables[t] = true; } catch (e) { out.tables[t] = false; }

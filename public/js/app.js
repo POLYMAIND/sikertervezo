@@ -322,6 +322,7 @@ function proBlock(dc,rc,bd,cont,st){return `  <div class="grid g4">
   </div>
 `}
 function vMa(){
+  extLoad();
   activeBoard="ma-"+T;
   const dc=S.contacts.filter(c=>c.nextDate&&c.nextDate<=T).sort((a,b)=>a.nextDate.localeCompare(b.nextDate));
   const rc=S.clients.filter(c=>reorderDue(c)<=3).sort((a,b)=>reorderDue(a)-reorderDue(b));
@@ -338,7 +339,7 @@ function vMa(){
   ${pointsCard()}</div>
   ${bpStrip()}
   ${PRO?proBlock(dc,rc,bd,cont,st):proTeaser()}
-  <div class="grid g2"><div class="card"><div class="row between" style="margin-bottom:6px"><h3 style="margin:0">Mai beosztás</h3><button class="btn ghost small" data-act="opennap" data-k="${T}">Napi nézet</button></div><div class="list">${hoursOf(T).map(([h,v])=>{const loc=locOf(T,h);return `<div class="li"><span class="num tm ${+h===new Date().getHours()?"now":""}">${pad(h)}:00</span><div class="grow"><div class="t">${esc(v)}</div>${loc?`<div class="s">${esc(loc)}</div>`:""}</div>${apptLinks(T,h,v,loc)}</div>`}).join("")||'<div class="empty">Mára nincs beírt időpont.</div>'}</div></div>
+  <div class="grid g2"><div class="card"><div class="row between" style="margin-bottom:6px"><h3 style="margin:0">Mai beosztás</h3><button class="btn ghost small" data-act="opennap" data-k="${T}">Napi nézet</button></div><div class="list">${[...hoursOf(T).map(([h,v])=>({t:pad(h)+":00",own:[h,v]})),...extOf(T).map(e=>({t:e.allDay?"00:00":e.start,ext:e}))].sort((a,b)=>a.t.localeCompare(b.t)).map(x=>{if(x.ext){const e=x.ext;return `<div class="li"><span class="num tm">${e.allDay?"egész nap":e.start}</span><div class="grow"><div class="t">${esc(e.title)}</div><div class="s"><span class="dot" style="background:${esc(e.color)};width:8px;height:8px"></span> ${esc(e.calName)}${e.location?" · "+esc(e.location):""}</div></div></div>`}const[h,v]=x.own,loc=locOf(T,h);return `<div class="li"><span class="num tm ${+h===new Date().getHours()?"now":""}">${pad(h)}:00</span><div class="grow"><div class="t">${esc(v)}</div>${loc?`<div class="s">${esc(loc)}</div>`:""}</div>${apptLinks(T,h,v,loc)}</div>`}).join("")||'<div class="empty">Mára nincs beírt időpont.</div>'}</div></div>
   <div class="card"><h3>Mai teendők</h3>${tasksHTML(T)}</div></div>
   <div class="grid g2">${habitsToday()}${closeHTML(T,true)}</div>`;
 }
@@ -362,6 +363,7 @@ function dayPanels(sel){
   </div>`;
 }
 function vNaptar(){
+  extLoad();
   const mode=ui.calMode;
   const ctrls=`<button class="btn small" data-act="qadd">+ Gyors hozzáadás</button><div class="tabs">${MODES.map(([k,l])=>`<button data-act="calmode" data-k="${k}" aria-pressed="${mode===k}">${l}</button>`).join("")}</div><span class="row" style="gap:6px"><button class="iconbtn" data-act="calnav" data-d="-1" aria-label="Előző">‹</button><button class="btn ghost small" data-act="caltoday">Ma</button><button class="iconbtn" data-act="calnav" data-d="1" aria-label="Következő">›</button></span>`;
   let title,body;
@@ -379,7 +381,7 @@ function vNaptar(){
       cells+=`<button class="day ${d.getMonth()!==M-1?"out":""} ${k===T?"today":""} ${sc===5?"gold":""}" data-act="opennap" data-k="${k}" ${sc===5?'title="Arany nap: mind az 5 lépés megvolt"':""}>
         <span class="n num">${d.getDate()}</span>${(()=>{const pm=periodMark(k);return pm?`<span class="pmark ${pm}">${pm==="start"?"Kezdet":"Zárás"}</span>`:""})()}${sc===5?`<span class="goldmark" aria-hidden="true">${TH.svg(ICONS.crown).replace(/width="\d+" height="\d+"/,'width="18" height="16"')}</span>`:""}
         <span class="marks">${cs.map(c=>`<span class="dot" style="background:var(--p${c.pillar+1})" title="${esc(c.title)}"></span>`).join("")}</span>
-        ${hrs.length?`<span class="mini"><b>${pad(hrs[0][0])}:00</b> ${esc(hrs[0][1])}</span>`:""}${hrs.length>1?`<span class="mini">+${hrs.length-1} időpont</span>`:""}${tk&&hrs.length<2?`<span class="mini">${tk} teendő</span>`:""}
+        ${hrs.length?`<span class="mini"><b>${pad(hrs[0][0])}:00</b> ${esc(hrs[0][1])}</span>`:""}${hrs.length>1?`<span class="mini">+${hrs.length-1} időpont</span>`:""}${tk&&hrs.length<2?`<span class="mini">${tk} teendő</span>`:""}${extOf(k).slice(0,2).map(e=>`<span class="mini extmini" style="--c:${esc(e.color)}">${e.allDay?"":`<b>${e.start}</b> `}${esc(e.title)}</span>`).join("")}${extOf(k).length>2?`<span class="mini">+${extOf(k).length-2} más naptárból</span>`:""}
         <span class="meter"><i style="width:${sc*20}%"></i></span></button>`;
       if(i===34&&addDays(start,35).getMonth()!==M-1)break;
     }
@@ -390,6 +392,7 @@ function vNaptar(){
       return `<div class="wcol ${k===T?"today":""}">
         <button class="whead" data-act="opennap" data-k="${k}"><span class="wd2">${WD[i]}</span><span class="wn">${d.getDate()}</span></button>${(()=>{const pm=periodMark(k);return pm?`<span class="pmark ${pm}" style="align-self:flex-start">${pm==="start"?"Periódus kezdete":"Periódus zárása"}</span>`:""})()}
         <div class="meter" title="Napi lépések: ${sc}/5"><i style="width:${sc*20}%"></i></div>
+        ${extOf(k).map(e=>`<div class="wappt extappt" style="--c:${esc(e.color)}"><span class="num">${e.allDay?"Egész nap":e.start}</span>${esc(e.title)}<span class="extsrc">${esc(e.calName)}</span></div>`).join("")}
         ${hrs.map(([h,v])=>{const loc=locOf(k,h);return `<div class="wappt"><span class="num">${pad(h)}:00</span>${esc(v)}${loc?`<a class="wloc" href="${mapURL(loc)}" target="_blank" rel="noopener">${esc(loc)}</a>`:""}</div>`}).join("")}
         ${cs.map(c=>`<div class="wcont"><span class="dot" style="background:var(--p${c.pillar+1})"></span><span>${c.format}: ${esc(c.title)}</span></div>`).join("")}
         ${(dd.tasks||[]).map(t=>`<div class="wtask ${t.done?"done":""}"><button class="cbx" data-act="task" data-day="${k}" data-id="${t.id}" aria-pressed="${t.done}" aria-label="Kész">${t.done?"✓":""}</button><span class="t">${esc(t.t)}</span></div>`).join("")}
@@ -400,7 +403,7 @@ function vNaptar(){
     const sel=ui.selDay,dd=day(sel);activeBoard="nap-"+sel;title=longDate(sel);
     const nowH=new Date().getHours();
     const hoursHTML=HOURS.map(h=>{const v=(dd.hours||{})[h]||"",loc=locOf(sel,h);return `<div class="hr ${sel===T&&h===nowH?"now":""}"><label class="hh num" for="hr-${sel}-${h}">${pad(h)}:00</label><input type="text" id="hr-${sel}-${h}" data-hour="${h}" data-day="${sel}" value="${esc(v)}" aria-label="${pad(h)}:00 időpont"><input type="text" class="locin" id="loc-${sel}-${h}" data-loc="${h}" data-day="${sel}" value="${esc(loc)}" aria-label="${pad(h)}:00 helyszín" placeholder="${v?"Helyszín":""}"><span class="hacts" id="hacts-${sel}-${h}">${v?apptLinks(sel,h,v,loc):""}</span></div>`}).join("");
-    body=`<div class="card page daypage"><div class="row between dp-top"><div class="row" style="gap:10px"><div class="eyebrow">Időbeosztás</div>${pointsChip(sel)}</div><button class="btn gold small" data-act="tray">Matrica a lapra</button></div><div class="dp-cols"><div><div class="hours">${hoursHTML}</div><p class="muted" style="font-size:12px;margin:10px 0 0">Írd be az időpontot, mellé a helyszínt: azonnal a tervezőbe mentődik. A Térkép a Google Térképet nyitja meg. A Google Naptárral és a telefonod naptárával a <a href="#beallitasok" data-act="tosync">Beállítások → Naptár-szinkron</a> alatt kötheted össze.</p></div>${dayPanels(sel)}</div>${board(activeBoard)}</div>`;
+    body=`<div class="card page daypage"><div class="row between dp-top"><div class="row" style="gap:10px"><div class="eyebrow">Időbeosztás</div>${pointsChip(sel)}</div><button class="btn gold small" data-act="tray">Matrica a lapra</button></div><div class="dp-cols"><div>${extOf(sel).length?`<div class="extlist"><div class="eyebrow" style="margin-bottom:6px">Más naptárakból</div>${extOf(sel).map(e=>`<div class="li"><span class="dot" style="background:${esc(e.color)}"></span><span class="num tm">${extLabel(e)}</span><div class="grow"><div class="t">${esc(e.title)}</div><div class="s">${esc(e.calName)}${e.location?" · "+esc(e.location):""}</div></div></div>`).join("")}</div>`:""}<div class="hours">${hoursHTML}</div><p class="muted" style="font-size:12px;margin:10px 0 0">Írd be az időpontot, mellé a helyszínt: azonnal a tervezőbe mentődik. A Térkép a Google Térképet nyitja meg. A Google Naptárral és a telefonod naptárával a <a href="#beallitasok" data-act="tosync">Beállítások → Naptár-szinkron</a> alatt kötheted össze.</p></div>${dayPanels(sel)}</div>${board(activeBoard)}</div>`;
   }
   return head(title,mode==="nap"?"Napi nézet":mode==="het"?"Heti nézet":"Havi nézet",ctrls)+body;
 }
@@ -627,8 +630,9 @@ const firstName=n=>{const p=String(n||"").trim().split(/\s+/);return p.length>1?
 function fillTpl(k,v){return tpl(k).replace(/\{nev\}/g,v.nev||"").replace(/\{termek\}/g,v.termek||"a kedvenc termékeid").replace(/\{sajat\}/g,S.settings.name||"")}
 function openMsg(k,v,done){
   $("#layer").innerHTML=`<div class="modal" data-act="close"><div class="sheet" role="dialog" aria-label="Üzenet"><div class="row between"><div><div class="eyebrow">Üzenetvázlat</div><h2>${esc(TPL_DEFAULT[k][0])}${v.full?": "+esc(v.full):""}</h2></div><button type="button" class="iconbtn" data-act="close" aria-label="Bezárás">×</button></div>
-  <label class="f">Igazítsd a saját szavaidra, aztán másold be Messengerbe vagy SMS-be.<textarea id="msgtext" rows="6">${esc(fillTpl(k,v))}</textarea></label>
-  <div class="row between"><span class="muted" style="font-size:12px">A sablonokat a Beállításokban írhatod át.</span><span class="row"><button class="btn" data-act="msgcopy">Másolás</button>${done?`<button class="btn ghost" data-act="${done.act}" data-id="${done.id}">${esc(done.label)}</button>`:""}</span></div></div></div>`;
+  ${PRO&&!DEMO?`<div class="grid g2"><label class="f">E-mail-cím${v.email?"":" (nincs megadva)"}<input type="email" id="msgto" value="${esc(v.email||"")}" placeholder="pelda@pelda.hu"></label><label class="f">Tárgy<input type="text" id="msgsubj" maxlength="150" value="${esc(TPL_DEFAULT[k][0])}"></label></div>`:""}
+  <label class="f">Igazítsd a saját szavaidra, aztán ${PRO&&!DEMO?"küldd el e-mailben, vagy ":""}másold be Messengerbe vagy SMS-be.<textarea id="msgtext" rows="6">${esc(fillTpl(k,v))}</textarea></label>
+  <div class="row between"><span class="muted" style="font-size:12px">A sablonokat a Beállításokban írhatod át.</span><span class="row">${PRO&&!DEMO?'<button class="btn" data-act="msgsend">Küldés e-mailben</button><button class="btn ghost" data-act="msgcopy">Másolás</button>':!PRO?'<button class="btn" data-act="msgcopy">Másolás</button><a class="chip" href="#kapcsolatok" title="E-mail küldése a Pro csomagban">E-mail: Pro</a>':'<button class="btn" data-act="msgcopy">Másolás</button>'}${done?`<button class="btn ghost" data-act="${done.act}" data-id="${done.id}">${esc(done.label)}</button>`:""}</span></div></div></div>`;
 }
 
 /* ---------- következő lépés ---------- */
@@ -637,11 +641,11 @@ function suggestions(){
   S.contacts.filter(c=>c.nextDate&&c.nextDate<=T).sort((a,b)=>a.nextDate.localeCompare(b.nextDate)).forEach(c=>{
     const late=-diff(c.nextDate);
     out.push({id:"c"+c.id,eyebrow:"Utánkövetés",title:`Keresd meg ${c.name} kapcsolatodat.`,sub:`${c.next||"Következő lépés"} · ${late?late+" napja esedékes":"ma esedékes"}`,
-      msg:{k:c.stage>=1&&c.stage<2?"bemutato":"utankovetes",v:{nev:firstName(c.name),full:c.name},done:{act:"cdone",id:c.id,label:"Megvolt"}},done:{act:"cdone",id:c.id,label:"Megvolt"}});
+      msg:{k:c.stage>=1&&c.stage<2?"bemutato":"utankovetes",v:{email:c.email||"",nev:firstName(c.name),full:c.name},done:{act:"cdone",id:c.id,label:"Megvolt"}},done:{act:"cdone",id:c.id,label:"Megvolt"}});
   });
   S.clients.filter(c=>reorderDue(c)<=0).forEach(c=>out.push({id:"r"+c.id,eyebrow:"Újrarendelés",title:`${c.name} kedvencei mostanra fogyhatnak el.`,sub:`${c.fav} · ${-reorderDue(c)?(-reorderDue(c))+" napja esedékes":"ma esedékes"}`,
-    msg:{k:"ujrarendeles",v:{nev:firstName(c.name),full:c.name,termek:c.fav}},done:{act:"order",id:c.id,label:"Rendelés rögzítése"}}));
-  S.clients.forEach(c=>{if(!c.bday)return;for(let i=0;i<4;i++){if(iso(addDays(TODAY,i)).slice(5)===c.bday){out.push({id:"b"+c.id,eyebrow:"Születésnap",title:i?`${c.name} ${i} nap múlva ünnepel.`:`Ma van ${c.name} születésnapja.`,sub:"Egy kedves üzenet többet ér minden akciónál.",msg:{k:"szulinap",v:{nev:firstName(c.name),full:c.name}}});break}}});
+    msg:{k:"ujrarendeles",v:{email:c.email||"",nev:firstName(c.name),full:c.name,termek:c.fav}},done:{act:"order",id:c.id,label:"Rendelés rögzítése"}}));
+  S.clients.forEach(c=>{if(!c.bday)return;for(let i=0;i<4;i++){if(iso(addDays(TODAY,i)).slice(5)===c.bday){out.push({id:"b"+c.id,eyebrow:"Születésnap",title:i?`${c.name} ${i} nap múlva ünnepel.`:`Ma van ${c.name} születésnapja.`,sub:"Egy kedves üzenet többet ér minden akciónál.",msg:{k:"szulinap",v:{email:c.email||"",nev:firstName(c.name),full:c.name}}});break}}});
   S.team.filter(t=>t.talk&&diff(t.talk)<-14).forEach(t=>out.push({id:"t"+t.id,eyebrow:"Csapat",title:`${-diff(t.talk)} napja nem beszéltél ${t.name} csapattagoddal.`,sub:t.goal?"A célja: "+t.goal:"Egy rövid hívás sokat jelent.",msg:{k:"csapattag",v:{nev:firstName(t.name),full:t.name},done:{act:"talk",id:t.id,label:"Ma beszéltünk"}},done:{act:"talk",id:t.id,label:"Ma beszéltünk"}}));
   const m=mondayOf(T),wk=[0,1,2,3,4,5,6].map(i=>iso(addDays(m,i)));
   if(!S.content.some(c=>wk.includes(c.date)&&c.date>=T)){out.push({id:"content",eyebrow:"Tartalom",title:"Erre a hétre még nincs betervezett tartalmad.",sub:"Válassz egy ötletet az Ötletbankból, és tedd be a naptárba.",go:{label:"Tartalomnaptár",href:"tartalom"}})}
@@ -961,8 +965,8 @@ function addMapNode(m,par){
 
 /* ---------- forms ---------- */
 const FORMS={
-  contact:{title:"Kapcsolat",coll:"contacts",fields:[["name","Név","text"],["src","Honnan ismered?","text"],["interest","Érdeklődés","select",["Termék","Üzlet","Mindkettő"]],["stage","Hol tartotok?","select",STAGES.map((s,i)=>[i,s])],["next","Következő lépés","text"],["nextDate","Mikor?","date"],["note","Megjegyzés","textarea"]]},
-  client:{title:"Ügyfél",coll:"clients",fields:[["name","Név","text"],["phone","Telefon, e-mail","text"],["bdayFull","Születésnap","date"],["fav","Kedvenc termékei","text"],["addr","Cím (átadáshoz, szállításhoz)","text"],["last","Utolsó rendelés","date"],["cycle","Újrarendelési ciklus (nap)","number"]]},
+  contact:{title:"Kapcsolat",coll:"contacts",fields:[["name","Név","text"],["email","E-mail (nem kötelező)","email"],["src","Honnan ismered?","text"],["interest","Érdeklődés","select",["Termék","Üzlet","Mindkettő"]],["stage","Hol tartotok?","select",STAGES.map((s,i)=>[i,s])],["next","Következő lépés","text"],["nextDate","Mikor?","date"],["note","Megjegyzés","textarea"]]},
+  client:{title:"Ügyfél",coll:"clients",fields:[["name","Név","text"],["phone","Telefon","text"],["email","E-mail","email"],["bdayFull","Születésnap","date"],["fav","Kedvenc termékei","text"],["addr","Cím (átadáshoz, szállításhoz)","text"],["last","Utolsó rendelés","date"],["cycle","Újrarendelési ciklus (nap)","number"]]},
   order:{title:"Rendelés",coll:"orders",fields:[["date","Dátum","date"],["client","Ügyfél","text"],["items","Termékek","text"],["amount","Összeg","number"],["points","Pont (a cég pontrendszere szerint)","number"]]},
   content:{title:"Tartalom",coll:"content",fields:[["title","Téma, cím","text"],["date","Megjelenés","date"],["time","Időpont","time"],["pillar","Pillér","select",PILLARS.map((s,i)=>[i,s])],["format","Formátum","select",FORMATS],["status","Állapot","select",CSTATUS.map((s,i)=>[i,s])]]},
   idea:{title:"Ötlet",coll:"ideas",fields:[["pillar","Pillér","select",PILLARS.map((s,i)=>[i,s])],["hook","Hook: a mondat, ami megállít","textarea"],["main","Fő üzenet","textarea"],["cta","CTA: kérdés vagy felhívás","textarea"]]},
@@ -1279,8 +1283,8 @@ function calSyncCard(){
     ${https?`<label class="f">A te naptárlinked (titkos, ne oszd meg)<input type="text" readonly value="${esc(https)}" id="cal-url" onfocus="this.select()"></label><div class="row" style="gap:8px"><button class="btn small" data-act="calcopy">Link másolása</button><a class="btn small ghost" href="${esc(webcal)}">Megnyitás a telefonon / Macen</a></div>`:c.active?'<p class="muted" style="margin:0;font-size:12.5px">Biztonsági okból a linket csak létrehozáskor mutatjuk meg. Ha új eszközt kötnél be, kérj új linket (a régi ilyenkor megszűnik, a már bekötött naptárakat is frissíteni kell).</p>':""}
     <details class="howto"><summary>Hogyan kötöm be?</summary><ol><li><b>iPhone:</b> koppints a „Megnyitás a telefonon” gombra, majd az „Előfizetés” gombra. Vagy kézzel: Beállítások → Naptár → Fiókok → Fiók hozzáadása → Egyéb → Előfizetett naptár → illeszd be a linket.</li><li><b>Google Naptár:</b> számítógépen a calendar.google.com oldalon bal oldalt a „Más naptárak” melletti <b>+</b> → „URL alapján” → illeszd be a linket → „Naptár hozzáadása”.</li><li><b>Outlook:</b> Naptár → Naptár hozzáadása → Feliratkozás a webről.</li></ol><p class="muted" style="margin:0;font-size:12px">A Google és az iPhone néhány óránként frissíti a feliratkozott naptárt, ezért egy új időpont késéssel jelenhet meg.</p></details>`;
   }
-  return `<div class="card stack" id="naptarszinkron" style="gap:12px"><div class="row between"><h3 style="margin:0">Naptár-szinkron</h3><span class="chip">Google · iPhone · Outlook</span></div>${body}
-  <p class="muted" style="margin:0;font-size:12px">Most: a tervezőből a naptáraidba (egyirányú). A kétirányú szinkron (a Google-ben felvett esemény is megjelenik itt) fejlesztés alatt.</p></div>`;
+  return `<div class="card stack" id="naptarszinkron" style="gap:12px"><div class="row between"><h3 style="margin:0">Naptár-szinkron</h3><span class="chip">Google · iPhone · Outlook</span></div>${body}${PRO&&!DEMO?'<hr class="sep">'+importsBlock():""}
+  <p class="muted" style="margin:0;font-size:12px">A tervezőből a naptáraidba: feliratkozó link. A naptáraidból a tervezőbe: a „Más naptárak behúzása” rész. A Google Naptárba közvetlen írás (teljes kétirányú szinkron) hamarosan.</p></div>`;
 }
 
 /* ---------- heti és havi értékelő ---------- */
@@ -1374,6 +1378,7 @@ function proUrl(){
 }
 function proCta(label){
   if(DEMO)return `<button class="btn" data-act="demoplan" data-k="pro">${label||"Kipróbálom a Pro-t a bemutatóban"}</button>`;
+  if(ctx.billingReady)return `<button class="btn" data-act="buypro">${label||"Pro-ra váltok"}</button>`;
   return `<a class="btn" href="${esc(proUrl())}">${label||"Pro-ra váltok"}</a>`;
 }
 function vPro(view){
@@ -1382,7 +1387,7 @@ function vPro(view){
   return head(it[1],"Pro funkció")+`<div class="card stack procard" style="gap:14px"><div class="row" style="gap:12px;flex-wrap:nowrap"><span class="ic" aria-hidden="true">${nicon(view)}</span><div><h2 style="margin:0">${esc(it[1])} a Pro csomagban</h2><p class="muted" style="margin:4px 0 0">${esc(it[2])}</p></div></div>
   <div class="prolist">${PRO_LIST.map(([k,l,d])=>`<div class="li"><span class="cbx" aria-hidden="true" aria-pressed="true">✓</span><div class="grow"><div class="t">${esc(l)}</div><div class="s">${esc(d)}</div></div></div>`).join("")}</div>
   <div class="row between"><div><div class="bpv" style="margin:0">${PRO_PRICE.replace(" / hó","")}<small> / hó</small></div><div class="muted" style="font-size:12px">Bármikor lemondható. Minden ingyenes funkció is benne van.</div></div>${proCta()}</div>
-  ${DEMO?"":'<p class="muted" style="margin:0;font-size:12px">Az online fizetés hamarosan indul. Addig a gombra kattintva írj nekünk, és még aznap bekapcsoljuk a Pro-t a fiókodon.</p>'}</div>`;
+  ${DEMO?"":ctx.billingReady?'<p class="muted" style="margin:0;font-size:12px">Biztonságos bankkártyás fizetés a Stripe-on. A Pro a fizetés után azonnal bekapcsol.</p>':'<p class="muted" style="margin:0;font-size:12px">Az online fizetés hamarosan indul. Addig a gombra kattintva írj nekünk, és még aznap bekapcsoljuk a Pro-t a fiókodon.</p>'}</div>`;
 }
 function proTeaser(){
   return `<div class="card upstrip"><span class="ic" aria-hidden="true">⭐</span><div class="grow"><span class="t">Kapcsolatok, ügyfelek, tartalom és számok a Pro csomagban</span><span class="s">Utánkövetési emlékeztetők, újrarendelés, tartalomnaptár, havi célok, naptár-szinkron. ${PRO_PRICE}.</span></div><a class="btn small" href="#kapcsolatok">Megnézem</a></div>`;
@@ -1391,8 +1396,35 @@ function planCard(){
   const pro=PRO,wl=BR.plan==="whitelabel";
   return `<div class="card stack"><div class="row between"><h3 style="margin:0">Csomagod</h3><span class="chip ${pro?"on":""}">${wl?"White label":pro?"Pro":"Ingyenes"}</span></div>
   <p style="margin:0;font-size:13.5px">${wl?`A ${esc(BR.productName)} csomagjában minden funkció elérhető.`:pro?"Minden funkció elérhető: tartalom, kapcsolatok, ügyfelek, számok, naptár-szinkron.":`A Pro csomagban (${PRO_PRICE}) a Tartalomtervező, a Kapcsolatok, az Ügyfelek, a Számok, a naptár-szinkron és az e-mail is elérhető.`}</p>
-  ${pro||wl?"":`<div class="row">${proCta()}</div>`}
+  ${pro||wl?"":`<div class="row">${proCta()}</div>`}${pro&&!wl&&!DEMO&&ctx.billingReady&&ctx.planSource==="subscription"?'<div class="row"><button class="btn ghost small" data-act="billportal">Előfizetés kezelése (kártya, számlák, lemondás)</button></div>':""}
   ${DEMO?`<div class="row" style="gap:6px"><span class="lab2" style="margin:0">Csomag a bemutatóban:</span>${[["ingyenes","Ingyenes"],["pro","Pro"],["whitelabel","White label"]].map(([k,l])=>`<button class="mood" data-act="demoplan" data-k="${k}" aria-pressed="${(wl?"whitelabel":pro?"pro":"ingyenes")===k}">${l}</button>`).join("")}</div>`:""}</div>`;
+}
+/* ---------- bekötött külső naptárak (csak olvasható réteg) ---------- */
+function extRange(){
+  if(route==="ma")return [T,T];
+  if(ui.calMode==="honap"){const[Y,M]=ui.calMonth.split("-").map(Number);const f=new Date(Y,M-1,1),s=addDays(f,-((f.getDay()+6)%7));return [iso(s),iso(addDays(s,41))]}
+  if(ui.calMode==="het"){const m=mondayOf(ui.selDay);return [iso(m),iso(addDays(m,6))]}
+  return [ui.selDay,ui.selDay];
+}
+function extLoad(){
+  if(!PRO||DEMO)return;const[from,to]=extRange(),key=from+"|"+to;const e=ui.ext||(ui.ext={});
+  if(e.key===key||e.loading===key)return;e.loading=key;
+  ctx.calendar("events",{from,to}).then(r=>{ui.ext={key,events:r.events||[],errors:r.errors||[]};if(route==="naptar"||route==="ma")render()},()=>{ui.ext={key,events:[],errors:[]}});
+}
+const extOf=k=>((ui.ext&&ui.ext.events)||[]).filter(e=>e.date===k);
+function extLabel(e){return `${e.allDay?"Egész nap":e.start}${e.allDay?"":"–"+e.end}`}
+function importsBlock(){
+  if(!PRO)return "";
+  if(DEMO)return '<p class="muted" style="margin:0;font-size:12.5px">Más naptárak behúzása fiókkal érhető el.</p>';
+  const im=ui.imports;
+  if(!im){ctx.calendar("import.list").then(r=>{ui.imports=r.imports||[];render()},e=>{ui.imports={err:e.message||"hiba"};render()});return '<div class="spinner" role="status" aria-label="Betöltés"></div>'}
+  if(im.err)return `<p class="muted" style="margin:0">${im.err==="not_configured"?"A naptárak behúzása ezen a telepítésen még nincs bekapcsolva.":"Most nem sikerült betölteni a bekötött naptárakat."}</p>`;
+  const COLS=["#3E7BFA","#12A150","#E5484D","#C77700","#8B5CF6","#0EA5E9"];
+  return `<div class="stack" style="gap:10px"><h3 style="margin:6px 0 0;font-size:16px">Más naptárak behúzása</h3><p class="muted" style="margin:0;font-size:12.5px">A Google, iCloud vagy Outlook naptáraid eseményei megjelennek a tervező naptárában, így egy helyen látsz mindent. Csak olvassuk őket, nem módosítjuk.</p>
+  ${im.length?`<div class="list">${im.map(c=>`<div class="li"><span class="dot" style="background:${esc(c.color)}"></span><div class="grow"><div class="t">${esc(c.name)}</div><div class="s">${esc(c.host||"")}${c.last_error?' · <span style="color:var(--warn)">nem sikerült frissíteni</span>':c.last_ok_at?" · frissítve: "+fmtDate(String(c.last_ok_at).slice(0,10)):""}</div></div>${ui.impDel===c.id?`<button class="chip warn" data-act="impdel" data-id="${c.id}">Igen, leválasztom</button><button class="chip" data-act="impdelno">Mégse</button>`:`<button class="iconbtn" data-act="impdelask" data-id="${c.id}" aria-label="Leválasztás">×</button>`}</div>`).join("")}</div>`:""}
+  <form class="stack" data-form="impadd" style="gap:10px"><div class="grid g2"><label class="f">Megnevezés<input type="text" id="imp-name" maxlength="60" placeholder="Például: Google (munka)" required></label><label class="f">Szín<select id="imp-color">${COLS.map((c,i)=>`<option value="${c}">${["Kék","Zöld","Piros","Narancs","Lila","Égszínkék"][i]}</option>`).join("")}</select></label></div>
+  <label class="f">A naptár iCal-linkje<input type="text" id="imp-url" inputmode="url" placeholder="https://… vagy webcal://… (.ics)" required></label><button class="btn small" style="align-self:flex-start">Naptár bekötése</button></form>
+  <details class="howto"><summary>Honnan kapom meg a linket?</summary><ol><li><b>Google Naptár:</b> számítógépen a calendar.google.com → bal oldalt a naptár neve melletti ⋮ → <b>Beállítások és megosztás</b> → lent a <b>Naptár integrálása</b> résznél: <b>Titkos cím iCal formátumban</b> → másold ki.</li><li><b>iPhone / iCloud:</b> a Naptár appban a <b>Naptárak</b> → a naptár melletti ⓘ → kapcsold be a <b>Nyilvános naptár</b>-t → <b>Link megosztása</b> → Másolás. (A link bárki számára olvasható, aki ismeri.)</li><li><b>Outlook:</b> outlook.com → Beállítások → Naptár → <b>Megosztott naptárak</b> → Naptár közzététele → „Minden részlet” → az <b>ICS</b> linket másold ki.</li></ol><p class="muted" style="margin:0;font-size:12px">A linkeket titkosítva tároljuk. Az új események legfeljebb 10 percen belül jelennek meg itt.</p></details></div>`;
 }
 /* ---------- render ---------- */
 const RENDER={ma:vMa,admin:vAdmin,ertekelesek:vErtekelesek,bovitesek:vBovitesek,olvasas:vOlvasas,szokasok:vSzokasok,terkep:vTerkep,matricak:vMatricak,naptar:vNaptar,kapcsolatok:vKapcsolatok,ugyfelek:vUgyfelek,tartalom:vTartalom,csapat:vCsapat,szamok:vSzamok,beallitasok:vBeall};
@@ -1416,8 +1448,8 @@ document.addEventListener("click",e=>{
   switch(a){
     case"step":{const dd=day(b.dataset.day);const was=dd.steps.filter(Boolean).length;dd.steps[+b.dataset.i]=!dd.steps[+b.dataset.i];save();render();if(was<5&&dd.steps.filter(Boolean).length===5)crownPop();break}
     case"msg":{const ty=b.dataset.type;let v={},done=null;
-      if(ty==="contact"){const c=find("contacts");v={nev:firstName(c.name),full:c.name};done={act:"cdone",id:c.id,label:"Megvolt"}}
-      else if(ty==="client"){const c=find("clients");v={nev:firstName(c.name),full:c.name,termek:c.fav}}
+      if(ty==="contact"){const c=find("contacts");v={nev:firstName(c.name),full:c.name,email:c.email||""};done={act:"cdone",id:c.id,label:"Megvolt"}}
+      else if(ty==="client"){const c=find("clients");v={nev:firstName(c.name),full:c.name,termek:c.fav,email:c.email||(/@/.test(c.phone||"")?(c.phone.match(/[^\s,;]+@[^\s,;]+/)||[""])[0]:"")}}
       else{const t=find("team");v={nev:firstName(t.name),full:t.name};done={act:"talk",id:t.id,label:"Ma beszéltünk"}}
       openMsg(b.dataset.k,v,done);break}
     case"ncmsg":{const s=suggestions()[0];if(s&&s.msg)openMsg(s.msg.k,s.msg.v,s.msg.done);break}
@@ -1573,6 +1605,15 @@ document.addEventListener("click",e=>{
     case"revprev":ui.rev.step--;render();window.scrollTo(0,0);break;
     case"revsave":revSave();break;
     case"revpanel":revOpenPanel=!revOpenPanel;drawer();break;
+    case"impdelask":ui.impDel=id;render();break;
+    case"impdelno":ui.impDel=null;render();break;
+    case"impdel":ui.impDel=null;ctx.calendar("import.remove",{id}).then(()=>{ui.imports=null;ui.ext=null;toast("Naptár leválasztva.");render()},()=>toast("Nem sikerült. Próbáld újra."));break;
+    case"msgsend":{const to=($("#msgto").value||"").trim(),subj=($("#msgsubj").value||"").trim(),txt=$("#msgtext").value;
+      if(!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(to)){toast("Adj meg egy érvényes e-mail-címet.");break}
+      b.disabled=true;b.textContent="Küldöm…";
+      ctx.email({to,subject:subj||"Üzenet",text:txt,senderName:S.settings.name||"",kind:"msg"}).then(()=>{toast("Elküldve. A válasz a te e-mail-címedre érkezik.");closeForm()},e=>{b.disabled=false;b.textContent="Küldés e-mailben";toast({not_configured:"Az e-mail-küldés hamarosan indul. Addig másold ki az üzenetet.",daily_limit:"Ma már elérted a napi 50 e-mailt.",pro_required:"Az e-mail-küldés Pro funkció.",not_confirmed:"Előbb erősítsd meg az e-mail-címed."}[e.message]||"Nem sikerült elküldeni. Próbáld újra.")});break}
+    case"buypro":b.disabled=true;ctx.billing("checkout").then(r=>{location.href=r.url},()=>{b.disabled=false;toast("Most nem sikerült elindítani a fizetést. Próbáld újra.")});break;
+    case"billportal":ctx.billing("portal").then(r=>{location.href=r.url},e=>toast(e.message==="no_customer"?"Az előfizetésedet nem bankkártyával indítottad; írj nekünk, ha módosítanál rajta.":"Most nem sikerült megnyitni. Próbáld újra."));break;
     case"more":openMore();break;
     case"install":ctx.install.prompt().then(ok=>{if(ok)toast("Telepítve. Mostantól a kezdőképernyőről indíthatod.");render()});break;
     case"installhide":S.prefs=S.prefs||{};S.prefs.installHide=true;save();render();break;
@@ -1597,6 +1638,8 @@ document.addEventListener("submit",e=>{
   e.preventDefault();const f=e.target;
   if(f.dataset.form==="ob"){obNext();return}
   if(f.dataset.form==="qadd"){saveQuickAdd();return}
+  if(f.dataset.form==="impadd"){const btn=f.querySelector(".btn");btn.disabled=true;btn.textContent="Ellenőrzöm a naptárt…";
+    ctx.calendar("import.add",{name:$("#imp-name").value,url:$("#imp-url").value,color:$("#imp-color").value}).then(()=>{ui.imports=null;ui.ext=null;toast("Naptár bekötve.");render()},e=>{btn.disabled=false;btn.textContent="Naptár bekötése";toast({bad_url:"Ez nem érvényes https:// vagy webcal:// naptárlink.",not_ics:"Ezen a linken nem naptár van. Az iCal (.ics) linket másold be.",too_many:"Legfeljebb 8 naptárat köthetsz be.",too_large:"Ez a naptár túl nagy.",pro_required:"Ez Pro funkció."}[e.message]||"Nem sikerült elérni a naptárt. Ellenőrizd a linket.")});return}
   if(f.dataset.form==="admsub"){admDo("sub.set",{id:f.dataset.id,plan:$("#as-plan").value,status:$("#as-status").value,current_period_end:$("#as-end").value,note:$("#as-note").value},"Előfizetés mentve.","felhasznalok");return}
   if(f.dataset.form==="admbrand"){admDo("brand.set",{slug:$("#adm-slug").value.trim(),plan:$("#adm-plan").value,upsell:true},"Márka létrehozva.","markak");return}
   if(f.dataset.form==="admbadm"){const em=f.querySelector("input").value.trim();if(em)admDo("brand.admin.add",{slug:f.dataset.slug,email:em},"Márka-admin hozzáadva.","markak");return}
@@ -1662,6 +1705,7 @@ document.addEventListener("change",e=>{
 if(!S.unlocked){S.unlocked={};checkAch(true)}
 if(!S.maps){S.maps=[S.blank?{id:uid(),title:"Első térképem",nodes:[{id:uid(),x:700,y:450,t:"A céljaim",p:null}]}:sampleMap()];save()}
 go();
+if(ctx.payResult==="ok")setTimeout(()=>toast(PRO?"Köszönjük! A Pro bekapcsolt.":"Köszönjük a fizetést! A Pro pár másodpercen belül bekapcsol, frissítsd az oldalt."),400);
 if((S.blank&&!S.onboarded&&!DEMO)||/[?&]bevezeto\b/.test(location.search))obOpen();
 return {render,replace(st){S=st&&st.v?st:S;migrate();render()},get state(){return S}};
 };

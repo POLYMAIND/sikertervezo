@@ -654,3 +654,9 @@ body.ob-open{overflow:hidden}
 .procard .ic{width:52px;height:52px;border-radius:14px;background:var(--accent-tint);color:var(--accent);display:grid;place-items:center;flex:none}
 .prolist{display:flex;flex-direction:column}
 .prolist .li .cbx{pointer-events:none}
+.extmini{color:var(--ink)!important;border-left:3px solid var(--c);padding-left:4px}
+.extappt{background:color-mix(in srgb,var(--c) 14%,var(--surface));border-left:3px solid var(--c)}
+.extappt .extsrc{display:block;font-size:10.5px;color:var(--muted)}
+.extlist{margin-bottom:12px;padding:10px 12px;border-radius:12px;background:var(--soft)}
+.extlist .li{padding:6px 0}
+hr.sep{border:0;border-top:1px solid var(--line);margin:4px 0;width:100%}

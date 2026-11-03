@@ -149,7 +149,10 @@
     // csomag: belépve a szerver mondja meg (/api/me); bemutató módban a csomagváltó (alapból Pro, hogy minden látszódjon)
     let userPlan = demo ? (["ingyenes", "pro", "whitelabel"].includes(ls.get(DEMO_PLAN_KEY)) ? ls.get(DEMO_PLAN_KEY) : "pro") : "ingyenes";
     if (userPlan === "whitelabel") userPlan = "pro";
-    if (!demo) { try { userPlan = (await api("/api/me" + location.search)).plan === "pro" ? "pro" : "ingyenes"; } catch (e) {} }
+    let planSource = "";
+    if (!demo) { try { const me = await api("/api/me" + location.search); userPlan = me.plan === "pro" ? "pro" : "ingyenes"; planSource = me.source || ""; } catch (e) {} }
+    const payResult = new URLSearchParams(location.search).get("fizetes");
+    if (payResult) { const q = new URLSearchParams(location.search); q.delete("fizetes"); history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "") + location.hash); }
     if (!demo) {
       try { brandAdmin = !!(await api("/api/brand")).admin; } catch (e) {}
       try { superadmin = !!(await api("/api/admin", { method: "POST", body: JSON.stringify({ action: "whoami" }) })).superadmin; } catch (e) {}
@@ -164,13 +167,16 @@
       mode: demo ? "demo" : "cloud", cloud: store.cloudAvailable(), user, state: st,
       brand: TH.effectiveBrand(brandRaw), brandRaw, brandAdmin, paintChrome, install, superadmin,
       // superadmin hívás: a jogosultságot a szerver MINDEN kérésnél újra ellenőrzi, ez csak a felület kapuja
-      calendar: async (action) => api("/api/calendar", { method: "POST", body: JSON.stringify({ action }) }),
+      email: async (payload) => api("/api/email" + location.search, { method: "POST", body: JSON.stringify(payload) }),
+      billing: async (action) => api("/api/billing" + location.search, { method: "POST", body: JSON.stringify({ action }) }),
+      billingReady: !!(config.billing && config.billing.enabled),
+      calendar: async (action, payload) => api("/api/calendar", { method: "POST", body: JSON.stringify(Object.assign({ action }, payload || {})) }),
       admin: async (action, payload) => api("/api/admin", { method: "POST", body: JSON.stringify(Object.assign({ action }, payload || {})) }),
       showAuth: (tab) => { sessionStorage.removeItem(DEMO_CHOSEN); authScreen(tab === "belepes" ? "belepes" : "regisztracio"); },
       logout: async () => { await store.signOut(); sessionStorage.removeItem(DEMO_CHOSEN); location.hash = ""; location.reload(); },
       // bemutató módban a csomag kézzel váltható: ingyenes / pro / white label (csak a kinézet és a zárolások; a szerver semmit nem enged ezzel)
       setDemoPlan: (p) => { ls.set(DEMO_PLAN_KEY, ["ingyenes", "pro", "whitelabel"].includes(p) ? p : "pro"); location.reload(); },
-      plan: userPlan,
+      plan: userPlan, planSource, payResult,
       saveBrand: async (draft) => {
         if (demo) { ls.set(DEMO_BRAND_KEY, JSON.stringify(draft)); return; }
         try { await api("/api/brand", { method: "PUT", body: JSON.stringify({ brand: draft }) }); }
