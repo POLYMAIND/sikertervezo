@@ -1325,6 +1325,9 @@ function vAdmin(){
     <div class="card stack" style="gap:10px"><div class="row between"><h3 style="margin:0">Nyitás időpontja (visszaszámláló)</h3>${w.launchAt?`<span class="chip">${esc(fmtLaunch(w.launchAt))}</span>`:'<span class="chip">Nincs beállítva</span>'}</div>
       <p class="muted" style="margin:0;font-size:12.5px">A landingen és az appban visszaszámláló fut eddig az időpontig, és ekkor a regisztráció <b>magától megnyílik</b> (az adatbázis is ezt követi). Magyar idő szerint add meg.</p>
       <div class="row" style="gap:8px;flex-wrap:wrap"><input type="datetime-local" id="wl-launch" value="${esc(w.launchAt?toLocalInput(w.launchAt):"")}" aria-label="Nyitás időpontja" style="max-width:230px"><button class="btn small" data-act="launchset">Mentés</button>${w.launchAt?'<button class="btn small ghost" data-act="launchclear">Időzítés törlése</button>':""}</div></div>
+    ${(()=>{const notN=list.filter(x=>!x.notified_at).length,done=list.length-notN;return `<div class="card stack" style="gap:10px"><div class="row between"><h3 style="margin:0">Nyitási értesítő</h3><span class="chip">${done} / ${list.length} értesítve</span></div>
+      <p class="muted" style="margin:0;font-size:12.5px">„Megnyitottunk!” levél a feliratkozóknak, regisztrációs gombbal. Mindenki csak egyszer kapja meg; ha a küldés megszakad (pl. a Brevo napi kerete miatt), később folytatható. ${w.signupOpen?"":"<b>Előbb nyisd meg a regisztrációt</b> (vagy várd meg az időzített nyitást), csak utána küldhető ki."}</p>
+      <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn small ghost" data-act="wlnotest">Próbalevél nekem</button>${ui.wlConfirm?`<button class="btn small" data-act="wlnotgo">Igen, kiküldöm ${notN} főnek</button><button class="nc-skip" data-act="wlnotno">Mégse</button>`:`<button class="btn small" data-act="wlnotask" ${!w.signupOpen||!notN?"disabled":""}>Értesítő küldése${notN?` (${notN} fő)`:""}</button>`}${ui.wlProgress?`<span class="muted" style="font-size:12.5px">${esc(ui.wlProgress)}</span>`:""}</div></div>`})()}
     <div class="grid g3">${[["Feliratkozó",list.length],["Új az elmúlt 7 napban",wk],["Letöltötte az ajándékot",dl]].map(([l,v])=>`<div class="card kpi"><div class="v num">${v}</div><div class="l">${l}</div></div>`).join("")}</div>
     <div class="card"><div class="row between" style="margin-bottom:10px"><h3 style="margin:0">Feliratkozók</h3>${list.length?'<button class="btn ghost small" data-act="wlcsv">Letöltés (CSV)</button>':""}</div>
     ${list.length?`<div class="tablewrap"><table><thead><tr><th>E-mail</th><th>Feliratkozott</th><th>Honnan</th><th>Letöltés</th></tr></thead><tbody>${list.map(x=>`<tr><td>${esc(x.email)}</td><td class="num">${esc(String(x.created_at).replace("T"," ").slice(0,16))}</td><td>${esc(x.source||"–")}</td><td class="num">${x.downloads||0}</td></tr>`).join("")}</tbody></table></div>`:'<div class="empty">Még nincs feliratkozó.</div>'}</div>`}
@@ -1925,6 +1928,13 @@ document.addEventListener("click",e=>{
     case"platclearno":ui.platClear=false;render();break;
     case"platclearyes":ui.platClear=false;ctx.admin("platform.set",{config:{}}).then(()=>{toast("Visszaállítva a semleges alapkinézetre. Újratöltöm…");setTimeout(()=>location.reload(),900)},()=>toast("Nem sikerült. Próbáld újra."));break;
 
+    case"wlnotest":ctx.admin("waitlist.notify",{test:true}).then(()=>toast("Próbalevél elküldve a saját címedre."),e=>toast(e.message==="email_not_configured"?"Az e-mail-küldés nincs beállítva (BREVO_API_KEY).":"Nem sikerült elküldeni."));break;
+    case"wlnotask":ui.wlConfirm=true;render();break;
+    case"wlnotno":ui.wlConfirm=false;render();break;
+    case"wlnotgo":{ui.wlConfirm=false;let total=0;ui.wlProgress="Küldés…";render();
+      (async()=>{try{for(let i=0;i<60;i++){const r=await ctx.admin("waitlist.notify",{});total+=r.sent||0;ui.wlProgress=`Elküldve: ${total}`;render();if(!r.left)break}
+        toast(`Kész: ${total} értesítő elküldve.`)}catch(e){toast(e.message==="signup_closed"?"Előbb nyisd meg a regisztrációt.":`Megszakadt ${total} levél után. Később folytathatod ugyanezzel a gombbal.`)}
+        ui.wlProgress="";admLoad("varolista")})();break}
     case"launchset":{const v=$("#wl-launch").value;if(!v){toast("Válaszd ki a nyitás napját és időpontját.");break}const at=new Date(v);if(isNaN(at)){toast("Hibás időpont.");break}admDo("launch.set",{at:at.toISOString()},"Elmentve: a visszaszámláló eddig fut.","varolista");break}
     case"launchclear":admDo("launch.set",{at:null},"Az időzített nyitás törölve.","varolista");break;
     case"signupask":ui.signupConfirm=true;render();break;

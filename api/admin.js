@@ -16,10 +16,13 @@
 //   { action:"audit" }                                    -> utolsó 100 napló-esemény
 //   { action:"waitlist" }                                 -> várólista (e-mail, forrás, dátum, letöltések) + regisztráció állapota
 //   { action:"signup.set", open }                         -> a regisztráció nyitása / zárása (az adatbázis kényszeríti ki)
+//   { action:"waitlist.notify", test? }                   -> nyitási értesítő: test = próbalevél magadnak; különben a még
+//                                                             nem értesített feliratkozóknak, 100-asával (a kliens ismétli)
 //   { action:"launch.set", at }                           -> a nyitás időpontja (visszaszámláló, automatikus nyitás)
 const L = require("./_lib");
 const B = require("./_brands");
 const W = require("./_waitlist");
+const LM = require("./_launchmail");
 
 const PLANS = ["ingyenes", "pro"];
 const STATUSES = ["probaido", "aktiv", "lejart", "lemondva", "ajandek"];
@@ -184,6 +187,23 @@ module.exports = async function handler(req, res) {
       await W.signupState(true);
       await audit(user, "signup.set", "default", { open });
       return L.send(res, 200, { ok: true, signupOpen: open });
+    }
+    if (action === "waitlist.notify") {
+      if (!LM.ready()) return L.send(res, 503, { error: "email_not_configured" });
+      if (b.test === true) {
+        const ok = await LM.send([user.email]);
+        await audit(user, "waitlist.notify.test", user.email, { ok });
+        return ok ? L.send(res, 200, { ok: true, sent: 1, test: true }) : L.send(res, 502, { error: "send_failed" });
+      }
+      if (!(await W.signupState(true)).open) return L.send(res, 409, { error: "signup_closed" }); // előbb nyisd meg a regisztrációt
+      const rows = await L.sb("sikertervezo_waitlist?notified_at=is.null&select=id,email&order=id.asc&limit=100");
+      if (!rows || !rows.length) return L.send(res, 200, { ok: true, sent: 0, left: 0 });
+      const ok = await LM.send(rows.map((r) => r.email));
+      if (!ok) { await audit(user, "waitlist.notify", "batch", { ok: false, count: rows.length }); return L.send(res, 502, { error: "send_failed" }); }
+      await L.sb(`sikertervezo_waitlist?id=in.(${rows.map((r) => r.id).join(",")})`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ notified_at: new Date().toISOString() }) });
+      const left = await L.sb("sikertervezo_waitlist?notified_at=is.null&select=id&limit=1");
+      await audit(user, "waitlist.notify", "batch", { ok: true, count: rows.length });
+      return L.send(res, 200, { ok: true, sent: rows.length, left: (left || []).length });
     }
     if (action === "launch.set") {
       // { at: ISO időpont | null } — a nyitás időpontja (visszaszámláló); null = nincs időzített nyitás
