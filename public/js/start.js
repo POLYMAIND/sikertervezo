@@ -1,8 +1,103 @@
-// Sikermaker landing: mobil menü + évszám. (CSP: csak saját forrásból töltődő script.)
+// Sikermaker landing: mobil menü, görgetésre beúszás, „élő" minta-felület a heróban.
+// Könyvtár nélkül (CSP: csak saját script). Csökkentett mozgás beállításnál minden animáció kimarad.
 (function () {
-  var b = document.getElementById("burger"), l = document.getElementById("links"), y = document.getElementById("yr");
-  if (y) y.textContent = new Date().getFullYear();
-  if (!b || !l) return;
-  b.addEventListener("click", function () { var o = l.classList.toggle("open"); b.setAttribute("aria-expanded", o); });
-  l.addEventListener("click", function (e) { if (e.target.tagName === "A") { l.classList.remove("open"); b.setAttribute("aria-expanded", "false"); } });
+  var d = document, root = d.documentElement;
+  root.classList.remove("nojs"); root.classList.add("js");
+  var calm = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var $ = function (s, c) { return (c || d).querySelector(s); }, $$ = function (s, c) { return [].slice.call((c || d).querySelectorAll(s)); };
+
+  // évszám + mobil menü
+  var y = $("#yr"); if (y) y.textContent = new Date().getFullYear();
+  var b = $("#burger"), l = $("#links");
+  if (b && l) {
+    b.addEventListener("click", function () { var o = l.classList.toggle("open"); b.setAttribute("aria-expanded", o); });
+    l.addEventListener("click", function (e) { if (e.target.tagName === "A") { l.classList.remove("open"); b.setAttribute("aria-expanded", "false"); } });
+  }
+  // fejléc árnyék görgetéskor
+  var top = $("#top"), onScroll = function () { if (top) top.classList.toggle("scrolled", scrollY > 8); };
+  addEventListener("scroll", onScroll, { passive: true }); onScroll();
+
+  if (calm) { root.classList.add("calm"); return; }
+  root.classList.add("motion");
+
+  /* ---- görgetésre beúszás (lépcsőzetesen a testvérek között) ---- */
+  var groups = [".hero .copy > *", ".band h2", ".pain", ".answer", ".sec h2", ".kicker", ".sec .lead", ".feat", ".checks li", ".phone-big", ".steps li", ".price", ".mods a", ".faq details", ".final h2", ".final p", ".final .ctas"];
+  var items = [];
+  groups.forEach(function (sel) { $$(sel).forEach(function (el, i) { if (el.classList.contains("rv")) return; el.classList.add("rv"); el.style.setProperty("--d", (Math.min(i, 8) * 70) + "ms"); items.push(el); }); });
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in-view"); io.unobserve(e.target); } }); }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+    items.forEach(function (el) { io.observe(el); });
+  } else items.forEach(function (el) { el.classList.add("in-view"); });
+
+  /* ---- hero mockup: enyhe dőlés az egér után (csak asztali) ---- */
+  var mock = $("#mock");
+  if (mock && matchMedia("(hover:hover) and (pointer:fine)").matches) {
+    var raf = 0;
+    mock.addEventListener("pointermove", function (e) {
+      var r = mock.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, yy = (e.clientY - r.top) / r.height - 0.5;
+      cancelAnimationFrame(raf); raf = requestAnimationFrame(function () { mock.style.setProperty("--rx", (-yy * 6).toFixed(2) + "deg"); mock.style.setProperty("--ry", (x * 8).toFixed(2) + "deg"); });
+    });
+    mock.addEventListener("pointerleave", function () { mock.style.setProperty("--rx", "0deg"); mock.style.setProperty("--ry", "0deg"); });
+  }
+
+  /* ---- hero mockup: magától „dolgozik" (körbe-körbe, csak amíg látszik) ---- */
+  var tasks = $$("[data-task]"), left = $("#mm-left"), ring = $("#ring"), ringN = $("#ring-n"), dots = $$("#dots i"), toast = $("#toast"), conf = $("#confetti");
+  var pct = 68;
+  function setRing(v) { pct = v; if (ring) ring.style.setProperty("--p", v.toFixed(1)); if (ringN) ringN.textContent = Math.round(v) + "%"; }
+  function tweenRing(to, ms) { var from = pct, t0 = performance.now(); (function step(t) { var k = Math.min(1, (t - t0) / ms), e = 1 - Math.pow(1 - k, 3); setRing(from + (to - from) * e); if (k < 1) requestAnimationFrame(step); })(t0); }
+  function burst() {
+    if (!conf) return;
+    while (conf.firstChild) conf.removeChild(conf.firstChild);
+    var cols = ["#F7D987", "#6D4AFF", "#1F2024", "#F4CF72", "#9B85FF"];
+    for (var i = 0; i < 18; i++) {
+      var s = d.createElement("i");
+      s.style.setProperty("--x", (Math.random() * 220 - 110).toFixed(0) + "px");
+      s.style.setProperty("--y", (-60 - Math.random() * 110).toFixed(0) + "px");
+      s.style.setProperty("--r", (Math.random() * 540 - 270).toFixed(0) + "deg");
+      s.style.background = cols[i % cols.length]; s.style.animationDelay = (Math.random() * 80).toFixed(0) + "ms";
+      conf.appendChild(s);
+    }
+  }
+  function refreshLeft() { if (left) left.textContent = tasks.filter(function (t) { return !t.classList.contains("done"); }).length; }
+  var seq = [
+    function () { if (tasks[1]) tasks[1].classList.add("done"); refreshLeft(); tweenRing(80, 900); },
+    function () { if (dots[4]) dots[4].classList.add("f", "pop"); },
+    function () { if (toast) toast.classList.add("show"); },
+    function () { if (tasks[2]) tasks[2].classList.add("done"); refreshLeft(); tweenRing(100, 1100); setTimeout(burst, 500); },
+    function () { if (toast) toast.classList.remove("show"); },
+    function () { // vissza az elejére
+      tasks.slice(1).forEach(function (t) { t.classList.remove("done"); }); refreshLeft();
+      dots.slice(4).forEach(function (x) { x.classList.remove("f", "pop"); }); tweenRing(68, 700);
+    },
+  ];
+  var waits = [1800, 1200, 1400, 1600, 2400, 2600], k = 0, timer = 0, running = false;
+  function tick() { seq[k](); timer = setTimeout(tick, waits[k]); k = (k + 1) % seq.length; }
+  function run(on) { if (on === running) return; running = on; clearTimeout(timer); if (on) timer = setTimeout(tick, 1200); }
+  setRing(68);
+  if (mock && "IntersectionObserver" in window) new IntersectionObserver(function (es) { run(es[0].isIntersecting && !d.hidden); }, { threshold: 0.3 }).observe(mock);
+  d.addEventListener("visibilitychange", function () { if (d.hidden) run(false); });
+
+  /* ---- nagy telefon: pipák + sáv, amikor először látszik ---- */
+  var ptasks = $$("[data-ptask]"), pbN = $("#pb-n"), bar = $("#pb-bar"), ptxt = $("#pb-txt"), phone = $(".phone-big");
+  if (phone && ptasks.length === 4 && "IntersectionObserver" in window) {
+    var played = false;
+    ptasks.slice(2).forEach(function (t) { t.classList.remove("done"); });
+    if (bar) bar.style.width = "0%";
+    new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting || played) return; played = true;
+      setTimeout(function () { if (bar) bar.style.width = "68%"; }, 300);
+      [2, 3].forEach(function (i, n) {
+        setTimeout(function () {
+          ptasks[i].classList.add("done"); if (pbN) pbN.textContent = 3 + n;
+          if (bar) bar.style.width = (n ? 100 : 84) + "%";
+          if (ptxt) ptxt.textContent = n ? "100% – megvan a hét! 🎉" : "84% – jó úton jársz!";
+        }, 1500 + n * 1100);
+      });
+    }, { threshold: 0.5 }).observe(phone);
+  }
+
+  /* ---- kártyák: fényfolt az egér alatt ---- */
+  $$(".feat, .price, .pain").forEach(function (c) {
+    c.addEventListener("pointermove", function (e) { var r = c.getBoundingClientRect(); c.style.setProperty("--mx", (e.clientX - r.left) + "px"); c.style.setProperty("--my", (e.clientY - r.top) + "px"); });
+  });
 })();

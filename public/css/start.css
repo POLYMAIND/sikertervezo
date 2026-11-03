@@ -76,7 +76,7 @@ mark{background:linear-gradient(transparent 58%,var(--hl-300) 58%,var(--hl-300) 
 .mm-card p.done::before,.mp-card p.done::before{background:var(--ink);border-color:var(--ink)}
 .mm-card p.ev::before{border:0;background:var(--accent);width:4px;height:14px;top:3px;border-radius:2px}
 .mm-card p.ev.b::before{background:var(--hl-500)}
-.ring{width:74px;height:74px;border-radius:50%;background:conic-gradient(var(--ink) 0 68%,var(--line) 68% 100%);display:grid;place-items:center;margin:4px auto 0}
+.ring{--p:68;width:74px;height:74px;border-radius:50%;background:conic-gradient(var(--ink) 0 calc(var(--p)*1%),var(--line) calc(var(--p)*1%) 100%);display:grid;place-items:center;margin:4px auto 0}
 .ring span{width:56px;height:56px;border-radius:50%;background:var(--soft);display:grid;place-items:center;font-weight:700;font-size:14px}
 .dots{display:flex;gap:6px;margin-top:10px}
 .dots i{width:16px;height:16px;border-radius:50%;background:var(--line)}
@@ -210,4 +210,116 @@ mark{background:linear-gradient(transparent 58%,var(--hl-300) 58%,var(--hl-300) 
   .mock-phone{display:none}
   .fgrid{grid-template-columns:1fr}
 }
-@media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+
+
+/* ================= MOZGÁS ================= */
+.mm-head em,.mp-card em{font-style:normal}
+.top{transition:box-shadow .25s,border-color .25s}
+.top.scrolled{border-bottom-color:var(--line);box-shadow:0 6px 24px rgba(31,32,36,.06)}
+
+/* görgetésre beúszás – csak ha fut a JS és engedett a mozgás */
+.motion .rv{opacity:0;transform:translateY(22px);transition:opacity .7s cubic-bezier(.2,.7,.2,1) var(--d,0ms),transform .7s cubic-bezier(.2,.7,.2,1) var(--d,0ms)}
+.motion .rv.in-view{opacity:1;transform:none}
+.motion .price.best.rv.in-view{transform:translateY(-8px)}
+@media (max-width:980px){.motion .price.best.rv.in-view{transform:none}}
+
+/* kiemelő filc a címben */
+.motion mark{background-size:0% 100%;background-repeat:no-repeat;background-image:linear-gradient(transparent 58%,var(--hl-300) 58%,var(--hl-300) 92%,transparent 92%);background-color:transparent;animation:mark 1s .7s cubic-bezier(.6,0,.2,1) forwards}
+@keyframes mark{to{background-size:100% 100%}}
+
+/* hero háttér: lassan mozgó színfoltok */
+.hero{position:relative;isolation:isolate;overflow:hidden}
+.hero::before,.hero::after{content:"";position:absolute;z-index:-1;border-radius:50%;filter:blur(70px);opacity:.55;pointer-events:none}
+.hero::before{width:420px;height:420px;background:var(--hl-200);right:6%;top:-80px}
+.hero::after{width:360px;height:360px;background:var(--accent-tint);right:30%;bottom:-120px}
+.motion .hero::before{animation:blob 16s ease-in-out infinite alternate}
+.motion .hero::after{animation:blob 19s ease-in-out infinite alternate-reverse}
+@keyframes blob{to{transform:translate(-60px,40px) scale(1.15)}}
+
+/* mockup: 3D-dőlés, lebegő telefon */
+.mock{perspective:1200px}
+.mock-win{transform:rotate(-1deg) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .4s cubic-bezier(.2,.7,.2,1);transform-style:preserve-3d}
+.motion .mock-phone{animation:float 6s ease-in-out infinite}
+@keyframes float{0%,100%{transform:rotate(3deg) translateY(0)}50%{transform:rotate(2deg) translateY(-12px)}}
+.motion .mock{animation:rise 1s .2s cubic-bezier(.2,.7,.2,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(30px) scale(.97)}}
+
+/* pipálás animációja */
+.mm-card p,.mp-card p{transition:color .4s}
+.mm-card p::before,.mp-card p::before{transition:background .3s,border-color .3s,transform .3s}
+.mm-card p::after,.mp-card p::after{content:"";position:absolute;left:3.5px;top:6.5px;width:5px;height:3px;border-left:1.6px solid #fff;border-bottom:1.6px solid #fff;transform:rotate(-45deg) scale(0);transition:transform .25s .1s}
+.mp-card p::after{left:2.8px;top:6.2px;width:4px;height:2.4px}
+.mm-card p.ev::after,.mp-card p.nob::after{display:none}
+.mm-card p.done::after,.mp-card p.done::after{transform:rotate(-45deg) scale(1)}
+.mm-card p.done::before,.mp-card p.done::before{animation:tick .35s}
+@keyframes tick{50%{transform:scale(1.35)}}
+.mm-card p,.mp-card p{text-decoration:none!important;background:linear-gradient(currentColor,currentColor) no-repeat 20px 55%/0 1.3px}
+.mp-card p{background-position:17px 55%}
+.mm-card p.done,.mp-card p.done{background-size:calc(100% - 20px) 1.3px;transition:background-size .45s ease,color .4s}
+.mp-card p.nob{padding-left:0}
+.mp-card p.nob::before{display:none}
+.dots i{transition:background .3s}
+.dots i.pop{animation:tick .4s}
+
+/* felugró „új esemény" */
+.toast{position:absolute;left:-14px;top:58%;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:12px;padding:9px 14px;font-size:13px;font-weight:600;display:flex;gap:8px;align-items:center;opacity:0;transform:translateY(10px) scale(.95);transition:opacity .35s,transform .35s cubic-bezier(.2,.9,.3,1.4);pointer-events:none}
+.toast span{display:grid;place-items:center;width:20px;height:20px;border-radius:6px;background:var(--accent);color:#fff;font-size:12px}
+.toast.show{opacity:1;transform:none}
+
+/* konfetti a 100%-nál */
+.confetti{position:absolute;right:28%;top:30%;width:0;height:0;pointer-events:none}
+.confetti i{position:absolute;width:7px;height:10px;border-radius:2px;opacity:0;animation:conf 1.1s cubic-bezier(.2,.6,.4,1) forwards}
+@keyframes conf{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--x),calc(var(--y) + 140px)) rotate(var(--r))}}
+
+/* futószalag */
+.marquee{overflow:hidden;background:var(--hl-bright);border-block:1px solid rgba(31,32,36,.08);padding:14px 0;-webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+.mq-track{display:flex;width:max-content;gap:0}
+.mq-track span{font-weight:750;font-size:18px;letter-spacing:-.01em;padding:0 22px;white-space:nowrap;display:flex;align-items:center;gap:44px}
+.mq-track span::after{content:"✦";font-size:13px;opacity:.55;margin-right:-22px}
+.motion .mq-track{animation:mq 38s linear infinite}
+.marquee:hover .mq-track{animation-play-state:paused}
+@keyframes mq{to{transform:translateX(-50%)}}
+
+/* nagy telefon: haladás-sáv */
+.bar{height:8px;border-radius:99px;background:rgba(31,32,36,.12);overflow:hidden;margin:4px 0 6px}
+.bar i{display:block;height:100%;width:68%;background:var(--ink);border-radius:99px;transition:width 1.1s cubic-bezier(.2,.7,.2,1)}
+
+/* kártyák: fényfolt + emelés */
+.feat,.price,.pain{overflow:hidden}
+.feat::after,.price::after,.pain::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .3s;background:radial-gradient(260px circle at var(--mx,50%) var(--my,50%),rgba(247,217,135,.28),transparent 60%)}
+.pain{position:relative}
+.pain::after{background:radial-gradient(260px circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.09),transparent 60%)}
+.price.best::after{background:radial-gradient(260px circle at var(--mx,50%) var(--my,50%),rgba(247,217,135,.16),transparent 60%)}
+.feat:hover::after,.price:hover::after,.pain:hover::after{opacity:1}
+.feat > *,.price > *{position:relative;z-index:1}
+.feat .tag,.price .badge{position:absolute}
+.feat .ic{transition:transform .35s cubic-bezier(.2,.9,.3,1.5)}
+.feat:hover .ic{transform:rotate(-8deg) scale(1.12)}
+.price{transition:transform .3s,box-shadow .3s}
+.price:not(.best):hover{transform:translateY(-4px);box-shadow:var(--shadow)}
+
+/* gombok: fényvillanás */
+.btn{position:relative;overflow:hidden}
+.btn::after{content:"";position:absolute;top:0;bottom:0;left:-60%;width:40%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-20deg);transition:left .6s}
+.btn:hover::after{left:130%}
+.btn.ghost::after,.btn.ghost-light::after{background:linear-gradient(100deg,transparent,rgba(31,32,36,.08),transparent)}
+.motion .hero .btn.lg:not(.ghost){animation:nudge 4.5s 3s ease-in-out infinite}
+@keyframes nudge{0%,88%,100%{transform:none}92%{transform:translateY(-3px)}96%{transform:translateY(0)}}
+
+/* lépések: sorszám pulzál beúszáskor */
+.motion .steps li.in-view span{animation:popin .6s var(--d,0ms) cubic-bezier(.2,.9,.3,1.5) both}
+@keyframes popin{from{transform:scale(.3);opacity:0}}
+
+/* FAQ nyitás */
+.faq details[open] p{animation:fadein .35s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(-4px)}}
+
+@media (max-width:760px){.toast{left:4px;top:auto;bottom:6px}.confetti{right:50%}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* javítások: áthúzás csak a szöveg alatt; a telefon ne takarja a gyűrűt */
+.mm-card p,.mp-card p{width:fit-content;max-width:100%}
+.mock{padding-bottom:120px}
+.mock-phone{bottom:0;right:-18px}
+@media (max-width:760px){.mock{padding-bottom:60px}.mock-phone{right:-4px}}
+@media (max-width:420px){.mock{padding-bottom:20px}}

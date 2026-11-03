@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="hu">
+<html lang="hu" class="nojs">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -60,32 +60,34 @@
       </ul>
     </div>
 
-    <div class="mock" aria-hidden="true">
+    <div class="mock" id="mock" aria-hidden="true">
       <div class="mock-win">
         <div class="mock-side">
           <div class="ms-logo"></div>
           <i class="on"></i><i></i><i></i><i></i><i></i><i></i>
         </div>
         <div class="mock-main">
-          <div class="mm-head"><b>Jó reggelt!</b><span>Kedd · 3 lépés vár ma</span></div>
+          <div class="mm-head"><b>Jó reggelt!</b><span>Kedd · <em id="mm-left">2</em> lépés vár ma</span></div>
           <div class="mm-row">
             <div class="mm-card big">
               <small>A mai lépések</small>
-              <p class="done">Árajánlat küldése</p>
-              <p>Bejegyzés a heti témáról</p>
-              <p>Visszahívni: Minta Anna</p>
+              <p class="done" data-task>Árajánlat küldése</p>
+              <p data-task>Bejegyzés a heti témáról</p>
+              <p data-task>Visszahívni: Minta Anna</p>
             </div>
             <div class="mm-card">
               <small>Heti cél</small>
-              <div class="ring"><span>68%</span></div>
+              <div class="ring" id="ring"><span id="ring-n">68%</span></div>
             </div>
           </div>
           <div class="mm-row">
-            <div class="mm-card"><small>Naptár</small><p class="ev">10:00 Ügyféltalálkozó</p><p class="ev b">14:30 Tartalomgyártás</p></div>
-            <div class="mm-card"><small>Szokás</small><div class="dots"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i><i></i></div></div>
+            <div class="mm-card" id="mm-cal"><small>Naptár</small><p class="ev">10:00 Ügyféltalálkozó</p><p class="ev b">14:30 Tartalomgyártás</p></div>
+            <div class="mm-card"><small>Szokás</small><div class="dots" id="dots"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i></i><i></i><i></i></div></div>
           </div>
         </div>
       </div>
+      <div class="toast" id="toast"><span>＋</span> Új esemény: 16:00 Hírlevél</div>
+      <div class="confetti" id="confetti"></div>
       <div class="mock-phone">
         <div class="mp-bar">Sikermaker</div>
         <div class="mp-card"><small>Ma</small><p class="done">Reggeli tervezés</p><p>Hírlevél megírása</p></div>
@@ -95,6 +97,12 @@
     </div>
   </div>
 </section>
+
+<!-- FUTÓSZALAG -->
+<div class="marquee" aria-hidden="true"><div class="mq-track">
+  <span>Teendők</span><span>Naptár</span><span>Ügyfelek</span><span>Kapcsolatok</span><span>Tartalom</span><span>Célok</span><span>Szokások</span><span>Gondolattérkép</span><span>Hétértékelő</span><span>Számok</span>
+  <span>Teendők</span><span>Naptár</span><span>Ügyfelek</span><span>Kapcsolatok</span><span>Tartalom</span><span>Célok</span><span>Szokások</span><span>Gondolattérkép</span><span>Hétértékelő</span><span>Számok</span>
+</div></div>
 
 <!-- PROBLÉMA -->
 <section class="band">
@@ -144,9 +152,9 @@
     <div class="phone-big" aria-hidden="true">
       <div class="pb-screen">
         <div class="mp-bar">Sikermaker</div>
-        <div class="mp-card"><small>Mai lépések · 2/4</small><p class="done">Reggeli tervezés</p><p class="done">Árajánlat küldése</p><p>Hírlevél megírása</p><p>Könyvelő hívása</p></div>
+        <div class="mp-card"><small>Mai lépések · <em id="pb-n">2</em>/4</small><p class="done" data-ptask>Reggeli tervezés</p><p class="done" data-ptask>Árajánlat küldése</p><p data-ptask>Hírlevél megírása</p><p data-ptask>Könyvelő hívása</p></div>
         <div class="mp-card"><small>Következő esemény</small><p>14:30 · Tartalomgyártás</p></div>
-        <div class="mp-card hl"><small>Heti cél</small><p>68% – jó úton jársz!</p></div>
+        <div class="mp-card hl"><small>Heti cél</small><div class="bar"><i id="pb-bar"></i></div><p class="nob" id="pb-txt">68% – jó úton jársz!</p></div>
         <div class="mp-tab"><i class="on"></i><i></i><i></i><i></i></div>
       </div>
     </div>
