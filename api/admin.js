@@ -16,21 +16,11 @@
 const L = require("./_lib");
 const B = require("./_brands");
 
-const PLANS = ["ingyenes", "alap", "whitelabel"];
+const PLANS = ["ingyenes", "pro"];
 const STATUSES = ["probaido", "aktiv", "lejart", "lemondva", "ajandek"];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const admins = () => L.env("SUPERADMIN_EMAILS").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
-const isRoot = (u) => !!(u && u.email && admins().includes(String(u.email).toLowerCase()));
-async function dbAdminIds() {
-  try { return new Set((await L.sb("sikertervezo_superadmins?select=user_id")).map((r) => r.user_id)); } catch (e) { return new Set(); }
-}
-// Superadmin: MEGERŐSÍTETT e-mail ÉS (fő admin a SUPERADMIN_EMAILS-ből VAGY a felületen kinevezett admin).
-// Ha nincs fő admin beállítva, senki sem admin (fail-closed) — a kinevezett adminok sem.
-async function isSuper(u) {
-  if (!u || !u.confirmed || !admins().length) return false;
-  if (isRoot(u)) return true;
-  return (await dbAdminIds()).has(u.id);
-}
+const ROLES = require("./_plan");
+const { admins, isRoot, dbAdminIds, isSuper } = ROLES;
 
 async function audit(actor, action, target, detail) {
   try {

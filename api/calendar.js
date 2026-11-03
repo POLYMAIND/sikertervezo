@@ -6,6 +6,7 @@
 const crypto = require("crypto");
 const L = require("./_lib");
 const B = require("./_brands");
+const PL = require("./_plan");
 const hash = (t) => crypto.createHash("sha256").update(t).digest("hex");
 
 module.exports = async function handler(req, res) {
@@ -20,6 +21,7 @@ module.exports = async function handler(req, res) {
       return L.send(res, 200, { ok: true, active: !!(rows && rows[0]), created_at: rows && rows[0] ? rows[0].created_at : null, last_fetch_at: rows && rows[0] ? rows[0].last_fetch_at : null });
     }
     if (b.action === "create") {
+      if ((await PL.userPlan(user, B.resolveSlug(req))).plan !== "pro") return L.send(res, 402, { error: "pro_required" });
       const token = crypto.randomBytes(24).toString("base64url");
       await L.sb(`sikertervezo_ical_feeds?user_id=eq.${user.id}`, { method: "DELETE" });
       await L.sb("sikertervezo_ical_feeds", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ token_hash: hash(token), user_id: user.id, brand_slug: B.resolveSlug(req) }) });

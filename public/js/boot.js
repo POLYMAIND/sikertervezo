@@ -146,6 +146,10 @@
 
     let brandAdmin = false, px = Object.assign({ enabled: false }, config.polyos || {});
     let superadmin = false;
+    // csomag: belépve a szerver mondja meg (/api/me); bemutató módban a csomagváltó (alapból Pro, hogy minden látszódjon)
+    let userPlan = demo ? (["ingyenes", "pro", "whitelabel"].includes(ls.get(DEMO_PLAN_KEY)) ? ls.get(DEMO_PLAN_KEY) : "pro") : "ingyenes";
+    if (userPlan === "whitelabel") userPlan = "pro";
+    if (!demo) { try { userPlan = (await api("/api/me" + location.search)).plan === "pro" ? "pro" : "ingyenes"; } catch (e) {} }
     if (!demo) {
       try { brandAdmin = !!(await api("/api/brand")).admin; } catch (e) {}
       try { superadmin = !!(await api("/api/admin", { method: "POST", body: JSON.stringify({ action: "whoami" }) })).superadmin; } catch (e) {}
@@ -164,7 +168,9 @@
       admin: async (action, payload) => api("/api/admin", { method: "POST", body: JSON.stringify(Object.assign({ action }, payload || {})) }),
       showAuth: (tab) => { sessionStorage.removeItem(DEMO_CHOSEN); authScreen(tab === "belepes" ? "belepes" : "regisztracio"); },
       logout: async () => { await store.signOut(); sessionStorage.removeItem(DEMO_CHOSEN); location.hash = ""; location.reload(); },
-      setDemoPlan: (p) => { if (p === "whitelabel") ls.set(DEMO_PLAN_KEY, "whitelabel"); else ls.del(DEMO_PLAN_KEY); location.reload(); },
+      // bemutató módban a csomag kézzel váltható: ingyenes / pro / white label (csak a kinézet és a zárolások; a szerver semmit nem enged ezzel)
+      setDemoPlan: (p) => { ls.set(DEMO_PLAN_KEY, ["ingyenes", "pro", "whitelabel"].includes(p) ? p : "pro"); location.reload(); },
+      plan: userPlan,
       saveBrand: async (draft) => {
         if (demo) { ls.set(DEMO_BRAND_KEY, JSON.stringify(draft)); return; }
         try { await api("/api/brand", { method: "PUT", body: JSON.stringify({ brand: draft }) }); }

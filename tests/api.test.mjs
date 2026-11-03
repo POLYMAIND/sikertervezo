@@ -184,3 +184,16 @@ test("iCal: időpont, tartalom és utánkövetés kerül bele, a szöveg helyese
   assert.match(out, /SUMMARY:Bemutató\\, Kata\\; online/); assert.match(out, /SUMMARY:Reel: Tipp/); assert.match(out, /Utánkövetés: Minta Zsófi/);
   assert.ok(out.split("\r\n").every((l) => Buffer.byteLength(l) <= 75));
 });
+
+test("csomag: Pro csak aktív / ajándék / érvényes próbaidő esetén", () => {
+  const { subActive } = require("../api/_plan.js");
+  const T = "2026-11-03";
+  assert.equal(subActive({ plan: "pro", status: "aktiv" }, T), true);
+  assert.equal(subActive({ plan: "pro", status: "aktiv", current_period_end: "2026-11-02" }, T), false);
+  assert.equal(subActive({ plan: "pro", status: "ajandek" }, T), true);
+  assert.equal(subActive({ plan: "pro", status: "probaido", current_period_end: "2026-11-10" }, T), true);
+  assert.equal(subActive({ plan: "pro", status: "probaido" }, T), false);
+  assert.equal(subActive({ plan: "pro", status: "lemondva" }, T), false);
+  assert.equal(subActive({ plan: "ingyenes", status: "aktiv" }, T), false);
+  assert.equal(subActive(null, T), false);
+});

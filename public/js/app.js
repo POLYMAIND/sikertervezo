@@ -5,6 +5,10 @@
 const ST=(window.ST=window.ST||{});
 ST.start=function(ctx){
 const BR=ctx.brand, TH=ST.theme, PX=ST.polyos, DEMO=ctx.mode!=="cloud";
+// csomag: ingyenes / pro. A white label márka felhasználói Pro-t kapnak.
+const PRO=ctx.plan==="pro"||BR.plan==="whitelabel";
+const PRO_VIEWS=["tartalom","kapcsolatok","ugyfelek","szamok"];
+const PRO_PRICE="3 999 Ft / hó";
 /* ---------- utils ---------- */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -259,11 +263,11 @@ const NICON={
 };
 const nicon=k=>`<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${NICON[k]||""}</svg>`;
 const TABS=["ma","naptar","kapcsolatok","tartalom"];
-function navBadge(k,dc){if(k==="kapcsolatok"&&dc.f)return dc.f;if(k==="ugyfelek"&&dc.r)return dc.r;return 0}
+function navBadge(k,dc){if(!PRO&&PRO_VIEWS.includes(k))return 0;if(k==="kapcsolatok"&&dc.f)return dc.f;if(k==="ugyfelek"&&dc.r)return dc.r;return 0}
 function nav(){
   const dc=dueCounts();
   $("#nav").innerHTML=VIEWS.map(([k,l])=>{
-    const n=navBadge(k,dc),b=n?`<span class="badge">${n}</span>`:"";
+    const n=navBadge(k,dc),b=!PRO&&PRO_VIEWS.includes(k)?'<span class="badge probadge">PRO</span>':n?`<span class="badge">${n}</span>`:"";
     return `<a href="#${k}" ${route===k?'aria-current="page"':""}>${l}${b}</a>`}).join("");
   const tb=$("#tabbar");
   if(tb){
@@ -305,6 +309,18 @@ function monthStats(m){
   };
 }
 
+function proBlock(dc,rc,bd,cont,st){return `  <div class="grid g4">
+    <div class="card kpi"><div class="v num red">${st.contacts}</div><div class="l">új kapcsolat ebben a hónapban</div></div>
+    <div class="card kpi"><div class="v num">${st.clients}</div><div class="l">új ügyfél</div></div>
+    <div class="card kpi"><div class="v num">${st.team}</div><div class="l">új csapattag</div></div>
+    <div class="card kpi"><div class="v num">${money(st.revenue)}</div><div class="l">bevétel a rendelésekből</div></div>
+  </div>
+  <div class="grid g3">
+    <div class="card"><h3>Kit keress meg ma?</h3><div class="list">${dc.map(c=>`<div class="li"><div class="grow"><div class="t">${esc(c.name)}</div><div class="s">${esc(c.next)} · ${STAGES[c.stage]}</div></div>${c.nextDate<T?`<span class="chip warn">${-diff(c.nextDate)} napja</span>`:'<span class="chip">ma</span>'}<button class="iconbtn" data-act="msg" data-k="${c.stage===1?"bemutato":"utankovetes"}" data-type="contact" data-id="${c.id}" aria-label="Üzenetvázlat" title="Üzenetvázlat">${MSGICON}</button><button class="iconbtn" data-act="cdone" data-id="${c.id}" aria-label="Megvolt" title="Megvolt">✓</button></div>`).join("")||'<div class="empty">Mára nincs esedékes utánkövetés.</div>'}</div></div>
+    <div class="card"><h3>Újrarendelés, szülinap</h3><div class="list">${rc.map(c=>`<div class="li"><div class="grow"><div class="t">${esc(c.name)}</div><div class="s">${esc(c.fav)}</div></div><span class="chip ${reorderDue(c)<0?"warn":""}">${reorderDue(c)<0?-reorderDue(c)+" napja esedékes":reorderDue(c)===0?"ma esedékes":reorderDue(c)+" nap múlva"}</span><button class="iconbtn" data-act="msg" data-k="ujrarendeles" data-type="client" data-id="${c.id}" aria-label="Üzenetvázlat" title="Üzenetvázlat">${MSGICON}</button></div>`).join("")}${bd.map(c=>`<div class="li"><div class="grow"><div class="t">${esc(c.name)}</div><div class="s">születésnap a héten</div></div><span class="chip good">Szülinap</span><button class="iconbtn" data-act="msg" data-k="szulinap" data-type="client" data-id="${c.id}" aria-label="Üzenetvázlat" title="Üzenetvázlat">${MSGICON}</button></div>`).join("")}${!rc.length&&!bd.length?'<div class="empty">Nincs teendő az ügyfeleiddel.</div>':""}</div></div>
+    <div class="card"><h3>Mai tartalom</h3><div class="list">${cont.map(c=>`<div class="li"><span class="dot" style="background:var(--p${c.pillar+1})"></span><div class="grow"><div class="t">${esc(c.title)}</div><div class="s">${c.format} · ${PILLARS[c.pillar]}</div></div><button class="chip" data-act="cstat" data-id="${c.id}">${CSTATUS[c.status]}</button></div>`).join("")||'<div class="empty">Mára nincs betervezett tartalom.</div>'}</div><div style="margin-top:10px"><a class="btn ghost small" href="#tartalom" style="text-decoration:none">Tartalomnaptár</a></div></div>
+  </div>
+`}
 function vMa(){
   activeBoard="ma-"+T;
   const dc=S.contacts.filter(c=>c.nextDate&&c.nextDate<=T).sort((a,b)=>a.nextDate.localeCompare(b.nextDate));
@@ -321,17 +337,7 @@ function vMa(){
     <div style="margin-top:14px">${stepsHTML(T)}</div>${board(activeBoard)}</div>
   ${pointsCard()}</div>
   ${bpStrip()}
-  <div class="grid g4">
-    <div class="card kpi"><div class="v num red">${st.contacts}</div><div class="l">új kapcsolat ebben a hónapban</div></div>
-    <div class="card kpi"><div class="v num">${st.clients}</div><div class="l">új ügyfél</div></div>
-    <div class="card kpi"><div class="v num">${st.team}</div><div class="l">új csapattag</div></div>
-    <div class="card kpi"><div class="v num">${money(st.revenue)}</div><div class="l">bevétel a rendelésekből</div></div>
-  </div>
-  <div class="grid g3">
-    <div class="card"><h3>Kit keress meg ma?</h3><div class="list">${dc.map(c=>`<div class="li"><div class="grow"><div class="t">${esc(c.name)}</div><div class="s">${esc(c.next)} · ${STAGES[c.stage]}</div></div>${c.nextDate<T?`<span class="chip warn">${-diff(c.nextDate)} napja</span>`:'<span class="chip">ma</span>'}<button class="iconbtn" data-act="msg" data-k="${c.stage===1?"bemutato":"utankovetes"}" data-type="contact" data-id="${c.id}" aria-label="Üzenetvázlat" title="Üzenetvázlat">${MSGICON}</button><button class="iconbtn" data-act="cdone" data-id="${c.id}" aria-label="Megvolt" title="Megvolt">✓</button></div>`).join("")||'<div class="empty">Mára nincs esedékes utánkövetés.</div>'}</div></div>
-    <div class="card"><h3>Újrarendelés, szülinap</h3><div class="list">${rc.map(c=>`<div class="li"><div class="grow"><div class="t">${esc(c.name)}</div><div class="s">${esc(c.fav)}</div></div><span class="chip ${reorderDue(c)<0?"warn":""}">${reorderDue(c)<0?-reorderDue(c)+" napja esedékes":reorderDue(c)===0?"ma esedékes":reorderDue(c)+" nap múlva"}</span><button class="iconbtn" data-act="msg" data-k="ujrarendeles" data-type="client" data-id="${c.id}" aria-label="Üzenetvázlat" title="Üzenetvázlat">${MSGICON}</button></div>`).join("")}${bd.map(c=>`<div class="li"><div class="grow"><div class="t">${esc(c.name)}</div><div class="s">születésnap a héten</div></div><span class="chip good">Szülinap</span><button class="iconbtn" data-act="msg" data-k="szulinap" data-type="client" data-id="${c.id}" aria-label="Üzenetvázlat" title="Üzenetvázlat">${MSGICON}</button></div>`).join("")}${!rc.length&&!bd.length?'<div class="empty">Nincs teendő az ügyfeleiddel.</div>':""}</div></div>
-    <div class="card"><h3>Mai tartalom</h3><div class="list">${cont.map(c=>`<div class="li"><span class="dot" style="background:var(--p${c.pillar+1})"></span><div class="grow"><div class="t">${esc(c.title)}</div><div class="s">${c.format} · ${PILLARS[c.pillar]}</div></div><button class="chip" data-act="cstat" data-id="${c.id}">${CSTATUS[c.status]}</button></div>`).join("")||'<div class="empty">Mára nincs betervezett tartalom.</div>'}</div><div style="margin-top:10px"><a class="btn ghost small" href="#tartalom" style="text-decoration:none">Tartalomnaptár</a></div></div>
-  </div>
+  ${PRO?proBlock(dc,rc,bd,cont,st):proTeaser()}
   <div class="grid g2"><div class="card"><div class="row between" style="margin-bottom:6px"><h3 style="margin:0">Mai beosztás</h3><button class="btn ghost small" data-act="opennap" data-k="${T}">Napi nézet</button></div><div class="list">${hoursOf(T).map(([h,v])=>{const loc=locOf(T,h);return `<div class="li"><span class="num tm ${+h===new Date().getHours()?"now":""}">${pad(h)}:00</span><div class="grow"><div class="t">${esc(v)}</div>${loc?`<div class="s">${esc(loc)}</div>`:""}</div>${apptLinks(T,h,v,loc)}</div>`}).join("")||'<div class="empty">Mára nincs beírt időpont.</div>'}</div></div>
   <div class="card"><h3>Mai teendők</h3>${tasksHTML(T)}</div></div>
   <div class="grid g2">${habitsToday()}${closeHTML(T,true)}</div>`;
@@ -541,7 +547,7 @@ function vSzamok(){
 
 function vBeall(){
   activeBoard=null;
-  return head("Beállítások","Egyszer beírod, mindenhol ott lesz")+installCard("beallitasok")+accountCard()+brandCard()+`
+  return head("Beállítások","Egyszer beírod, mindenhol ott lesz")+installCard("beallitasok")+accountCard()+planCard()+brandCard()+`
   <div class="grid g2">
     <div class="card stack"><h3>Rólad</h3>
       <label class="f">A neved<input type="text" id="set-name" data-set="name" value="${esc(S.settings.name)}"></label>
@@ -641,7 +647,7 @@ function suggestions(){
   if(!S.content.some(c=>wk.includes(c.date)&&c.date>=T)){out.push({id:"content",eyebrow:"Tartalom",title:"Erre a hétre még nincs betervezett tartalmad.",sub:"Válassz egy ötletet az Ötletbankból, és tedd be a naptárba.",go:{label:"Tartalomnaptár",href:"tartalom"}})}
   if(new Date().getHours()>=17&&!(S.days[T]&&S.days[T].close&&S.days[T].close.mood!=null))out.push({id:"close",eyebrow:"Esti zárás",title:"Zárd le a napot két perc alatt.",sub:"Három kérdés és a hangulatod: így látod, mennyit haladtál.",anchor:"estizaras"});
   const cp=curPeriod();if(cp){const c=cdParts(cp.end);if(c&&c.d<3){const b=bpPeriod(cp),pg=+S.settings.ptGoal||0,miss=Math.max(0,pg-b.personal);out.unshift({id:"per-"+cp.id,eyebrow:"Periódus zárása",title:`Még ${cdText(cp.end)} a zárásig.`,sub:miss?`A személyes célodhoz még ${nfmt(miss)} ${ptName()} hiányzik.`:"A személyes célod megvan. Segíts a csapatodnak is!",go:{label:"Napi állás",href:"szamok"}})}}
-  return out.filter(x=>!ui.skip.includes(x.id));
+  return out.filter(x=>!ui.skip.includes(x.id)&&(PRO||!/^(c|r|b|content)/.test(x.id)||x.id.startsWith("close")));
 }
 function nextCard(){
   const list=suggestions();
@@ -1060,14 +1066,14 @@ function brandCard(){
     const d=ui.brand||(ui.brand=JSON.parse(JSON.stringify(ctx.brandRaw||{})));
     wl=brandEditor(d,{id:"markaszerk",title:"Márka (white label)",badge:ctx.brandAdmin?"Te kezeled":"Bemutató",note:"Ez minden felhasználódnál megjelenik: név, logó, kiemelőszínek, betűk. A háttérmintát mindenki maga választja.",saveAct:"brandsave",resetAct:"brandreset",saveLabel:"Márka mentése"});
   }else if(BR.plan!=="whitelabel"&&BR.upsell){
-    wl=`<div class="card stack lockcard"><h3 style="margin:0">Saját márkával szeretnéd?</h3><p style="margin:0;font-size:13px">A <b>white label</b> csomagban a tervező a te nevedet, logódat, színeidet és betűidet viseli, és így adhatod tovább a csapatodnak, ügyfeleidnek.</p><a class="btn small ghost" style="align-self:flex-start" href="${esc(PX.upsellUrl("whitelabel",BR.slug))}" target="_blank" rel="noopener">Érdekel a white label</a></div>`;
+    wl=`<div class="card stack lockcard"><div class="row between"><h3 style="margin:0">Saját márkával szeretnéd?</h3><span class="chip">Hamarosan</span></div><p style="margin:0;font-size:13px">A <b>white label</b> csomagban a tervező a te nevedet, logódat, színeidet és betűidet viseli, és így adhatod tovább a csapatodnak, ügyfeleidnek.</p><a class="btn small ghost" style="align-self:flex-start" href="${esc(PX.upsellUrl("whitelabel",BR.slug))}" target="_blank" rel="noopener">Érdekel a white label</a></div>`;
   }
   return `<div class="grid g2" style="align-items:start" id="arculat"><div class="card stack" style="gap:14px"><h3 style="margin:0">Háttér</h3><p class="muted" style="margin:0;font-size:12.5px">Csak nálad látszik, bármikor visszaváltható.</p><div class="bgpick">${pats}</div><div class="colorrow">${cols}<input type="color" data-bgc="1" value="${bp.bgColor}" aria-label="Saját háttérszín"></div></div>${wl}</div>`;
 }
 function accountCard(){
   if(DEMO)return `<div class="card stack"><h3>Bemutató mód</h3><p class="muted" style="margin:0">Most belépés nélkül, mintaadatokkal próbálod a tervezőt: amit beírsz, csak ebben a böngészőben marad meg. Fiókkal minden eszközödön ugyanazt látod.</p>
   <div class="row">${ctx.cloud?'<button class="btn" data-act="signup">Regisztrálok és elkezdem</button>':""}<span id="resetrow" class="row"><button class="btn ghost" data-act="resetask">Mintaadatok visszaállítása</button></span></div>
-  <div class="row" style="gap:6px"><span class="lab2" style="margin:0">Csomag a bemutatóban:</span><button class="mood" data-act="demoplan" data-k="alap" aria-pressed="${BR.plan!=="whitelabel"}">Alap</button><button class="mood" data-act="demoplan" data-k="whitelabel" aria-pressed="${BR.plan==="whitelabel"}">White label</button></div></div>`;
+</div>`;
   return `<div class="card stack"><h3>Fiók</h3><div class="row between"><div><b>${esc((ctx.user&&ctx.user.email)||"")}</b><div class="muted" style="font-size:12.5px">A terved a fiókodhoz van mentve, minden eszközödön ugyanaz.</div></div><span class="row"><button class="btn ghost small" data-act="export">Adataim letöltése</button><button class="btn ghost small" data-act="logout">Kijelentkezés</button></span></div></div>`;
 }
 
@@ -1093,7 +1099,7 @@ const PROFILES=[
   {k:"egyeb",l:"Valami más",d:"Egyszerűen jól akarod szervezni a napjaidat és a kapcsolataidat.",steps:["Tervezés","Új kapcsolat","Utánkövetés","Tartalom","Önfejlesztés"],pt:false}
 ];
 const greetName=()=>{const n=(S.settings.nick||"").trim();return n||firstName(S.settings.name)||""};
-function obSteps(d){return ["udv","nev","profil","lepesek"].concat(d.pt?["pont"]:[]).concat(["kulonbseg","kapcsolat","ugyfel","kesz"])}
+function obSteps(d){return ["udv","nev","profil","lepesek"].concat(d.pt&&PRO?["pont"]:[]).concat(PRO?["kulonbseg","kapcsolat","ugyfel"]:[]).concat(["kesz"])}
 function obOpen(){
   const prof=PROFILES.find(p=>p.k===S.settings.profile)||null;
   ui.ob={i:0,d:{name:S.settings.name||"",nick:S.settings.nick||"",profile:prof?prof.k:"",pt:prof?prof.pt:true,steps:S.settings.steps.slice(),ptName:S.settings.ptName||"pont",ptGoal:S.settings.ptGoal||"",gpGoal:S.settings.gpGoal||"",perEnd:(curPeriod()||{}).end||iso(addDays(TODAY,27)),contact:{name:"",src:"",next:"",nextDate:iso(addDays(TODAY,1))},client:{name:"",fav:"",last:""}}};
@@ -1115,7 +1121,7 @@ function obBody(step,d){
   if(step==="kapcsolat")return `<h2>Vedd fel az első kapcsolatod</h2><p class="lead">Gondolj valakire, akivel mostanában beszéltél, vagy akit szeretnél megkeresni. Később a <b>Kapcsolatok</b> oldalon az <b>Új kapcsolat</b> gombbal veszel fel újat.</p>${obField("c.name","Név",d.contact.name,"text",'maxlength="60" placeholder="Például: Minta Kata"')}${obField("c.src","Honnan ismered?",d.contact.src,"text",'maxlength="60" placeholder="Például: Instagram, ajánlás"')}<div class="grid g2">${obField("c.next","Mi a következő lépés?",d.contact.next,"text",'maxlength="60" placeholder="Például: Első üzenet"')}${obField("c.nextDate","Mikor?",d.contact.nextDate,"date")}</div>`;
   if(step==="ugyfel")return `<h2>És az első ügyfeled</h2><p class="lead">Ha már van, aki vásárolt tőled, vedd fel. Ha még nincs, nyugodtan hagyd ki. Később az <b>Ügyfelek</b> oldalon az <b>Új ügyfél</b> gombbal veszel fel újat.</p>${obField("u.name","Név",d.client.name,"text",'maxlength="60" placeholder="Például: Minta Éva"')}${obField("u.fav","Mit szokott venni?",d.client.fav,"text",'maxlength="80" placeholder="Például: arckrém, vitamin"')}${obField("u.last","Mikor vásárolt utoljára?",d.client.last,"date")}`;
   const inst=ctx.install&&ctx.install.mode();
-  return `<div class="ob-hero">🎉</div><h2>Kész is vagy${greetName()||d.nick||firstName(d.name)?", "+esc(d.nick||firstName(d.name)):""}!</h2><p class="lead">Így találsz meg mindent:</p><ul class="ob-list"><li><b>Ma:</b> a napi lépéseid, kit keress meg, mai teendők</li><li><b>Naptár:</b> havi, heti és napi nézet az időpontjaiddal</li><li><b>Kapcsolatok és Ügyfelek:</b> az embereid, emlékeztetőkkel</li><li><b>Tartalom:</b> mit posztolsz és mikor</li></ul><p class="lead">A Vezérlőpulton egy <b>Első lépések</b> lista vár, amivel végigjárhatod az alapokat.</p>${inst==="prompt"?'<button type="button" class="btn ghost" data-act="install">Telepítem a kezdőképernyőre</button>':inst==="ios"?'<p class="ob-note">Tipp: Safariban a Megosztás ikon, majd a „Főképernyőhöz adás” után appként indul a tervező.</p>':""}`;
+  return `<div class="ob-hero">🎉</div><h2>Kész is vagy${greetName()||d.nick||firstName(d.name)?", "+esc(d.nick||firstName(d.name)):""}!</h2><p class="lead">Így találsz meg mindent:</p><ul class="ob-list"><li><b>Ma:</b> a napi lépéseid, kit keress meg, mai teendők</li><li><b>Naptár:</b> havi, heti és napi nézet az időpontjaiddal</li><li><b>Kapcsolatok és Ügyfelek:</b> az embereid, emlékeztetőkkel</li><li><b>Tartalom:</b> mit posztolsz és mikor</li></ul><p class="lead">A Vezérlőpulton egy <b>Első lépések</b> lista vár, amivel végigjárhatod az alapokat.</p>${PRO?"":`<p class="ob-note">A kapcsolatok, ügyfelek, a tartalomtervező és a számok a <b>Pro</b> csomagban érhetők el (${PRO_PRICE}).</p>`}${inst==="prompt"?'<button type="button" class="btn ghost" data-act="install">Telepítem a kezdőképernyőre</button>':inst==="ios"?'<p class="ob-note">Tipp: Safariban a Megosztás ikon, majd a „Főképernyőhöz adás” után appként indul a tervező.</p>':""}`;
 }
 function obRender(){
   const o=ui.ob;if(!o)return;const steps=obSteps(o.d),step=steps[o.i],last=o.i===steps.length-1;
@@ -1162,6 +1168,7 @@ function checklistCard(){
     ["Betervezted az első tartalmad",S.content.length>0,'<button class="btn small ghost" data-act="newcontent" data-k="">Új tartalom</button>'],
     ["Lezártad az első napod este",closedDays()>0,'<button class="btn small ghost" data-act="ncanchor" data-k="estizaras">Esti zárás</button>']
   ];
+  if(!PRO)for(let i=items.length-1;i>=0;i--)if(/kapcsolat|ügyfel|tartalm/.test(items[i][0]))items.splice(i,1);
   const done=items.filter(x=>x[1]).length;if(done===items.length)return "";
   return `<div class="card checklist"><div class="row between"><div><div class="eyebrow">Első lépések</div><h3 style="margin:4px 0 0">${done} / ${items.length} kész</h3></div><button class="nc-skip" style="color:var(--muted)" data-act="checkhide">Elrejtés</button></div>
   <div class="prog" style="margin:10px 0 6px"><i style="width:${done/items.length*100}%"></i></div>
@@ -1169,7 +1176,7 @@ function checklistCard(){
 }
 /* ---------- superadmin (Polymaind) ---------- */
 const ADM_TABS=[["attekintes","Áttekintés"],["felhasznalok","Regisztrálók"],["arculat","Sikertervező-arculat"],["markak","Márkák"],["naplo","Napló"]];
-const SUB_PLANS=[["ingyenes","Ingyenes"],["alap","Alap"],["whitelabel","White label"]];
+const SUB_PLANS=[["ingyenes","Ingyenes"],["pro","Pro"]];
 const SUB_STATUS=[["probaido","Próbaidő"],["aktiv","Aktív"],["lejart","Lejárt"],["lemondva","Lemondva"],["ajandek","Ajándék"]];
 const lbl=(arr,k)=>(arr.find(x=>x[0]===k)||[k,k])[1];
 const dt=s=>s?fmtDate(String(s).slice(0,10))+" "+String(s).slice(0,4):"–";
@@ -1225,7 +1232,7 @@ function admUserSheet(id){
   <div class="fg"><label class="f">Csomag<select id="as-plan">${SUB_PLANS.map(([k,l])=>`<option value="${k}" ${s.plan===k?"selected":""}>${l}</option>`).join("")}</select></label><label class="f">Állapot<select id="as-status">${SUB_STATUS.map(([k,l])=>`<option value="${k}" ${s.status===k?"selected":""}>${l}</option>`).join("")}</select></label>
   <label class="f">Érvényes eddig<input type="date" id="as-end" value="${esc(s.current_period_end||"")}"></label><label class="f full">Megjegyzés (csak admin látja)<textarea id="as-note" rows="2" maxlength="500">${esc(s.note||"")}</textarea></label></div>
   <div class="status"><div class="grow"><b>Admin jog</b><div class="muted" style="font-size:12.5px">${u.superadmin?"Fő admin (a Vercel beállításából), innen nem módosítható.":u.me?"Ez a te fiókod.":u.admin?"Admin: látja és kezeli a regisztrálókat, előfizetéseket, márkákat.":u.confirmed?"Nem admin.":"Előbb erősítse meg az e-mail-címét, csak utána tehető adminná."}</div></div>${u.superadmin||u.me||(!u.admin&&!u.confirmed)?"":ui.admConfirm===u.id?`<span class="row" style="gap:6px"><button type="button" class="btn small" data-act="${u.admin?"admrevoke":"admgrant"}" data-id="${u.id}">${u.admin?"Igen, elveszem":"Igen, adminná teszem"}</button><button type="button" class="btn small ghost" data-act="admconfno" data-id="${u.id}">Mégse</button></span>`:`<button type="button" class="btn small ${u.admin?"ghost":""}" data-act="admconf" data-id="${u.id}">${u.admin?"Admin jog elvétele":"Adminná teszem"}</button>`}</div>
-  <p class="muted" style="margin:0;font-size:12px">A csomag egyelőre nyilvántartás: a fizetés (Stripe/Billingo) bekötéséig nem korlátoz funkciót.</p>
+  <p class="muted" style="margin:0;font-size:12px">A Pro azonnal bekapcsolja a Pro funkciókat (aktív, ajándék, vagy próbaidő a megadott dátumig). Az online fizetés bekötéséig itt kezeled.</p>
   <div class="row between">${u.superadmin?"<span></span>":`<button type="button" class="btn ghost small" data-act="${u.banned?"admunban":"admban"}" data-id="${u.id}">${u.banned?"Letiltás feloldása":"Fiók letiltása"}</button>`}<button class="btn">Mentés</button></div></form></div>`;
 }
 async function admDo(action,payload,okMsg,reload){
@@ -1261,7 +1268,8 @@ function saveQuickAdd(){
 function calSyncCard(){
   const c=ui.cal||{};
   let body;
-  if(DEMO)body=`<p style="margin:0">A naptár-szinkronhoz fiók kell: ${ctx.cloud?'<button class="chip" data-act="signup">Regisztrálok</button>':"a bemutató módban nem érhető el."}</p>`;
+  if(!PRO)body=`<p style="margin:0">A naptár-szinkron a Pro csomag része (${PRO_PRICE}).</p><div class="row">${proCta()}</div>`;
+  else if(DEMO)body=`<p style="margin:0">A naptár-szinkronhoz fiók kell: ${ctx.cloud?'<button class="chip" data-act="signup">Regisztrálok</button>':"a bemutató módban nem érhető el."}</p>`;
   else if(!c.loaded){if(!c.loading){c.loading=true;ui.cal=c;ctx.calendar("status").then(r=>{ui.cal=Object.assign({loaded:true},r);render()},()=>{ui.cal={loaded:true,err:true};render()})}body='<div class="spinner" role="status" aria-label="Betöltés"></div>'}
   else if(c.err)body='<p style="margin:0">Most nem sikerült betölteni. Próbáld újra később.</p>';
   else{
@@ -1358,11 +1366,39 @@ function revSave(){
   if(first)logPt("review");
   ui.rev=null;save();toast(first?(isW?"Lezártad a hetet. Szép munka!":"Lezártad a hónapot. Gratulálok!"):"Mentve.");render();window.scrollTo(0,0);
 }
+/* ---------- csomagok: ingyenes / pro ---------- */
+const PRO_LIST=[["tartalom","Tartalomtervező","Havi tartalomnaptár, pillér-egyensúly, ötletbank hookkal és CTA-val."],["kapcsolatok","Kapcsolatok","Négylépcsős folyamat, utánkövetési emlékeztetők, üzenetvázlatok."],["ugyfelek","Ügyfelek","Rendelések, újrarendelési és szülinapi emlékeztető."],["szamok","Számok","Havi célok, bevétel, pontrendszer napi bontásban."],["naptar","Naptár-szinkron","A tervező naptára a Google Naptárban és a telefonodon, és a többi naptárad bekötése."],["email","E-mail","Üzenetek küldése a kapcsolataidnak és ügyfeleidnek, közvetlenül a tervezőből (hamarosan)."]];
+function proUrl(){
+  if(DEMO)return null;
+  const u=ctx.user||{};return "mailto:hello@polymaind.hu?subject="+encodeURIComponent(BR.productName+" Pro előfizetés")+"&body="+encodeURIComponent(`Szia!\n\nSzeretnék Pro-ra váltani (${PRO_PRICE}).\nA fiókom e-mail-címe: ${u.email||""}\n\nKöszönöm!`);
+}
+function proCta(label){
+  if(DEMO)return `<button class="btn" data-act="demoplan" data-k="pro">${label||"Kipróbálom a Pro-t a bemutatóban"}</button>`;
+  return `<a class="btn" href="${esc(proUrl())}">${label||"Pro-ra váltok"}</a>`;
+}
+function vPro(view){
+  activeBoard=null;
+  const it=PRO_LIST.find(x=>x[0]===view)||PRO_LIST[0];
+  return head(it[1],"Pro funkció")+`<div class="card stack procard" style="gap:14px"><div class="row" style="gap:12px;flex-wrap:nowrap"><span class="ic" aria-hidden="true">${nicon(view)}</span><div><h2 style="margin:0">${esc(it[1])} a Pro csomagban</h2><p class="muted" style="margin:4px 0 0">${esc(it[2])}</p></div></div>
+  <div class="prolist">${PRO_LIST.map(([k,l,d])=>`<div class="li"><span class="cbx" aria-hidden="true" aria-pressed="true">✓</span><div class="grow"><div class="t">${esc(l)}</div><div class="s">${esc(d)}</div></div></div>`).join("")}</div>
+  <div class="row between"><div><div class="bpv" style="margin:0">${PRO_PRICE.replace(" / hó","")}<small> / hó</small></div><div class="muted" style="font-size:12px">Bármikor lemondható. Minden ingyenes funkció is benne van.</div></div>${proCta()}</div>
+  ${DEMO?"":'<p class="muted" style="margin:0;font-size:12px">Az online fizetés hamarosan indul. Addig a gombra kattintva írj nekünk, és még aznap bekapcsoljuk a Pro-t a fiókodon.</p>'}</div>`;
+}
+function proTeaser(){
+  return `<div class="card upstrip"><span class="ic" aria-hidden="true">⭐</span><div class="grow"><span class="t">Kapcsolatok, ügyfelek, tartalom és számok a Pro csomagban</span><span class="s">Utánkövetési emlékeztetők, újrarendelés, tartalomnaptár, havi célok, naptár-szinkron. ${PRO_PRICE}.</span></div><a class="btn small" href="#kapcsolatok">Megnézem</a></div>`;
+}
+function planCard(){
+  const pro=PRO,wl=BR.plan==="whitelabel";
+  return `<div class="card stack"><div class="row between"><h3 style="margin:0">Csomagod</h3><span class="chip ${pro?"on":""}">${wl?"White label":pro?"Pro":"Ingyenes"}</span></div>
+  <p style="margin:0;font-size:13.5px">${wl?`A ${esc(BR.productName)} csomagjában minden funkció elérhető.`:pro?"Minden funkció elérhető: tartalom, kapcsolatok, ügyfelek, számok, naptár-szinkron.":`A Pro csomagban (${PRO_PRICE}) a Tartalomtervező, a Kapcsolatok, az Ügyfelek, a Számok, a naptár-szinkron és az e-mail is elérhető.`}</p>
+  ${pro||wl?"":`<div class="row">${proCta()}</div>`}
+  ${DEMO?`<div class="row" style="gap:6px"><span class="lab2" style="margin:0">Csomag a bemutatóban:</span>${[["ingyenes","Ingyenes"],["pro","Pro"],["whitelabel","White label"]].map(([k,l])=>`<button class="mood" data-act="demoplan" data-k="${k}" aria-pressed="${(wl?"whitelabel":pro?"pro":"ingyenes")===k}">${l}</button>`).join("")}</div>`:""}</div>`;
+}
 /* ---------- render ---------- */
 const RENDER={ma:vMa,admin:vAdmin,ertekelesek:vErtekelesek,bovitesek:vBovitesek,olvasas:vOlvasas,szokasok:vSzokasok,terkep:vTerkep,matricak:vMatricak,naptar:vNaptar,kapcsolatok:vKapcsolatok,ugyfelek:vUgyfelek,tartalom:vTartalom,csapat:vCsapat,szamok:vSzamok,beallitasok:vBeall};
 function render(){
   const y=window.scrollY;
-  $("#view").innerHTML=demoCta()+RENDER[route]()+upStrip(route);
+  $("#view").innerHTML=demoCta()+(!PRO&&PRO_VIEWS.includes(route)?vPro(route):RENDER[route]()+upStrip(route));
   nav();drawer();bindBoards();bindMap();
   window.scrollTo(0,y);
   checkAch(false);

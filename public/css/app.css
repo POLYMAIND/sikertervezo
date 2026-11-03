@@ -650,3 +650,7 @@ body.ob-open{overflow:hidden}
   .drawer .revfab .fl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
   .drawer .revfab .tbadge{position:absolute;top:-4px;right:-4px}
 }
+.probadge{background:var(--accent)!important;color:var(--accent-ink)!important;font-size:9.5px!important;letter-spacing:.06em}
+.procard .ic{width:52px;height:52px;border-radius:14px;background:var(--accent-tint);color:var(--accent);display:grid;place-items:center;flex:none}
+.prolist{display:flex;flex-direction:column}
+.prolist .li .cbx{pointer-events:none}

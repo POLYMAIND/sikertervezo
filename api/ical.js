@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const L = require("./_lib");
 const B = require("./_brands");
 const ICS = require("./_ical");
+const PL = require("./_plan");
 
 module.exports = async function handler(req, res) {
   const t = new URL(req.url, "http://x").searchParams.get("t") || "";
@@ -13,7 +14,10 @@ module.exports = async function handler(req, res) {
     const h = crypto.createHash("sha256").update(t).digest("hex");
     const feeds = await L.sb(`sikertervezo_ical_feeds?token_hash=eq.${h}&select=user_id,brand_slug&limit=1`);
     const f = feeds && feeds[0]; if (!f) return notFound();
-    const rows = await L.sb(`sikertervezo_state?user_id=eq.${f.user_id}&brand_slug=eq.${encodeURIComponent(f.brand_slug)}&select=data&limit=1`);
+    // a naptár-szinkron Pro funkció: ha lejárt az előfizetés, a feliratkozott naptár üres lesz (a link megmarad)
+    const au = await L.authAdmin("users/" + f.user_id).catch(() => null);
+    const plan = au ? await PL.userPlan({ id: au.id, email: (au.email || "").toLowerCase(), confirmed: !!(au.email_confirmed_at || au.confirmed_at) }, f.brand_slug) : { plan: "ingyenes" };
+    const rows = plan.plan !== "pro" ? [] : await L.sb(`sikertervezo_state?user_id=eq.${f.user_id}&brand_slug=eq.${encodeURIComponent(f.brand_slug)}&select=data&limit=1`);
     const brand = B.publicBrand(await B.loadBrand(f.brand_slug), await B.loadPlatform());
     const body = ICS.build(rows && rows[0] ? rows[0].data : {}, { name: brand.productName || "Sikertervező" });
     L.sb(`sikertervezo_ical_feeds?token_hash=eq.${h}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ last_fetch_at: new Date().toISOString() }) }).catch(() => {});
