@@ -17,6 +17,22 @@
 
   let config, brandRaw, app = null;
 
+  /* ---------- telepítés (PWA) ---------- */
+  let installEvt = null;
+  const isStandalone = () => window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installEvt = e; if (app) app.render(); });
+  window.addEventListener("appinstalled", () => { installEvt = null; if (app) app.render(); });
+  const install = {
+    standalone: isStandalone,
+    // Androidon / asztali Chrome-ban a böngésző saját telepítő ablaka; iPhone-on csak útmutatót tudunk adni
+    mode: () => (isStandalone() ? "" : installEvt ? "prompt" : isIOS() ? "ios" : ""),
+    prompt: async () => { if (!installEvt) return false; installEvt.prompt(); const r = await installEvt.userChoice.catch(() => null); installEvt = null; return !!(r && r.outcome === "accepted"); },
+  };
+  if ("serviceWorker" in navigator && location.protocol === "https:") {
+    window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+  }
+
   async function getConfig() {
     try {
       const r = await fetch("/api/config" + location.search, { headers: { Accept: "application/json" } });
@@ -33,6 +49,9 @@
     const logo = eb.logo ? `<img class="logo" src="${esc(eb.logo)}" alt="${esc(eb.productName)} logó">` : `<span class="logo" aria-hidden="true">${TH.svg(TH.MARK).replace('width="48" height="48"', 'width="72" height="72"')}</span>`;
     $("#brandrow").innerHTML = `${logo}<div class="brand">${esc(eb.productName)}<small>${esc(eb.tagline)}</small></div>`;
     document.title = eb.productName;
+    const at = document.querySelector('meta[name="apple-mobile-web-app-title"]'); if (at) at.setAttribute("content", eb.productName);
+    const mf = $("#manifest"); if (mf) mf.setAttribute("href", "/api/manifest" + location.search);
+    const ai = $("#appleicon"); if (ai) ai.setAttribute("href", eb.logo ? "/api/icon?size=180" + (location.search ? "&" + location.search.slice(1) : "") : "/icons/apple-touch-icon.png");
   }
   function setFoot(t) { const f = $("#foot"); if (f) f.innerHTML = t; }
 
@@ -134,7 +153,7 @@
 
     const ctx = {
       mode: demo ? "demo" : "cloud", cloud: store.cloudAvailable(), user, state: st,
-      brand: TH.effectiveBrand(brandRaw), brandRaw, brandAdmin, paintChrome,
+      brand: TH.effectiveBrand(brandRaw), brandRaw, brandAdmin, paintChrome, install,
       showAuth: (tab) => { sessionStorage.removeItem(DEMO_CHOSEN); authScreen(tab === "belepes" ? "belepes" : "regisztracio"); },
       logout: async () => { await store.signOut(); sessionStorage.removeItem(DEMO_CHOSEN); location.hash = ""; location.reload(); },
       setDemoPlan: (p) => { if (p === "whitelabel") ls.set(DEMO_PLAN_KEY, "whitelabel"); else ls.del(DEMO_PLAN_KEY); location.reload(); },

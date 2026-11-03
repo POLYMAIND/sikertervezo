@@ -7,6 +7,13 @@
 <meta name="description" content="Napi tervező vállalkozóknak: lépések, kapcsolatok, ügyfelek, tartalom, csapat és célok egy helyen.">
 <title>Sikertervező</title>
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="/api/manifest" id="manifest">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" id="appleicon">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sikertervező">
+<meta name="format-detection" content="telephone=no">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="/css/app.css">
@@ -17,11 +24,13 @@
   <div class="app">
     <aside class="side">
       <div class="brandrow" id="brandrow"></div>
+      <div class="mtitle" id="mtitle" aria-live="polite"></div>
       <nav class="nav" id="nav" aria-label="Fő menü"></nav>
       <div class="foot" id="foot"></div>
     </aside>
     <main class="main"><div class="wrap" id="view"></div></main>
   </div>
+  <nav class="tabbar" id="tabbar" aria-label="Alsó menü"></nav>
   <div class="drawer" id="drawer"></div>
   <div id="layer"></div>
   <div id="celeb"></div>

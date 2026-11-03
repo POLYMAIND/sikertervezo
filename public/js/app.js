@@ -189,7 +189,7 @@ function drawer(){
     for(const[t,keys] of allKeys()){if(!keys.length)continue;h+=`<div class="set"><div class="set-title">${t}</div>${keys.map(k=>`<button class="s" data-act="stkadd" data-k="${k}"><span class="mini-st">${stInner(k)}</span></button>`).join("")}</div>`}
     h+=`</div>`;
   }
-  h+=`<button class="btn gold fab" data-act="tray" aria-expanded="${trayOpen}">${trayOpen?"Kész":"Matricák"}</button>`;
+  h+=`<button class="btn gold fab" data-act="tray" aria-expanded="${trayOpen}" aria-label="${trayOpen?"Kész":"Matricák"}"><span class="fi" aria-hidden="true">${trayOpen?"✓":"★"}</span><span class="fl">${trayOpen?"Kész":"Matricák"}</span></button>`;
   el.innerHTML=h;
 }
 function markSel(){document.querySelectorAll(".stk.sel").forEach(z=>z.classList.remove("sel"));if(ui.sel){const b=document.querySelector(`.board[data-board="${CSS.escape(ui.sel.b)}"] .stk[data-sid="${ui.sel.id}"]`);b&&b.classList.add("sel")}}
@@ -233,11 +233,43 @@ function dueCounts(){
 }
 function reorderDate(c){return c.last?iso(addDays(parse(c.last),+c.cycle||30)):""}
 function reorderDue(c){return c.last?diff(reorderDate(c)):999}
+/* mobil alsó menü: 4 fő nézet + „Több" (a többi nézet egy alulról felcsúszó lapon) */
+const NICON={
+  ma:'<path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"/><circle cx="12" cy="12" r="4"/>',
+  naptar:'<rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+  kapcsolatok:'<circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="17" cy="9.5" r="2.4"/><path d="M15.5 14.3c2.3-.3 4.4 1.2 5 4.2"/>',
+  tartalom:'<rect x="4" y="3.5" width="16" height="17" rx="3"/><path d="M8 9h8M8 13h8M8 17h5"/>',
+  tobb:'<circle cx="5.5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18.5" cy="12" r="1.6"/>',
+  szokasok:'<path d="M5 12.5l4 4 10-10"/>',terkep:'<circle cx="12" cy="12" r="3"/><circle cx="4.5" cy="6" r="2"/><circle cx="19.5" cy="6" r="2"/><circle cx="4.5" cy="18" r="2"/><circle cx="19.5" cy="18" r="2"/><path d="M6.2 7.2l3.4 3M17.8 7.2l-3.4 3M6.2 16.8l3.4-3M17.8 16.8l-3.4-3"/>',
+  olvasas:'<path d="M4 5.5c3-1.2 5.7-1 8 1 2.3-2 5-2.2 8-1V19c-3-1.2-5.7-1-8 1-2.3-2-5-2.2-8-1z"/><path d="M12 6.5V20"/>',
+  ugyfelek:'<path d="M5 8h14l-1.3 10.2a2 2 0 0 1-2 1.8H8.3a2 2 0 0 1-2-1.8z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/>',
+  csapat:'<circle cx="12" cy="7.5" r="3"/><circle cx="5.5" cy="10" r="2.2"/><circle cx="18.5" cy="10" r="2.2"/><path d="M7 19c.5-3 2.5-4.6 5-4.6s4.5 1.6 5 4.6M2.5 18c.3-2 1.5-3.2 3-3.4M21.5 18c-.3-2-1.5-3.2-3-3.4"/>',
+  szamok:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',matricak:'<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
+  bovitesek:'<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><path d="M16.5 13v7M13 16.5h7"/>',
+  beallitasok:'<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>'
+};
+const nicon=k=>`<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${NICON[k]||""}</svg>`;
+const TABS=["ma","naptar","kapcsolatok","tartalom"];
+function navBadge(k,dc){if(k==="kapcsolatok"&&dc.f)return dc.f;if(k==="ugyfelek"&&dc.r)return dc.r;return 0}
 function nav(){
   const dc=dueCounts();
   $("#nav").innerHTML=VIEWS.map(([k,l])=>{
-    let b="";if(k==="kapcsolatok"&&dc.f)b=`<span class="badge">${dc.f}</span>`;if(k==="ugyfelek"&&dc.r)b=`<span class="badge">${dc.r}</span>`;
+    const n=navBadge(k,dc),b=n?`<span class="badge">${n}</span>`:"";
     return `<a href="#${k}" ${route===k?'aria-current="page"':""}>${l}${b}</a>`}).join("");
+  const tb=$("#tabbar");
+  if(tb){
+    const restBadge=VIEWS.filter(([k])=>!TABS.includes(k)).reduce((a,[k])=>a+navBadge(k,dc),0);
+    const inRest=!TABS.includes(route);
+    tb.innerHTML=TABS.map(k=>{const l=(VIEWS.find(v=>v[0]===k)||[k,k])[1],n=navBadge(k,dc);return `<a href="#${k}" class="tab" ${route===k?'aria-current="page"':""}>${nicon(k)}<span>${l}</span>${n?`<i class="tbadge">${n}</i>`:""}</a>`}).join("")
+      +`<button type="button" class="tab" data-act="more" ${inRest?'aria-current="page"':""} aria-haspopup="dialog">${nicon("tobb")}<span>${inRest?esc((VIEWS.find(v=>v[0]===route)||["",""])[1]):"Több"}</span>${restBadge?`<i class="tbadge">${restBadge}</i>`:""}</button>`;
+  }
+  const mt=$("#mtitle");if(mt)mt.textContent=(VIEWS.find(v=>v[0]===route)||["",""])[1];
+}
+function openMore(){
+  const dc=dueCounts();
+  $("#layer").innerHTML=`<div class="modal" data-act="close"><div class="sheet moresheet" role="dialog" aria-label="Minden nézet"><div class="grabber" aria-hidden="true"></div><div class="row between"><h2>Minden nézet</h2><button type="button" class="iconbtn" data-act="close" aria-label="Bezárás">×</button></div>
+  <div class="moregrid">${VIEWS.filter(([k])=>!TABS.includes(k)).map(([k,l])=>{const n=navBadge(k,dc);return `<a href="#${k}" class="moreitem" data-act="close" ${route===k?'aria-current="page"':""}>${nicon(k)}<span>${l}</span>${n?`<i class="tbadge">${n}</i>`:""}</a>`}).join("")}</div>
+  ${DEMO&&ctx.cloud?`<button class="btn" data-act="signup">Regisztrálok és elkezdem</button>`:""}${!DEMO?`<button class="btn ghost" data-act="logout">Kijelentkezés</button>`:""}</div></div>`;
 }
 
 /* ---------- views ---------- */
@@ -272,7 +304,7 @@ function vMa(){
   const cont=S.content.filter(c=>c.date===T);
   const st=monthStats(ym(TODAY));
   const done=day(T).steps.filter(Boolean).length;
-  return head("Szia,",longDate(T),BR.founder.enabled&&S.settings.founder?'<button class="chip founderchip" data-act="cert" data-id="alapito" title="Alapító oklevél">Alapító tag</button>':"",S.settings.name+"!")+(()=>{const q=quoteOfDay();return `<p class="qday">„${esc(q.t)}”${q.a?` <span class="qday-a">${esc(q.a)}</span>`:""}</p>`})()+nextCard()+`
+  return installCard("ma")+head("Szia,",longDate(T),BR.founder.enabled&&S.settings.founder?'<button class="chip founderchip" data-act="cert" data-id="alapito" title="Alapító oklevél">Alapító tag</button>':"",S.settings.name+"!")+(()=>{const q=quoteOfDay();return `<p class="qday">„${esc(q.t)}”${q.a?` <span class="qday-a">${esc(q.a)}</span>`:""}</p>`})()+nextCard()+`
   <div class="grid herogrid">
   <div class="card hero page"><div class="row between" style="align-items:flex-start"><div class="stack" style="gap:4px;max-width:60ch">
     <div class="eyebrow">A mai napi lépéseid</div><div class="big">${done===5?"Mind az 5 megvan. Büszke lehetsz Magadra!":done?`${done} / 5 kész, így tovább!`:"Ma is közelebb kerülhetsz a céljaidhoz."}</div></div>
@@ -500,7 +532,7 @@ function vSzamok(){
 
 function vBeall(){
   activeBoard=null;
-  return head("Beállítások","Egyszer beírod, mindenhol ott lesz")+accountCard()+brandCard()+`
+  return head("Beállítások","Egyszer beírod, mindenhol ott lesz")+installCard("beallitasok")+accountCard()+brandCard()+`
   <div class="grid g2">
     <div class="card stack"><h3>Rólad</h3>
       <label class="f">A neved<input type="text" id="set-name" data-set="name" value="${esc(S.settings.name)}"></label>
@@ -1030,6 +1062,15 @@ function demoCta(){
   if(!DEMO||!ctx.cloud)return "";
   return `<div class="card democta" role="region" aria-label="Regisztráció"><div class="grow"><span class="t">Tetszik? Kezdd el a saját tervedet.</span><span class="s">Most mintaadatokkal nézelődsz. Regisztrálj ingyen, és a saját terved minden eszközödön ott lesz.</span></div><div class="row" style="gap:10px"><button class="btn democta-btn" data-act="signup">Regisztrálok és elkezdem</button><button class="nc-skip" data-act="authshow">Már van fiókom</button></div></div>`;
 }
+/* ---------- telepítés a kezdőképernyőre ---------- */
+function installCard(where){
+  const I=ctx.install;if(!I)return "";const mode=I.mode();if(!mode)return "";
+  if(where==="ma"&&((S.prefs&&S.prefs.installHide)||!matchMedia("(max-width:860px)").matches))return "";
+  const body=mode==="prompt"
+    ?`<span class="s">Egy koppintás, és a ${esc(BR.productName)} saját ikonnal, teljes képernyőn indul, mint egy app.</span>`
+    :`<span class="s">Safariban koppints a <b>Megosztás</b> ikonra <span aria-hidden="true">(négyzet felfelé nyíllal)</span>, majd a <b>Főképernyőhöz adás</b> pontra.</span>`;
+  return `<div class="card installcard"><span class="ic" aria-hidden="true">${TH.svg(TH.MARK).replace('width="48" height="48"','width="40" height="40"')}</span><div class="grow"><span class="t">Tedd ki a kezdőképernyőre</span>${body}</div><div class="row" style="gap:8px">${mode==="prompt"?'<button class="btn small" data-act="install">Telepítés</button>':""}${where==="ma"?'<button class="nc-skip" style="color:var(--muted)" data-act="installhide">Most nem</button>':""}</div></div>`;
+}
 /* ---------- render ---------- */
 const RENDER={ma:vMa,bovitesek:vBovitesek,olvasas:vOlvasas,szokasok:vSzokasok,terkep:vTerkep,matricak:vMatricak,naptar:vNaptar,kapcsolatok:vKapcsolatok,ugyfelek:vUgyfelek,tartalom:vTartalom,csapat:vCsapat,szamok:vSzamok,beallitasok:vBeall};
 function render(){
@@ -1164,6 +1205,9 @@ document.addEventListener("click",e=>{
     case"brandlogodel":ui.brand.logo="";repaint();render();break;
     case"brandreset":ui.brand=null;repaint();render();toast("Visszaállítva a mentett márkára.");break;
     case"brandsave":{const d=ui.brand;if(!d)break;b.disabled=true;ctx.saveBrand(d).then(()=>{toast("Márka mentve. Újratöltöm…");setTimeout(()=>location.reload(),700)},e=>{b.disabled=false;toast(e&&e.message==="forbidden"?"Ehhez nincs jogosultságod.":"Nem sikerült menteni. Próbáld újra.")});break}
+    case"more":openMore();break;
+    case"install":ctx.install.prompt().then(ok=>{if(ok)toast("Telepítve. Mostantól a kezdőképernyőről indíthatod.");render()});break;
+    case"installhide":S.prefs=S.prefs||{};S.prefs.installHide=true;save();render();break;
     case"close":closeForm();break;
     case"delask":$("#delrow").innerHTML=`<span class="row" style="gap:6px"><span class="muted" style="font-size:12.5px">Biztosan törlöd?</span><button type="button" class="btn small" data-act="del">Igen, törlöm</button><button type="button" class="btn small ghost" data-act="delno">Mégse</button></span>`;break;
     case"delno":$("#delrow").innerHTML=`<button type="button" class="btn ghost small" data-act="delask">Törlés</button>`;break;

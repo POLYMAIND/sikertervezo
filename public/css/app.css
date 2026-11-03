@@ -495,3 +495,101 @@ a.btn{text-decoration:none;display:inline-block}
 .democta-btn{padding:12px 22px;font-size:14.5px;box-shadow:var(--shadow)}
 .democta .nc-skip{color:var(--accent)}
 @media (max-width:560px){.democta .row{width:100%}.democta-btn{flex:1}}
+
+/* =====================================================================
+   MOBIL APP-ELRENDEZÉS (≤860px, és telepített appként is)
+   felül kompakt fejléc · alul fix menüsor · alulról felcsúszó lapok · ujjbarát méretek
+   ===================================================================== */
+.tabbar,.mtitle{display:none}
+html{-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+button,a,.tab{touch-action:manipulation}
+.boot{min-height:100dvh}
+.sheet{max-height:90dvh}
+
+@media (max-width:860px){
+  :root{--tabbar-h:64px}
+  body{overscroll-behavior-y:none}
+  /* fejléc: logó + az aktuális oldal neve; a régi vízszintes menü és a lábléc eltűnik */
+  .side{display:flex;flex-direction:row;align-items:center;gap:12px;overflow:visible;
+    padding-top:calc(8px + env(safe-area-inset-top,0px));padding-bottom:8px;top:0;min-height:calc(54px + env(safe-area-inset-top,0px))}
+  body::before{display:none}
+  .side .nav,.side .foot{display:none}
+  .brandrow{flex:none}
+  .brandrow .brand{display:none}
+  .logo{height:34px}
+  img.logo{max-width:120px;object-fit:contain}
+  .mtitle{display:block;flex:1;min-width:0;font-family:var(--f-display);font-weight:var(--fw-display);font-size:19px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* alsó menüsor */
+  .tabbar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:40;
+    background:color-mix(in srgb,var(--surface) 92%,transparent);-webkit-backdrop-filter:saturate(1.6) blur(14px);backdrop-filter:saturate(1.6) blur(14px);
+    border-top:1px solid var(--line);padding:6px max(6px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(6px,env(safe-area-inset-left,0px))}
+  .tab{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:52px;padding:4px 2px;border:0;background:transparent;
+    color:var(--muted);text-decoration:none;font-size:10.5px;font-weight:600;border-radius:14px;font-family:var(--f-body)}
+  .tab span{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tab[aria-current="page"]{color:var(--accent)}
+  .tab[aria-current="page"] svg{background:var(--accent-tint);border-radius:99px;padding:2px 12px;box-sizing:content-box}
+  .tab:active{background:var(--soft)}
+  .tbadge{position:absolute;top:2px;left:calc(50% + 6px);min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:var(--warn);color:#fff;font-style:normal;font-size:10.5px;font-weight:700;line-height:18px;text-align:center}
+
+  /* tartalom: a menüsor ne takarjon ki semmit */
+  .main{padding-top:18px;padding-bottom:calc(var(--tabbar-h) + 28px + env(safe-area-inset-bottom,0px))}
+  .wrap{gap:16px}
+  .drawer{bottom:calc(var(--tabbar-h) + 14px + env(safe-area-inset-bottom,0px))}
+  .toast{bottom:calc(var(--tabbar-h) + 18px + env(safe-area-inset-bottom,0px));max-width:calc(100vw - 32px);text-align:center}
+  .head h1{font-size:30px}
+
+  /* ujjbarát méretek; 16px-es mezők, hogy iPhone-on ne nagyítson rá a mezőre */
+  input[type=text],input[type=date],input[type=time],input[type=number],input[type=email],input[type=password],select,textarea{font-size:16px;min-height:44px}
+  .hr input[type=text]{min-height:40px}
+  .iconbtn{width:40px;height:40px;font-size:17px}
+  .cbx{width:26px;height:26px}
+  .btn{min-height:42px}
+  .btn.small{min-height:36px}
+  .chip{min-height:30px}
+  .tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin-inline:-16px;padding-inline:16px}
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs button{flex:none;min-height:38px}
+  .card{padding:16px;border-radius:16px}
+
+  /* lapok: alulról felcsúszó „sheet", fogantyúval */
+  .modal{place-items:end center;padding:0}
+  .modal .sheet{width:100%;max-width:640px;border-radius:22px 22px 0 0;max-height:92dvh;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));animation:sheetup .22s ease-out}
+  .modal.celebrate{place-items:center;padding:16px}
+  .modal.celebrate .sheet{border-radius:20px;animation:none}
+  .certsheet{max-width:100%}
+  .grabber{width:40px;height:5px;border-radius:99px;background:var(--soft2);margin:-6px auto 2px}
+
+  /* Kapcsolatok: oszloponként lapozható kanban */
+  .kanban{grid-template-columns:repeat(4,82vw);scroll-snap-type:x mandatory;margin-inline:-16px;padding-inline:16px;scroll-padding-inline:16px}
+  .col{scroll-snap-align:start}
+
+  /* „Több" lap */
+  .moregrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .moreitem{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 6px;border-radius:16px;background:var(--soft);color:var(--ink);text-decoration:none;font-size:12.5px;font-weight:600;text-align:center}
+  .moreitem[aria-current="page"]{background:var(--accent-tint);color:var(--accent)}
+  .moreitem .tbadge{top:6px;left:auto;right:10px}
+}
+.grabber{display:none}
+@media (max-width:860px){.moresheet .grabber,.modal .sheet .grabber{display:block}}
+@keyframes sheetup{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion:reduce){.modal .sheet{animation:none!important}}
+
+/* telepítési kártya */
+.installcard{display:flex;gap:14px;align-items:center;flex-wrap:wrap;border:1px solid var(--line)}
+.installcard .ic{flex:none;line-height:0}
+.installcard .grow{flex:1;min-width:200px;display:flex;flex-direction:column;gap:2px}
+.installcard .t{font-weight:600}
+.installcard .s{font-size:12.5px;color:var(--muted)}
+
+/* telepített appként: nincs szövegkijelölés a kezelőelemeken, nincs „visszarugózás" */
+@media (display-mode:standalone){
+  .tab,.nav a,.btn,.chip{-webkit-user-select:none;user-select:none}
+}
+.fab .fi{display:none}
+@media (max-width:860px){
+  .drawer .fab{width:52px;height:52px;min-height:0;padding:0;border-radius:99px;display:grid;place-items:center;box-shadow:0 8px 22px color-mix(in srgb,var(--ink) 22%,transparent)}
+  .drawer .fab .fi{display:block;font-size:22px;line-height:1}
+  .drawer .fab .fl{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .installcard .row{width:100%;justify-content:flex-end}
+}

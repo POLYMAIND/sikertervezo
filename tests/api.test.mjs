@@ -113,3 +113,15 @@ test("/api/polyos belépés nélkül 401, ha be van állítva", async () => {
   assert.equal(res.statusCode, 401);
   delete process.env.POLYOS_MOCK; delete process.env.SUPABASE_URL; delete process.env.SUPABASE_ANON_KEY;
 });
+
+test("/api/manifest: alap csomagnál semleges, white labelnél a márka neve és színe", async () => {
+  const handler = fresh("../api/manifest.js");
+  const r1 = fakeRes(); await handler({ method: "GET", url: "/api/manifest", headers: {} }, r1);
+  const m1 = JSON.parse(r1.body);
+  assert.equal(m1.name, "Sikertervező"); assert.equal(m1.display, "standalone");
+  assert.ok(m1.icons.some((i) => i.purpose === "maskable"));
+  const r2 = fakeRes(); await handler({ method: "GET", url: "/api/manifest?brand=minta-marka", headers: {} }, r2);
+  const m2 = JSON.parse(r2.body);
+  assert.equal(m2.name, "Minta Sikerműhely"); assert.equal(m2.theme_color, "#0F766E");
+  assert.match(m2.start_url, /brand=minta-marka/);
+});
