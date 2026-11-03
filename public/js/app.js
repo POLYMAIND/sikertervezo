@@ -360,8 +360,8 @@ function vMa(){
     kovetkezo:()=>nextCard(),
     lepesek:()=>`<div class="card hero page"><div class="row between" style="align-items:flex-start"><div class="stack" style="gap:4px;max-width:60ch">
     <div class="eyebrow">A mai napi lépéseid</div><div class="big">${done===5?"Mind az 5 megvan. Büszke lehetsz Magadra!":done?`${done} / 5 kész, így tovább!`:"Ma is közelebb kerülhetsz a céljaidhoz."}</div></div>
-    <div class="chip good">${streak()} napos sorozat</div></div>
-    <div style="margin-top:14px">${stepsHTML(T)}</div></div>`,
+    <span class="row" style="gap:6px"><div class="chip good">${streak()} napos sorozat</div><button class="chip" data-act="stepedit" title="A napi lépések átnevezése">✎ Lépések</button></span></div>
+    <div style="margin-top:14px">${ui.stepEdit?`<div class="stack" style="gap:8px"><p class="muted" style="margin:0;font-size:12.5px">Nevezd át a napi lépéseidet (5 lépés). A már kipipált napok megmaradnak.</p><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px">${S.settings.steps.map((s,i)=>`<input type="text" data-step="${i}" value="${esc(s)}" maxlength="24" aria-label="${i+1}. lépés">`).join("")}</div><div class="row" style="justify-content:flex-end"><button class="btn small" data-act="stepedit">Kész</button></div></div>`:stepsHTML(T)}</div></div>`,
     lendulet:()=>pointsCard(),
     allas:()=>bpStrip(),
     pro:()=>`<div class="stack" style="gap:var(--gap,18px)">${PRO?proBlock(dc,rc,bd,cont,st):proTeaser()}</div>`,
@@ -759,7 +759,9 @@ function habitsCardInner(){
 }
 
 /* ---------- esti zárás ---------- */
-const MOODS=["Fáradt","Nyugodt","Jó","Lelkes","Csúcs"];
+const MOODS_DEFAULT=["Fáradt","Nyugodt","Jó","Lelkes","Csúcs"];
+// a hangulatgombok szövege átírható (Esti zárás → ✎ Kérdések); a sorrend (rossztól a jóig) marad
+const moods=()=>MOODS_DEFAULT.map((m,i)=>(S.settings.moods&&String(S.settings.moods[i]||"").trim())||m);
 const Q_DEFAULT=["Kinek segítettem ma?","Mi vitt ma közelebb a célomhoz?","Mire vagyok ma büszke?"];
 const questions=()=>S.settings.questions||Q_DEFAULT;
 function closeHTML(k,card){
@@ -768,9 +770,11 @@ function closeHTML(k,card){
   if(card&&ui.qEdit){const qs=questions();return `<div class="card stack" id="estizaras" style="gap:10px"><div class="row between"><h3 style="margin:0">Esti zárás: a kérdéseid</h3><button class="btn small" data-act="qedit">Kész</button></div>
     <p class="muted" style="margin:0;font-size:12.5px">Írd át őket a saját szavaidra. Legfeljebb 5 kérdés lehet; minden este ezekre válaszolsz.</p>
     ${qs.map((q,i)=>`<div class="row" style="gap:6px;flex-wrap:nowrap"><label class="f grow" style="margin:0">${i+1}. kérdés<input type="text" data-qset="${i}" value="${esc(q)}" maxlength="120"></label>${qs.length>1?`<button class="iconbtn" data-act="qdel" data-i="${i}" aria-label="${i+1}. kérdés törlése" style="align-self:flex-end">×</button>`:""}</div>`).join("")}
-    <div class="row between">${qs.length<5?'<button class="chip" data-act="qadd">＋ Új kérdés</button>':"<span></span>"}<button class="nc-skip" data-act="qreset">Eredeti kérdések</button></div></div>`}
+    <div class="row between">${qs.length<5?'<button class="chip" data-act="qadd">＋ Új kérdés</button>':"<span></span>"}<button class="nc-skip" data-act="qreset">Eredeti kérdések</button></div>
+    <div class="lab2" style="margin-top:6px">„Milyen volt a napod?” gombok (a rosszabbtól a jobbig)</div>
+    <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px">${moods().map((m,i)=>`<input type="text" data-moodset="${i}" value="${esc(m)}" maxlength="20" aria-label="${i+1}. hangulat">`).join("")}</div></div>`}
   const inner=`<div class="stack" style="gap:10px">${questions().map((q,i)=>!String(q).trim()?"":`<label class="f">${esc(q)}<input type="text" id="close-${k}-${i}" data-close="${k}" data-q="${i}" value="${esc((c.a||[])[i]||"")}"></label>`).join("")}
-    <div><div class="lab2">Milyen volt a napod?</div><div class="moods">${MOODS.map((m,i)=>`<button class="mood m${i}" data-act="mood" data-day="${k}" data-i="${i}" aria-pressed="${c.mood===i}">${m}</button>`).join("")}</div></div></div>`;
+    <div><div class="lab2">Milyen volt a napod?</div><div class="moods">${moods().map((m,i)=>`<button class="mood m${i}" data-act="mood" data-day="${k}" data-i="${i}" aria-pressed="${c.mood===i}">${m}</button>`).join("")}</div></div></div>`;
   return card?`<div class="card" id="estizaras"><div class="row between" style="margin-bottom:8px"><h3 style="margin:0">Esti zárás</h3><span class="row" style="gap:6px">${c.mood!=null?'<span class="chip good">Lezártad a napot</span>':""}<button class="chip" data-act="qedit" title="A kérdések átírása">✎ Kérdések</button></span></div>${inner}</div>`:`<div id="estizaras"><div class="eyebrow" style="margin-bottom:8px">Esti zárás</div>${inner}</div>`;
 }
 
@@ -1463,14 +1467,14 @@ function vErtekelesek(){
   const due=dueReviews(),R=S.reviews||{},done=Object.keys(R).filter(k=>R[k].done).sort().reverse();
   return head("Értékelések","Heti és havi visszatekintés")+`<p class="qday" style="margin:0">A hét végén (péntektől) betelik a heti értékelő, a hónap utolsó napjaiban a havi. Itt bármikor visszanézheted, merre jártál.</p>
   ${due.length?`<div class="card"><h3>Kitöltésre vár</h3><div class="list">${due.map(r=>`<div class="li"><div class="grow"><div class="t">${r.type==="het"?"Heti értékelő":"Havi értékelő"} · ${esc(revLabel(r.key))}</div><div class="s">${r.state==="missed"?'<span style="color:var(--warn)">Kimaradt</span>':"Most kitölthető"}</div></div><button class="btn small" data-act="revopen" data-k="${r.key}">Kitöltöm</button></div>`).join("")}</div></div>`:'<div class="card"><p style="margin:0">Most nincs kitöltésre váró értékelő. A heti péntektől, a havi a hónap utolsó napjaiban jelenik meg.</p></div>'}
-  <div class="card"><h3>Korábbi értékeléseid</h3>${done.length?`<div class="list">${done.map(k=>{const r=R[k];return `<div class="li"><div class="grow"><div class="t">${k.startsWith("w:")?"Heti":"Havi"} · ${esc(revLabel(k))}</div><div class="s">${r.a&&(r.a.best||r.a.win)?esc(String(r.a.best||r.a.win).slice(0,90)):"Kitöltve: "+fmtDate(r.done)}</div></div>${r.mood!=null?`<span class="chip">${MOODS[r.mood]}</span>`:""}<button class="btn small ghost" data-act="revopen" data-k="${k}">Megnyitás</button></div>`}).join("")}</div>`:'<div class="empty">Az első kitöltött értékelőd itt jelenik meg.</div>'}</div>`;
+  <div class="card"><h3>Korábbi értékeléseid</h3>${done.length?`<div class="list">${done.map(k=>{const r=R[k];return `<div class="li"><div class="grow"><div class="t">${k.startsWith("w:")?"Heti":"Havi"} · ${esc(revLabel(k))}</div><div class="s">${r.a&&(r.a.best||r.a.win)?esc(String(r.a.best||r.a.win).slice(0,90)):"Kitöltve: "+fmtDate(r.done)}</div></div>${r.mood!=null?`<span class="chip">${moods()[r.mood]}</span>`:""}<button class="btn small ghost" data-act="revopen" data-k="${k}">Megnyitás</button></div>`}).join("")}</div>`:'<div class="empty">Az első kitöltött értékelőd itt jelenik meg.</div>'}</div>`;
 }
 function revDraft(key){const R=S.reviews=S.reviews||{};const r=R[key]||{};return {key,a:Object.assign({},r.a||{}),goals:(r.goals||["","",""]).slice(0,3),focus:r.focus||"",mood:r.mood!=null?r.mood:null,toTodos:true,step:0,doneBefore:!!r.done}}
 function revForm(){
   const d=ui.rev,isW=d.key.startsWith("w:"),[from,to]=revRange(d.key),st=rangeStats(from,to);
   const q=(k,l)=>`<label class="f">${l}<textarea data-rev="${k}" rows="3">${esc(d.a[k]||"")}</textarea></label>`;
   const goals=`<div class="stack" style="gap:8px">${d.goals.map((g,i)=>`<label class="f">${i+1}. cél<input type="text" data-revgoal="${i}" maxlength="120" value="${esc(g)}"></label>`).join("")}</div><label class="row" style="gap:8px;font-size:13px"><button type="button" class="cbx" data-act="revtodos" aria-pressed="${d.toTodos}">${d.toTodos?"✓":""}</button>Felveszem őket a ${isW?"jövő heti":"jövő havi"} teendőim közé</label>`;
-  const moods=`<div class="moods">${MOODS.map((m,i)=>`<button type="button" class="mood" data-act="revmood" data-i="${i}" aria-pressed="${d.mood===i}">${m}</button>`).join("")}</div>`;
+  const moods=`<div class="moods">${moods().map((m,i)=>`<button type="button" class="mood" data-act="revmood" data-i="${i}" aria-pressed="${d.mood===i}">${m}</button>`).join("")}</div>`;
   const back=`<button class="chip" data-act="revclose" style="align-self:flex-start">← Értékelések</button>`;
   if(isW)return back+head("Heti értékelő",revLabel(d.key))+`<div class="card"><h3>A heted számokban</h3>${statsHTML(st)}</div>
     <div class="card stack" style="gap:14px"><h3 style="margin:0">Visszatekintés</h3>${WEEK_Q.map(([k,l])=>q(k,l)).join("")}</div>
@@ -1889,6 +1893,7 @@ document.addEventListener("click",e=>{
     case"pxdelno":ui.pxdel=false;render();break;
     case"pxdisconnect":ui.pxdel=false;ctx.polyosDisconnect().then(()=>{toast("Leválasztva a PolyOS-ről.");render()},()=>toast("Nem sikerült. Próbáld újra."));break;
     case"uphide":S.prefs=S.prefs||{};S.prefs.upHide=Object.assign({},S.prefs.upHide,{[b.dataset.k]:true});save();render();break;
+    case"stepedit":if(ui.stepEdit){S.settings.steps=S.settings.steps.map((x,i)=>String(x).trim()||["Poszt","Sztori","Új kapcsolat","Utánkövetés","Tanulás"][i]);save()}ui.stepEdit=!ui.stepEdit;render();break;
     case"qedit":ui.qEdit=!ui.qEdit;render();break;
     case"qadd":{const q=(S.settings.questions||Q_DEFAULT).slice();if(q.length<5){q.push("");S.settings.questions=q;save();render();setTimeout(()=>{const el=document.querySelector(`[data-qset="${q.length-1}"]`);el&&el.focus()},30)}break}
     case"qdel":{const q=(S.settings.questions||Q_DEFAULT).slice();q.splice(+b.dataset.i,1);S.settings.questions=q;save();render();break}
@@ -2086,6 +2091,7 @@ document.addEventListener("input",e=>{
   else if(t.dataset.note){day(t.dataset.note).note=t.value;save()}
   else if(t.dataset.set){S.settings[t.dataset.set]=t.value;save();nav()}
   else if(t.dataset.step){S.settings.steps[+t.dataset.step]=t.value;save()}
+  else if(t.dataset.moodset!=null){S.settings.moods=S.settings.moods||[];S.settings.moods[+t.dataset.moodset]=t.value;save()}
 });
 document.addEventListener("change",e=>{
   const t=e.target,m=ym(TODAY);
