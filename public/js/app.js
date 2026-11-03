@@ -172,10 +172,12 @@ function stkHTML(s,bk){const sel=ui.sel&&ui.sel.b===bk&&ui.sel.id===s.id;return 
 function board(key){return `<div class="board" data-board="${esc(key)}">${(S.stickers[key]||[]).map(s=>stkHTML(s,key)).join("")}</div>`}
 function allKeys(){return [["Kiérdemelt",ACH.filter(a=>S.unlocked&&S.unlocked[a.id]).map(a=>"a:"+a.id)],["Saját idézetek",(S.myquotes||[]).map(q=>"mq:"+q.id)],["Idézetek",QUOTES.map((_,i)=>"q:"+i)],["Saját",(S.custom||[]).map(c=>"c:"+c.id)],["Címkék",PILLS.map((_,i)=>"p:"+i)],["Kézírás",HNOTES.map((_,i)=>"h:"+i)],["Tárgyak és jelek",Object.keys(ICONS)],["Ragasztószalag",TAPES().map((_,i)=>"t:"+i)]]}
 function selSticker(){if(!ui.sel)return null;return (S.stickers[ui.sel.b]||[]).find(z=>z.id===ui.sel.id)||null}
-let activeBoard=null, trayOpen=false;
+let activeBoard=null, trayOpen=false, revOpenPanel=false;
 function drawer(){
   const el=$("#drawer");
-  if(!activeBoard){el.innerHTML="";return}
+  // a heti/havi értékelő itt „telik be" (nem felugró ablak): egy fül a matrica-gomb fölött, minden oldalon
+  const due=(DEMO||S.onboarded)?dueReviews():[];
+  if(!activeBoard&&!due.length){el.innerHTML="";return}
   let h="";
   const st=selSticker();
   if(st){
@@ -189,7 +191,11 @@ function drawer(){
     for(const[t,keys] of allKeys()){if(!keys.length)continue;h+=`<div class="set"><div class="set-title">${t}</div>${keys.map(k=>`<button class="s" data-act="stkadd" data-k="${k}"><span class="mini-st">${stInner(k)}</span></button>`).join("")}</div>`}
     h+=`</div>`;
   }
-  h+=`<button class="btn gold fab" data-act="tray" aria-expanded="${trayOpen}" aria-label="${trayOpen?"Kész":"Matricák"}"><span class="fi" aria-hidden="true">${trayOpen?"✓":"★"}</span><span class="fl">${trayOpen?"Kész":"Matricák"}</span></button>`;
+  if(due.length){
+    if(revOpenPanel)h+=`<div class="tray revtray" role="dialog" aria-label="Értékelések"><div class="row between"><h3>Értékelő vár</h3><a href="#ertekelesek" class="trlink" data-act="revpanel">Összes értékelés</a></div>${due.map(r=>`<div class="li"><div class="grow"><div class="t">${r.type==="het"?"Heti értékelő":"Havi értékelő"}</div><div class="s">${esc(revLabel(r.key))}${r.state==="missed"?' · <span style="color:var(--warn)">kimaradt</span>':""}</div></div><button class="btn small" data-act="revopen" data-k="${r.key}">Kitöltöm</button></div>`).join("")}</div>`;
+    h+=`<button class="btn revfab" data-act="revpanel" aria-expanded="${revOpenPanel}" aria-label="Értékelő vár: ${due.length}"><span class="fi" aria-hidden="true">📝</span><span class="fl">${due.some(r=>r.state==="missed")?"Kimaradt értékelő":"Értékelő vár"}</span><i class="tbadge">${due.length}</i></button>`;
+  }
+  if(activeBoard)h+=`<button class="btn gold fab" data-act="tray" aria-expanded="${trayOpen}" aria-label="${trayOpen?"Kész":"Matricák"}"><span class="fi" aria-hidden="true">${trayOpen?"✓":"★"}</span><span class="fl">${trayOpen?"Kész":"Matricák"}</span></button>`;
   el.innerHTML=h;
 }
 function markSel(){document.querySelectorAll(".stk.sel").forEach(z=>z.classList.remove("sel"));if(ui.sel){const b=document.querySelector(`.board[data-board="${CSS.escape(ui.sel.b)}"] .stk[data-sid="${ui.sel.id}"]`);b&&b.classList.add("sel")}}
@@ -222,7 +228,7 @@ function bindBoards(){
 }
 
 /* ---------- nav ---------- */
-const VIEWS=[["ma","Ma"],["naptar","Naptár"],["szokasok","Szokások"],["terkep","Gondolattérkép"],["olvasas","Olvasás"],["kapcsolatok","Kapcsolatok"],["ugyfelek","Ügyfelek"],["tartalom","Tartalom"],["csapat","Csapat"],["szamok","Számok"],["matricak","Matricák"],["bovitesek","Bővítések"],["beallitasok","Beállítások"]];
+const VIEWS=[["ma","Vezérlőpult"],["naptar","Naptár"],["szokasok","Szokások"],["terkep","Gondolattérkép"],["olvasas","Olvasás"],["kapcsolatok","Kapcsolatok"],["ugyfelek","Ügyfelek"],["tartalom","Tartalom"],["csapat","Csapat"],["szamok","Számok"],["ertekelesek","Értékelések"],["matricak","Matricák"],["bovitesek","Bővítések"],["beallitasok","Beállítások"]];
 if(ctx.superadmin)VIEWS.push(["admin","Admin"]);
 let route="ma";
 let ui={calMonth:ym(TODAY),selDay:T,calMode:"honap",ccMonth:ym(TODAY),cTab:"naptar",kFilter:"all",pFilter:-1,sel:null,mq:{t:"",a:"",editId:null},mqdel:null,skip:[],hdel:null,mapId:null,mapSel:null,mk:{type:"pill",text:"Bemutató 18:00",color:0,editId:null},cdel:null};
@@ -247,6 +253,7 @@ const NICON={
   csapat:'<circle cx="12" cy="7.5" r="3"/><circle cx="5.5" cy="10" r="2.2"/><circle cx="18.5" cy="10" r="2.2"/><path d="M7 19c.5-3 2.5-4.6 5-4.6s4.5 1.6 5 4.6M2.5 18c.3-2 1.5-3.2 3-3.4M21.5 18c-.3-2-1.5-3.2-3-3.4"/>',
   szamok:'<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',matricak:'<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/>',
   bovitesek:'<rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><path d="M16.5 13v7M13 16.5h7"/>',
+  ertekelesek:'<path d="M5 4h11l3 3v13H5z"/><path d="M8.5 12.5l2 2 4-4.5M8.5 8h5"/>',
   admin:'<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
   beallitasok:'<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>'
 };
@@ -306,7 +313,7 @@ function vMa(){
   const cont=S.content.filter(c=>c.date===T);
   const st=monthStats(ym(TODAY));
   const done=day(T).steps.filter(Boolean).length;
-  return installCard("ma")+head("Szia,",longDate(T),BR.founder.enabled&&S.settings.founder?'<button class="chip founderchip" data-act="cert" data-id="alapito" title="Alapító oklevél">Alapító tag</button>':"",(greetName()||"")+"!")+(()=>{const q=quoteOfDay();return `<p class="qday">„${esc(q.t)}”${q.a?` <span class="qday-a">${esc(q.a)}</span>`:""}</p>`})()+checklistCard()+nextCard()+`
+  return installCard("ma")+head("Szia,",longDate(T),BR.founder.enabled&&S.settings.founder?'<button class="chip founderchip" data-act="cert" data-id="alapito" title="Alapító oklevél">Alapító tag</button>':"",(greetName()||"")+"!")+(()=>{const q=quoteOfDay();return `<p class="qday">„${esc(q.t)}”${q.a?` <span class="qday-a">${esc(q.a)}</span>`:""}</p>`})()+revBanner()+checklistCard()+nextCard()+`
   <div class="grid herogrid">
   <div class="card hero page"><div class="row between" style="align-items:flex-start"><div class="stack" style="gap:4px;max-width:60ch">
     <div class="eyebrow">A mai napi lépéseid</div><div class="big">${done===5?"Mind az 5 megvan. Büszke lehetsz Magadra!":done?`${done} / 5 kész, így tovább!`:"Ma is közelebb kerülhetsz a céljaidhoz."}</div></div>
@@ -350,7 +357,7 @@ function dayPanels(sel){
 }
 function vNaptar(){
   const mode=ui.calMode;
-  const ctrls=`<div class="tabs">${MODES.map(([k,l])=>`<button data-act="calmode" data-k="${k}" aria-pressed="${mode===k}">${l}</button>`).join("")}</div><span class="row" style="gap:6px"><button class="iconbtn" data-act="calnav" data-d="-1" aria-label="Előző">‹</button><button class="btn ghost small" data-act="caltoday">Ma</button><button class="iconbtn" data-act="calnav" data-d="1" aria-label="Következő">›</button></span>`;
+  const ctrls=`<button class="btn small" data-act="qadd">+ Gyors hozzáadás</button><div class="tabs">${MODES.map(([k,l])=>`<button data-act="calmode" data-k="${k}" aria-pressed="${mode===k}">${l}</button>`).join("")}</div><span class="row" style="gap:6px"><button class="iconbtn" data-act="calnav" data-d="-1" aria-label="Előző">‹</button><button class="btn ghost small" data-act="caltoday">Ma</button><button class="iconbtn" data-act="calnav" data-d="1" aria-label="Következő">›</button></span>`;
   let title,body;
   if(mode==="honap"){
     const [Y,M]=ui.calMonth.split("-").map(Number);
@@ -387,7 +394,7 @@ function vNaptar(){
     const sel=ui.selDay,dd=day(sel);activeBoard="nap-"+sel;title=longDate(sel);
     const nowH=new Date().getHours();
     const hoursHTML=HOURS.map(h=>{const v=(dd.hours||{})[h]||"",loc=locOf(sel,h);return `<div class="hr ${sel===T&&h===nowH?"now":""}"><label class="hh num" for="hr-${sel}-${h}">${pad(h)}:00</label><input type="text" id="hr-${sel}-${h}" data-hour="${h}" data-day="${sel}" value="${esc(v)}" aria-label="${pad(h)}:00 időpont"><input type="text" class="locin" id="loc-${sel}-${h}" data-loc="${h}" data-day="${sel}" value="${esc(loc)}" aria-label="${pad(h)}:00 helyszín" placeholder="${v?"Helyszín":""}"><span class="hacts" id="hacts-${sel}-${h}">${v?apptLinks(sel,h,v,loc):""}</span></div>`}).join("");
-    body=`<div class="card page daypage"><div class="row between dp-top"><div class="row" style="gap:10px"><div class="eyebrow">Időbeosztás</div>${pointsChip(sel)}</div><button class="btn gold small" data-act="tray">Matrica a lapra</button></div><div class="dp-cols"><div><div class="hours">${hoursHTML}</div><p class="muted" style="font-size:12px;margin:10px 0 0">Írd be az időpontot, mellé a helyszínt. A Térkép a Google Térképet nyitja meg, a Naptárba gomb a Google Naptárba teszi az időpontot.</p></div>${dayPanels(sel)}</div>${board(activeBoard)}</div>`;
+    body=`<div class="card page daypage"><div class="row between dp-top"><div class="row" style="gap:10px"><div class="eyebrow">Időbeosztás</div>${pointsChip(sel)}</div><button class="btn gold small" data-act="tray">Matrica a lapra</button></div><div class="dp-cols"><div><div class="hours">${hoursHTML}</div><p class="muted" style="font-size:12px;margin:10px 0 0">Írd be az időpontot, mellé a helyszínt: azonnal a tervezőbe mentődik. A Térkép a Google Térképet nyitja meg. A Google Naptárral és a telefonod naptárával a <a href="#beallitasok" data-act="tosync">Beállítások → Naptár-szinkron</a> alatt kötheted össze.</p></div>${dayPanels(sel)}</div>${board(activeBoard)}</div>`;
   }
   return head(title,mode==="nap"?"Napi nézet":mode==="het"?"Heti nézet":"Havi nézet",ctrls)+body;
 }
@@ -403,7 +410,7 @@ function vKapcsolatok(){
         <div class="acts"><button class="iconbtn" data-act="stage" data-id="${c.id}" data-d="-1" ${i===0?"disabled":""} aria-label="Vissza">‹</button><button class="chip" data-act="msg" data-k="${c.stage===1?"bemutato":"utankovetes"}" data-type="contact" data-id="${c.id}">Üzenet</button><button class="iconbtn" data-act="stage" data-id="${c.id}" data-d="1" ${i===3?"disabled":""} aria-label="Tovább">›</button></div>
       </div>`).join("")||'<div class="empty">Üres</div>'}</section>`}).join("");
   return head("Kapcsolatok","Folyamat lépésről lépésre",`<button class="btn" data-act="new" data-type="contact">Új kapcsolat</button>`)+`
-  <div class="row between"><div class="tabs">${[["all","Mind"],["Termék","Termék iránt"],["Üzlet","Üzlet iránt"]].map(([k,l])=>`<button data-act="kf" data-k="${k}" aria-pressed="${ui.kFilter===k}">${l}</button>`).join("")}</div><span class="muted" style="font-size:12.5px">Az esedékes utánkövetéseket a Ma oldalon is megtalálod.</span></div>
+  <div class="row between"><div class="tabs">${[["all","Mind"],["Termék","Termék iránt"],["Üzlet","Üzlet iránt"]].map(([k,l])=>`<button data-act="kf" data-k="${k}" aria-pressed="${ui.kFilter===k}">${l}</button>`).join("")}</div><span class="muted" style="font-size:12.5px">Az esedékes utánkövetéseket a Vezérlőpulton is megtalálod.</span></div>
   <div class="kanban">${cols}</div>`;
 }
 
@@ -483,7 +490,7 @@ function vMatricak(){
     <div class="card mkprev"><div class="eyebrow">Előnézet</div><div class="mkstage" id="mk-prev">${prev}</div></div>
   </div>
   <div class="card stack" id="myquotes" style="gap:12px"><div class="row between"><h3 style="margin:0">Saját idézetgyűjteményed</h3><span class="muted" style="font-size:12px">${(S.myquotes||[]).length} idézet</span></div>
-    <p class="muted" style="margin:0;font-size:12.5px">Gyűjtsd ide a mondatokat, amik erőt adnak. Matricaként a lapjaidra teheted őket, és felbukkannak a Ma oldal napi gondolatai között is.</p>
+    <p class="muted" style="margin:0;font-size:12.5px">Gyűjtsd ide a mondatokat, amik erőt adnak. Matricaként a lapjaidra teheted őket, és felbukkannak a Vezérlőpult napi gondolatai között is.</p>
     <form class="mqform" data-form="mq"><label class="f" style="flex:2;min-width:220px">Idézet<textarea id="mq-text" rows="2" maxlength="180" placeholder="Például: Ma is egy lépéssel közelebb.">${esc(ui.mq.t)}</textarea></label><label class="f" style="flex:1;min-width:160px">Kitől? (nem kötelező)<input type="text" id="mq-a" maxlength="40" value="${esc(ui.mq.a)}" placeholder="Például: Anyukám"></label><span class="row" style="align-self:flex-end;gap:6px"><button class="btn">${ui.mq.editId?"Mentés":"Hozzáadás"}</button>${ui.mq.editId?`<button type="button" class="btn ghost" data-act="mqcancel">Mégse</button>`:""}</span></form>
     ${(S.myquotes||[]).length?`<div class="coll">${S.myquotes.map(q=>`<div class="citem"><button class="cbtn" data-act="toToday" data-k="mq:${q.id}" title="Rátesz a mai lapra">${quoteHTML(q.t,null,q.a)}</button><div class="row" style="gap:4px;justify-content:center">${ui.mqdel===q.id?`<button class="chip warn" data-act="mqdel" data-id="${q.id}">Igen, törlöm</button><button class="chip" data-act="mqdelno">Mégse</button>`:`<button class="iconbtn" data-act="mqedit" data-id="${q.id}" aria-label="Szerkesztés">✎</button><button class="iconbtn" data-act="mqdelask" data-id="${q.id}" aria-label="Törlés">×</button>`}</div></div>`).join("")}</div>`:`<div class="empty">Még nincs saját idézeted. Írd be fent az elsőt.</div>`}</div>
   <div class="card"><div class="row between"><h3>Kiérdemelt matricák</h3><span class="muted" style="font-size:12px">${ACH.filter(a=>S.unlocked&&S.unlocked[a.id]).length} / ${ACH.length} megszerezve</span></div><p class="muted" style="margin:0 0 6px;font-size:12.5px">Ezeket nem lehet elkészíteni, csak megszerezni. A lakatos darabokért még dolgozol.</p>
@@ -543,15 +550,13 @@ function vBeall(){
       <label class="f">A pont neve a cégednél (pl. BP, PV, CC)<input type="text" id="set-ptname" data-set="ptName" value="${esc(S.settings.ptName||"")}" placeholder="pont"></label>
       <div class="row" style="flex-wrap:nowrap;gap:8px"><label class="f" style="flex:1">Havi személyes cél<input type="number" id="set-ptgoal" data-set="ptGoal" value="${esc(S.settings.ptGoal||"")}"></label><label class="f" style="flex:1">Havi csoportcél<input type="number" id="set-gpgoal" data-set="gpGoal" value="${esc(S.settings.gpGoal||"")}"></label></div>
       <label class="f">A következő szinted neve (nem kötelező)<input type="text" id="set-lvl" data-set="lvlName" value="${esc(S.settings.lvlName||"")}" placeholder="Például: Vezető"></label></div>
-    <div class="card stack"><h3>Az 5 napi lépésed</h3><p class="muted" style="margin:0;font-size:12.5px">Ezeket pipálod ki minden nap a Ma oldalon és a naptárban.</p>
+    <div class="card stack"><h3>Az 5 napi lépésed</h3><p class="muted" style="margin:0;font-size:12.5px">Ezeket pipálod ki minden nap a Vezérlőpulton és a naptárban.</p>
       ${S.settings.steps.map((s,i)=>`<label class="f">${i+1}. lépés<input type="text" id="set-step-${i}" data-step="${i}" value="${esc(s)}"></label>`).join("")}</div>
   </div>
   <div class="grid g2">
-    <div class="card stack"><h3>Esti kérdéseid</h3><p class="muted" style="margin:0;font-size:12.5px">Ezekkel zárod a napot a Ma oldalon és a napi nézetben.</p>
+    <div class="card stack"><h3>Esti kérdéseid</h3><p class="muted" style="margin:0;font-size:12.5px">Ezekkel zárod a napot a Vezérlőpulton és a napi nézetben.</p>
       ${questions().map((q,i)=>`<label class="f">${i+1}. kérdés<input type="text" id="set-q-${i}" data-qset="${i}" value="${esc(q)}"></label>`).join("")}</div>
-    <div class="card stack"><h3>Naptár és térkép</h3>
-      <p style="margin:0">Az időpontokhoz helyszínt írhatsz. A <strong>Térkép</strong> megnyitja a Google Térképet, a <strong>Naptárba</strong> pedig a Google Naptárba teszi az időpontot. Ha az iPhone-od naptára a Google-fiókodat mutatja, ott is megjelenik.</p>
-      <p class="muted" style="margin:0;font-size:12.5px">Automatikus, kétirányú naptárszinkront és foglalási linket a PolyOS Naptár és Foglalás modulja ad (Bővítések).</p></div>
+    ${calSyncCard()}
   </div>
   <div class="card stack"><h3>Üzenetvázlataid</h3><p class="muted" style="margin:0;font-size:12.5px">A {nev} helyére az ember keresztneve, a {termek} helyére a kedvenc terméke, a {sajat} helyére a Te neved kerül.</p>
     <div class="grid g2">${Object.keys(TPL_DEFAULT).map(k=>`<label class="f">${esc(TPL_DEFAULT[k][0])}<textarea id="tpl-${k}" data-tpl="${k}" rows="4">${esc(tpl(k))}</textarea>${S.tpl&&S.tpl[k]!=null?`<button type="button" class="chip" data-act="tplreset" data-k="${k}" style="align-self:flex-start">Eredeti szöveg visszaállítása</button>`:""}</label>`).join("")}</div></div>
@@ -567,6 +572,7 @@ function habitCount(h){return Object.keys(h.days||{}).filter(k=>h.days[k]&&k>=h.
 function monthGoalHit(){const m=ym(TODAY),g=S.goals[m];if(!g)return false;const st=monthStats(m);const act={szem:g.szem&&g.szem.teny,csop:g.csop&&g.csop.teny,bev:st.revenue,kap:st.contacts,ugy:st.clients,tag:st.team};return Object.keys(act).some(k=>g[k]&&+g[k].cel>0&&+act[k]>=+g[k].cel)}
 function closedDays(){return Object.values(S.days).filter(d=>d.close&&(d.close.mood!=null||(d.close.a||[]).some(x=>x&&String(x).trim()))).length}
 const ACH=[
+  {id:"elso-ertekeles",t:"Első értékelés",n:"✍",d:"Kitöltötted az első heti vagy havi értékelődet.",test:()=>Object.values(S.reviews||{}).some(r=>r&&r.done)},
   {id:"elso-lepes",t:"Első lépés",n:"1",d:"Kipipáltad az első napi lépésed.",test:()=>Object.values(S.days).some(d=>d.steps&&d.steps.some(Boolean))},
   {id:"tokeletes-nap",t:"Tökéletes nap",n:"5/5",d:"Egy nap alatt mind az 5 napi lépés.",test:()=>Object.values(S.days).some(d=>d.steps&&d.steps.filter(Boolean).length===5)},
   {id:"sorozat-7",t:"7 napos sorozat",n:"7",d:"Egy héten át minden nap léptél.",test:()=>streak()>=7},
@@ -687,7 +693,7 @@ function closeHTML(k,card){
 
 /* ---------- naptár és térkép ---------- */
 const enc=encodeURIComponent;
-function apptLinks(k,h,v,loc){return `${loc?`<a class="alink" href="${mapURL(loc)}" target="_blank" rel="noopener">Térkép</a>`:""}<a class="alink" href="${gcalURL(k,h,v,loc)}" target="_blank" rel="noopener">Naptárba</a>${PX.canPush("event")?`<button type="button" class="alink" data-act="pxpush" data-kind="event" data-day="${k}" data-h="${h}">${((S.days[k]||{}).px||{})[h]?"PolyOS ✓":"PolyOS"}</button>`:""}`}
+function apptLinks(k,h,v,loc){return `${loc?`<a class="alink" href="${mapURL(loc)}" target="_blank" rel="noopener">Térkép</a>`:""}${PX.canPush("event")?`<button type="button" class="alink" data-act="pxpush" data-kind="event" data-day="${k}" data-h="${h}">${((S.days[k]||{}).px||{})[h]?"PolyOS ✓":"PolyOS"}</button>`:""}`}
 function gcalURL(k,h,t,loc){const d=k.replace(/-/g,"");return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${enc(t)}&dates=${d}T${pad(h)}0000/${d}T${pad(+h+1)}0000&ctz=Europe/Budapest${loc?"&location="+enc(loc):""}&details=${enc(BR.productName)}`}
 const mapURL=loc=>`https://www.google.com/maps/search/?api=1&query=${enc(loc)}`;
 const locOf=(k,h)=>((S.days[k]||{}).locs||{})[h]||"";
@@ -866,14 +872,14 @@ function quotePool(){return QUOTES.map(t=>({t,a:BR.ownerName})).concat((S.myquot
 const quoteOfDay=()=>{const p=quotePool();return p[dayOfYear()%p.length]};
 
 /* ---------- napi pontok ---------- */
-const PTS={step:10,all5:20,task:5,close:15,habit:5,follow:10,talk:10,publish:10,order:15,contact:5};
+const PTS={step:10,all5:20,task:5,close:15,habit:5,follow:10,talk:10,publish:10,order:15,contact:5,review:20};
 const DAILY_GOAL=100;
 function logPt(kind,k){k=k||T;S.pts=S.pts||{};const d=S.pts[k]||(S.pts[k]={});d[kind]=(d[kind]||0)+1}
 function scoreOf(k){
   const dd=S.days[k]||{},p=(S.pts||{})[k]||{};
   const steps=(dd.steps||[]).filter(Boolean).length,tasks=(dd.tasks||[]).filter(t=>t.done).length;
   const closed=dd.close&&dd.close.mood!=null?1:0,habits=(S.habits||[]).filter(h=>(h.days||{})[k]).length;
-  const parts=[["Napi lépések",steps*PTS.step],["Arany nap bónusz",steps===5?PTS.all5:0],["Sorozat bónusz",k===T&&steps>0?Math.min(streak(),10)*2:0],["Teendők",(tasks+(p.todo||0))*PTS.task],["Esti zárás",closed*PTS.close],["Kihívások",habits*PTS.habit],["Utánkövetés",(p.follow||0)*PTS.follow],["Csapat",(p.talk||0)*PTS.talk],["Megjelent tartalom",(p.publish||0)*PTS.publish],["Rendelés",(p.order||0)*PTS.order],["Új kapcsolat",(p.contact||0)*PTS.contact]];
+  const parts=[["Napi lépések",steps*PTS.step],["Arany nap bónusz",steps===5?PTS.all5:0],["Sorozat bónusz",k===T&&steps>0?Math.min(streak(),10)*2:0],["Teendők",(tasks+(p.todo||0))*PTS.task],["Esti zárás",closed*PTS.close],["Kihívások",habits*PTS.habit],["Utánkövetés",(p.follow||0)*PTS.follow],["Csapat",(p.talk||0)*PTS.talk],["Megjelent tartalom",(p.publish||0)*PTS.publish],["Rendelés",(p.order||0)*PTS.order],["Értékelés",(p.review||0)*PTS.review],["Új kapcsolat",(p.contact||0)*PTS.contact]];
   return {total:parts.reduce((a,b)=>a+b[1],0),parts:parts.filter(x=>x[1]>0)};
 }
 const pointsChip=k=>`<span class="chip ptchip" title="Napi lendület">${scoreOf(k).total} lendületpont</span>`;
@@ -1099,7 +1105,7 @@ function obBody(step,d){
   if(step==="udv")return `<div class="ob-hero">${TH.svg(TH.MARK).replace('width="48" height="48"','width="64" height="64"')}</div><h2>Szia! Állítsuk be együtt a tervezőt.</h2><p class="lead">Pár rövid kérdés, nagyjából 2 perc. Utána a ${esc(BR.productName)} pontosan rád szabva indul, és megmutatjuk, hol mit találsz.</p><ul class="ob-list"><li>Hogyan szólítsunk</li><li>Mivel foglalkozol, és mik a napi lépéseid</li><li>Mi a különbség a kapcsolat és az ügyfél között</li><li>Az első kapcsolatod és ügyfeled felvétele</li></ul>`;
   if(step==="nev")return `<h2>Hogyan szólíthatunk?</h2><p class="lead">Ezzel köszönünk minden reggel, és ez kerül az okleveleidre és az üzenetvázlataid aláírásába.</p>${obField("name","A teljes neved",d.name,"text",'autocomplete="name" maxlength="60" placeholder="Például: Minta Anna"')}${obField("nick","Így szólíts (nem kötelező)",d.nick,"text",'maxlength="30" placeholder="Például: Anna"')}`;
   if(step==="profil")return `<h2>Mivel foglalkozol?</h2><p class="lead">Ez alapján javaslunk napi lépéseket. Később bármit átírhatsz.</p><div class="ob-choices">${PROFILES.map(p=>`<button type="button" class="ob-choice" data-act="obprof" data-k="${p.k}" aria-pressed="${d.profile===p.k}"><b>${esc(p.l)}</b><span>${esc(p.d)}</span></button>`).join("")}</div>`;
-  if(step==="lepesek")return `<h2>Az 5 napi lépésed</h2><p class="lead">Ez az öt dolog visz előre minden nap. A Ma oldalon pipálod ki őket, és ha mind az öt megvan, az „arany nap”.</p><div class="stack" style="gap:10px">${d.steps.map((s,i)=>`<label class="f">${i+1}. lépés<input type="text" data-ob="step${i}" value="${esc(s)}" maxlength="24"></label>`).join("")}</div>`;
+  if(step==="lepesek")return `<h2>Az 5 napi lépésed</h2><p class="lead">Ez az öt dolog visz előre minden nap. A Vezérlőpulton pipálod ki őket, és ha mind az öt megvan, az „arany nap”.</p><div class="stack" style="gap:10px">${d.steps.map((s,i)=>`<label class="f">${i+1}. lépés<input type="text" data-ob="step${i}" value="${esc(s)}" maxlength="24"></label>`).join("")}</div>`;
   if(step==="pont")return `<h2>Pontrendszer és periódus</h2><p class="lead">Ha a cégednél pontokat gyűjtesz egy elszámolási időszakban, a tervező napi bontásban mutatja, mennyi hiányzik még. Ha nem kell, a „Nincs pontrendszerem” gombbal kikapcsolhatod.</p>${obField("ptName","A pont neve a cégednél",d.ptName,"text",'maxlength="12" placeholder="pl. BP, PV, CC"')}<div class="grid g2">${obField("ptGoal","Havi személyes cél",d.ptGoal,"number",'inputmode="numeric"')}${obField("gpGoal","Havi csoportcél (nem kötelező)",d.gpGoal,"number",'inputmode="numeric"')}</div>${obField("perEnd","Mikor zárul az aktuális periódus?",d.perEnd,"date")}<button type="button" class="chip" data-act="obnopt" style="align-self:flex-start">Nincs pontrendszerem</button>`;
   if(step==="kulonbseg")return `<h2>Kapcsolat vagy ügyfél?</h2><p class="lead">A tervezőben két külön helyen vezeted az embereket, mert mással kell foglalkoznod velük.</p>
     <div class="ob-two"><div class="ob-card"><div class="ob-ic">${nicon("kapcsolatok")}</div><b>Kapcsolat</b><p>Akivel <b>még ismerkedsz</b>: érdeklődő, leendő ügyfél vagy leendő csapattag. Négy lépcsőn viszed végig (kapcsolatfelvétel, beszélgetés, bemutató, döntés), és a tervező szól, mikor kell utánakövetned.</p></div>
@@ -1109,7 +1115,7 @@ function obBody(step,d){
   if(step==="kapcsolat")return `<h2>Vedd fel az első kapcsolatod</h2><p class="lead">Gondolj valakire, akivel mostanában beszéltél, vagy akit szeretnél megkeresni. Később a <b>Kapcsolatok</b> oldalon az <b>Új kapcsolat</b> gombbal veszel fel újat.</p>${obField("c.name","Név",d.contact.name,"text",'maxlength="60" placeholder="Például: Minta Kata"')}${obField("c.src","Honnan ismered?",d.contact.src,"text",'maxlength="60" placeholder="Például: Instagram, ajánlás"')}<div class="grid g2">${obField("c.next","Mi a következő lépés?",d.contact.next,"text",'maxlength="60" placeholder="Például: Első üzenet"')}${obField("c.nextDate","Mikor?",d.contact.nextDate,"date")}</div>`;
   if(step==="ugyfel")return `<h2>És az első ügyfeled</h2><p class="lead">Ha már van, aki vásárolt tőled, vedd fel. Ha még nincs, nyugodtan hagyd ki. Később az <b>Ügyfelek</b> oldalon az <b>Új ügyfél</b> gombbal veszel fel újat.</p>${obField("u.name","Név",d.client.name,"text",'maxlength="60" placeholder="Például: Minta Éva"')}${obField("u.fav","Mit szokott venni?",d.client.fav,"text",'maxlength="80" placeholder="Például: arckrém, vitamin"')}${obField("u.last","Mikor vásárolt utoljára?",d.client.last,"date")}`;
   const inst=ctx.install&&ctx.install.mode();
-  return `<div class="ob-hero">🎉</div><h2>Kész is vagy${greetName()||d.nick||firstName(d.name)?", "+esc(d.nick||firstName(d.name)):""}!</h2><p class="lead">Így találsz meg mindent:</p><ul class="ob-list"><li><b>Ma:</b> a napi lépéseid, kit keress meg, mai teendők</li><li><b>Naptár:</b> havi, heti és napi nézet az időpontjaiddal</li><li><b>Kapcsolatok és Ügyfelek:</b> az embereid, emlékeztetőkkel</li><li><b>Tartalom:</b> mit posztolsz és mikor</li></ul><p class="lead">A Ma oldalon egy <b>Első lépések</b> lista vár, amivel végigjárhatod az alapokat.</p>${inst==="prompt"?'<button type="button" class="btn ghost" data-act="install">Telepítem a kezdőképernyőre</button>':inst==="ios"?'<p class="ob-note">Tipp: Safariban a Megosztás ikon, majd a „Főképernyőhöz adás” után appként indul a tervező.</p>':""}`;
+  return `<div class="ob-hero">🎉</div><h2>Kész is vagy${greetName()||d.nick||firstName(d.name)?", "+esc(d.nick||firstName(d.name)):""}!</h2><p class="lead">Így találsz meg mindent:</p><ul class="ob-list"><li><b>Ma:</b> a napi lépéseid, kit keress meg, mai teendők</li><li><b>Naptár:</b> havi, heti és napi nézet az időpontjaiddal</li><li><b>Kapcsolatok és Ügyfelek:</b> az embereid, emlékeztetőkkel</li><li><b>Tartalom:</b> mit posztolsz és mikor</li></ul><p class="lead">A Vezérlőpulton egy <b>Első lépések</b> lista vár, amivel végigjárhatod az alapokat.</p>${inst==="prompt"?'<button type="button" class="btn ghost" data-act="install">Telepítem a kezdőképernyőre</button>':inst==="ios"?'<p class="ob-note">Tipp: Safariban a Megosztás ikon, majd a „Főképernyőhöz adás” után appként indul a tervező.</p>':""}`;
 }
 function obRender(){
   const o=ui.ob;if(!o)return;const steps=obSteps(o.d),step=steps[o.i],last=o.i===steps.length-1;
@@ -1145,7 +1151,7 @@ function obFinish(skipped){
   S.onboarded=T;save();obClose();if(route!=="ma")location.hash="ma";else render();
   if(!skipped)toast("Minden be van állítva. Jó tervezést!");
 }
-/* Első lépések lista a Ma oldalon, amíg be nem járja az alapokat */
+/* Első lépések lista a Vezérlőpulton, amíg be nem járja az alapokat */
 function checklistCard(){
   if(!S.onboarded||(S.prefs&&S.prefs.checklistHide))return "";
   const items=[
@@ -1226,8 +1232,134 @@ async function admDo(action,payload,okMsg,reload){
   try{await ctx.admin(action,payload);toast(okMsg);closeForm();if(reload)admLoad(reload)}
   catch(e){toast(e.message==="not_confirmed"?"Csak megerősített e-mail-című felhasználó tehető adminná.":e.message==="root"?"A fő admin a Vercel beállításából jön, innen nem módosítható.":e.message==="self"?"A saját fiókodon ezt nem módosíthatod.":e.message==="user_not_found"?"Nincs ilyen e-mail-címmel regisztrált felhasználó.":e.message==="bad_slug"?"Az azonosító csak kisbetűt, számot és kötőjelet tartalmazhat.":"Nem sikerült. Próbáld újra.")}
 }
+/* ---------- gyors hozzáadás (a napi nézet megnyitása nélkül) ---------- */
+function openQuickAdd(kind,date){
+  const k=date||(ui.calMode==="honap"&&ui.calMonth!==ym(TODAY)?ui.calMonth+"-01":(ui.calMode==="honap"?T:ui.selDay))||T;
+  ui.qa={kind:kind||"ido",date:k};
+  const q=ui.qa,nowH=Math.min(21,Math.max(7,new Date().getHours()+1));
+  $("#layer").innerHTML=`<div class="modal" data-act="close"><form class="sheet" data-form="qadd"><div class="grabber" aria-hidden="true"></div><div class="row between"><h2>Gyors hozzáadás</h2><button type="button" class="iconbtn" data-act="close" aria-label="Bezárás">×</button></div>
+  <div class="tabs">${[["ido","Időpont"],["teendo","Teendő"]].map(([v,l])=>`<button type="button" data-act="qakind" data-k="${v}" aria-pressed="${q.kind===v}">${l}</button>`).join("")}</div>
+  <label class="f">${q.kind==="ido"?"Mi lesz?":"Mit kell elintézni?"}<input type="text" id="qa-title" maxlength="120" required placeholder="${q.kind==="ido"?"Például: Bemutató Minta Katának":"Például: Csomag összekészítése"}"></label>
+  ${q.kind==="ido"?`<div class="grid g2"><label class="f">Nap<input type="date" id="qa-date" value="${q.date}" required></label><label class="f">Időpont<select id="qa-hour">${HOURS.map(h=>`<option value="${h}" ${h===nowH?"selected":""}>${pad(h)}:00</option>`).join("")}</select></label></div><label class="f">Helyszín (nem kötelező)<input type="text" id="qa-loc" maxlength="120" placeholder="Például: online, vagy egy cím"></label>`
+  :`<label class="f">Mikorra?<select id="qa-when"><option value="nap">Egy adott napra</option><option value="het">Valamikor ezen a héten</option><option value="honap">Valamikor ebben a hónapban</option></select></label><label class="f" id="qa-datewrap">Nap<input type="date" id="qa-date" value="${q.date}"></label>`}
+  <div class="row between"><span class="muted" style="font-size:12px">A tervezőbe mentjük; a telefonos naptáradba a szinkron viszi át.</span><button class="btn">Hozzáadás</button></div></form></div>`;
+  setTimeout(()=>{const i=$("#qa-title");i&&i.focus()},50);
+}
+function saveQuickAdd(){
+  const title=$("#qa-title").value.trim();if(!title){toast("Írd be, mi lesz.");return}
+  if(ui.qa.kind==="ido"){
+    const k=$("#qa-date").value,h=+$("#qa-hour").value,loc=($("#qa-loc").value||"").trim();if(!k){toast("Válassz napot.");return}
+    const dd=day(k);dd.hours=dd.hours||{};dd.hours[h]=dd.hours[h]?dd.hours[h]+" · "+title:title;if(loc){dd.locs=dd.locs||{};dd.locs[h]=loc}
+    save();closeForm();toast(`Bekerült: ${fmtDate(k)} ${pad(h)}:00`);render();return}
+  const w=$("#qa-when").value;
+  if(w==="nap"){const k=$("#qa-date").value||T;day(k).tasks.push({id:uid(),t:title,done:false});save();closeForm();toast(`Teendő: ${fmtDate(k)}`);render();return}
+  const key=w==="het"?"w:"+iso(mondayOf(ui.calMode==="honap"?T:ui.selDay)):"m:"+(ui.calMode==="honap"?ui.calMonth:ui.selDay.slice(0,7));
+  S.todos=S.todos||{};(S.todos[key]=S.todos[key]||[]).push({id:uid(),t:title,done:false});save();closeForm();toast(w==="het"?"Bekerült a hét teendői közé.":"Bekerült a hónap teendői közé.");render();
+}
+
+/* ---------- naptár-szinkron (Beállítások) ---------- */
+function calSyncCard(){
+  const c=ui.cal||{};
+  let body;
+  if(DEMO)body=`<p style="margin:0">A naptár-szinkronhoz fiók kell: ${ctx.cloud?'<button class="chip" data-act="signup">Regisztrálok</button>':"a bemutató módban nem érhető el."}</p>`;
+  else if(!c.loaded){if(!c.loading){c.loading=true;ui.cal=c;ctx.calendar("status").then(r=>{ui.cal=Object.assign({loaded:true},r);render()},()=>{ui.cal={loaded:true,err:true};render()})}body='<div class="spinner" role="status" aria-label="Betöltés"></div>'}
+  else if(c.err)body='<p style="margin:0">Most nem sikerült betölteni. Próbáld újra később.</p>';
+  else{
+    const https=c.url||"",webcal=https.replace(/^https?:/,"webcal:");
+    body=`<div class="status"><span class="ic">${c.active?"✅":"📅"}</span><div class="grow"><b>${c.active?"A naptárlinked aktív.":"Még nincs naptárlinked."}</b><div class="muted" style="font-size:12.5px">${c.active?`Létrehozva: ${fmtDate(String(c.created_at).slice(0,10))}${c.last_fetch_at?` · a naptárad utoljára ${fmtDate(String(c.last_fetch_at).slice(0,10))} kérte le`:" · még egy naptár sem kérte le"}`:"A tervező időpontjai, tartalmai és utánkövetései megjelennek a Google Naptárban és a telefonod naptárában, és maguktól frissülnek."}</div></div>
+      ${c.active?`<span class="row" style="gap:6px"><button class="btn small ghost" data-act="calnew">Új link</button>${ui.calOff?'<button class="chip warn" data-act="calrevoke">Igen, kikapcsolom</button><button class="chip" data-act="caloffno">Mégse</button>':'<button class="chip" data-act="caloff">Kikapcsolás</button>'}</span>`:'<button class="btn small" data-act="calnew">Bekapcsolom</button>'}</div>
+    ${https?`<label class="f">A te naptárlinked (titkos, ne oszd meg)<input type="text" readonly value="${esc(https)}" id="cal-url" onfocus="this.select()"></label><div class="row" style="gap:8px"><button class="btn small" data-act="calcopy">Link másolása</button><a class="btn small ghost" href="${esc(webcal)}">Megnyitás a telefonon / Macen</a></div>`:c.active?'<p class="muted" style="margin:0;font-size:12.5px">Biztonsági okból a linket csak létrehozáskor mutatjuk meg. Ha új eszközt kötnél be, kérj új linket (a régi ilyenkor megszűnik, a már bekötött naptárakat is frissíteni kell).</p>':""}
+    <details class="howto"><summary>Hogyan kötöm be?</summary><ol><li><b>iPhone:</b> koppints a „Megnyitás a telefonon” gombra, majd az „Előfizetés” gombra. Vagy kézzel: Beállítások → Naptár → Fiókok → Fiók hozzáadása → Egyéb → Előfizetett naptár → illeszd be a linket.</li><li><b>Google Naptár:</b> számítógépen a calendar.google.com oldalon bal oldalt a „Más naptárak” melletti <b>+</b> → „URL alapján” → illeszd be a linket → „Naptár hozzáadása”.</li><li><b>Outlook:</b> Naptár → Naptár hozzáadása → Feliratkozás a webről.</li></ol><p class="muted" style="margin:0;font-size:12px">A Google és az iPhone néhány óránként frissíti a feliratkozott naptárt, ezért egy új időpont késéssel jelenhet meg.</p></details>`;
+  }
+  return `<div class="card stack" id="naptarszinkron" style="gap:12px"><div class="row between"><h3 style="margin:0">Naptár-szinkron</h3><span class="chip">Google · iPhone · Outlook</span></div>${body}
+  <p class="muted" style="margin:0;font-size:12px">Most: a tervezőből a naptáraidba (egyirányú). A kétirányú szinkron (a Google-ben felvett esemény is megjelenik itt) fejlesztés alatt.</p></div>`;
+}
+
+/* ---------- heti és havi értékelő ---------- */
+const WEEK_Q=[["best","Mi sikerült a héten a legjobban?"],["hard","Mi nem úgy alakult, ahogy szeretted volna? Miért?"],["learn","Mit tanultál a héten?"],["thanks","Kinek vagy hálás ezen a héten?"]];
+const MONTH_STEPS=[
+  ["szamok","A hónap számokban","Nézd meg, hol tartasz. Ezeket a tervező számolta ki a hónapodból."],
+  ["siker","Sikerek",null,[["win","Mi volt a hónap legnagyobb sikere?"],["proud","Mire vagy a legbüszkébb?"]]],
+  ["kihivas","Kihívások",null,[["hard","Mi volt a legnehezebb?"],["diff","Mit csinálnál másképp, ha újrakezdhetnéd a hónapot?"]]],
+  ["tanulsag","Tanulságok és hála",null,[["learn","Mi volt a hónap legfontosabb tanulsága?"],["thanks","Ki segített a legtöbbet? Kinek mondasz köszönetet?"]]],
+  ["jovo","A következő hónap","Válassz egy fő fókuszt és három célt. A célokat felvehetjük a jövő havi teendőid közé."],
+  ["zaras","Zárás","Egy szóban vagy egy pontszámmal: milyen volt ez a hónap?"]
+];
+const monthStart=k=>k+"-01";
+const monthEnd=m=>{const[Y,M]=m.split("-").map(Number);return iso(new Date(Y,M,0))};
+const revStart=()=>S.onboarded||Object.keys(S.days||{}).sort()[0]||T;
+function revLabel(key){if(key.startsWith("w:")){const m=parse(key.slice(2));return `${weekLabel(m)}`}const[Y,M]=key.slice(2).split("-").map(Number);return cap(MONTHS[M-1])+" "+Y}
+// melyik értékelő „telt be": a hét péntekétől a heti, a hónap utolsó 3 napjától a havi; a lezárt, ki nem töltött = kimaradt
+function dueReviews(){
+  const out=[],R=S.reviews||{},hide=(S.prefs&&S.prefs.revHide)||{},start=revStart();
+  const mon=mondayOf(T),wd=(TODAY.getDay()+6)%7;
+  for(let i=0;i<=4;i++){const m=addDays(mon,-7*i),key="w:"+iso(m),end=iso(addDays(m,6));
+    if(end<start)continue;if(R[key]&&R[key].done)continue;
+    if(i===0){if(wd>=4)out.push({key,type:"het",state:"open"})}else if(!hide[key])out.push({key,type:"het",state:"missed"})}
+  const cm=ym(TODAY),dim=new Date(TODAY.getFullYear(),TODAY.getMonth()+1,0).getDate();
+  const pm=ym(new Date(TODAY.getFullYear(),TODAY.getMonth()-1,1));
+  if(TODAY.getDate()>=dim-2&&!(R["m:"+cm]&&R["m:"+cm].done))out.push({key:"m:"+cm,type:"honap",state:"open"});
+  if(monthEnd(pm)>=start&&!(R["m:"+pm]&&R["m:"+pm].done)&&!hide["m:"+pm])out.push({key:"m:"+pm,type:"honap",state:"missed"});
+  return out;
+}
+function rangeStats(from,to){
+  const ks=[];for(let d=parse(from);iso(d)<=to;d=addDays(d,1)){const k=iso(d);if(k>T)break;ks.push(k)}
+  const inR=s=>s&&s>=from&&s<=to;
+  let steps=0,gold=0,pts=0,closes=0;ks.forEach(k=>{const dd=S.days[k]||{},n=(dd.steps||[]).filter(Boolean).length;steps+=n;if(n===5)gold++;pts+=scoreOf(k).total;if(dd.close&&dd.close.mood!=null)closes++});
+  return {days:ks.length,steps,stepsMax:ks.length*5,gold,pts,closes,
+    contacts:S.contacts.filter(c=>inR(c.created)).length,clients:S.clients.filter(c=>inR(c.created)).length,
+    published:S.content.filter(c=>inR(c.date)&&c.status===2).length,planned:S.content.filter(c=>inR(c.date)).length,
+    revenue:S.orders.filter(o=>inR(o.date)).reduce((a,o)=>a+(+o.amount||0),0),team:S.team.filter(t=>inR(t.joined)).length};
+}
+function revRange(key){if(key.startsWith("w:")){const m=key.slice(2);return [m,iso(addDays(parse(m),6))]}const m=key.slice(2);return [monthStart(m),monthEnd(m)]}
+function statsHTML(st){
+  const pct=st.stepsMax?Math.round(st.steps/st.stepsMax*100):0;
+  return `<div class="grid g4 revstats">${[[pct+"%","napi lépés teljesítve",`${st.steps} / ${st.stepsMax}`],[st.gold,"arany nap","mind az 5 lépés"],[st.pts,"lendületpont",""],[st.closes,"esti zárás",`${st.days} napból`],[st.contacts,"új kapcsolat",""],[st.clients,"új ügyfél",""],[st.published,"megjelent tartalom",`${st.planned} betervezve`],[money(st.revenue),"bevétel",""]].map(([v,l,s])=>`<div class="card kpi"><div class="v num">${v}</div><div class="l">${l}${s?`<br><span class="muted">${s}</span>`:""}</div></div>`).join("")}</div>`;
+}
+function revBanner(){
+  const missed=dueReviews().filter(r=>r.state==="missed");if(!missed.length)return "";const r=missed[0];
+  return `<div class="card revbanner"><span class="ic" aria-hidden="true">📝</span><div class="grow"><span class="t">Kimaradt egy értékelő: ${r.type==="het"?"heti":"havi"} (${esc(revLabel(r.key))})</span><span class="s">Töltsd ki, kérlek, ${r.type==="het"?"5":"10"} perc. Ebből látod, merre haladsz.${missed.length>1?` Még ${missed.length-1} vár.`:""}</span></div><div class="row" style="gap:8px"><button class="btn small" data-act="revopen" data-k="${r.key}">Kitöltöm</button><button class="nc-skip" style="color:var(--muted)" data-act="revhide" data-k="${r.key}">Elrejtés</button></div></div>`;
+}
+function vErtekelesek(){
+  activeBoard=null;
+  if(ui.rev)return revForm();
+  const due=dueReviews(),R=S.reviews||{},done=Object.keys(R).filter(k=>R[k].done).sort().reverse();
+  return head("Értékelések","Heti és havi visszatekintés")+`<p class="qday" style="margin:0">A hét végén (péntektől) betelik a heti értékelő, a hónap utolsó napjaiban a havi. Itt bármikor visszanézheted, merre jártál.</p>
+  ${due.length?`<div class="card"><h3>Kitöltésre vár</h3><div class="list">${due.map(r=>`<div class="li"><div class="grow"><div class="t">${r.type==="het"?"Heti értékelő":"Havi értékelő"} · ${esc(revLabel(r.key))}</div><div class="s">${r.state==="missed"?'<span style="color:var(--warn)">Kimaradt</span>':"Most kitölthető"}</div></div><button class="btn small" data-act="revopen" data-k="${r.key}">Kitöltöm</button></div>`).join("")}</div></div>`:'<div class="card"><p style="margin:0">Most nincs kitöltésre váró értékelő. A heti péntektől, a havi a hónap utolsó napjaiban jelenik meg.</p></div>'}
+  <div class="card"><h3>Korábbi értékeléseid</h3>${done.length?`<div class="list">${done.map(k=>{const r=R[k];return `<div class="li"><div class="grow"><div class="t">${k.startsWith("w:")?"Heti":"Havi"} · ${esc(revLabel(k))}</div><div class="s">${r.a&&(r.a.best||r.a.win)?esc(String(r.a.best||r.a.win).slice(0,90)):"Kitöltve: "+fmtDate(r.done)}</div></div>${r.mood!=null?`<span class="chip">${MOODS[r.mood]}</span>`:""}<button class="btn small ghost" data-act="revopen" data-k="${k}">Megnyitás</button></div>`}).join("")}</div>`:'<div class="empty">Az első kitöltött értékelőd itt jelenik meg.</div>'}</div>`;
+}
+function revDraft(key){const R=S.reviews=S.reviews||{};const r=R[key]||{};return {key,a:Object.assign({},r.a||{}),goals:(r.goals||["","",""]).slice(0,3),focus:r.focus||"",mood:r.mood!=null?r.mood:null,toTodos:true,step:0,doneBefore:!!r.done}}
+function revForm(){
+  const d=ui.rev,isW=d.key.startsWith("w:"),[from,to]=revRange(d.key),st=rangeStats(from,to);
+  const q=(k,l)=>`<label class="f">${l}<textarea data-rev="${k}" rows="3">${esc(d.a[k]||"")}</textarea></label>`;
+  const goals=`<div class="stack" style="gap:8px">${d.goals.map((g,i)=>`<label class="f">${i+1}. cél<input type="text" data-revgoal="${i}" maxlength="120" value="${esc(g)}"></label>`).join("")}</div><label class="row" style="gap:8px;font-size:13px"><button type="button" class="cbx" data-act="revtodos" aria-pressed="${d.toTodos}">${d.toTodos?"✓":""}</button>Felveszem őket a ${isW?"jövő heti":"jövő havi"} teendőim közé</label>`;
+  const moods=`<div class="moods">${MOODS.map((m,i)=>`<button type="button" class="mood" data-act="revmood" data-i="${i}" aria-pressed="${d.mood===i}">${m}</button>`).join("")}</div>`;
+  const back=`<button class="chip" data-act="revclose" style="align-self:flex-start">← Értékelések</button>`;
+  if(isW)return back+head("Heti értékelő",revLabel(d.key))+`<div class="card"><h3>A heted számokban</h3>${statsHTML(st)}</div>
+    <div class="card stack" style="gap:14px"><h3 style="margin:0">Visszatekintés</h3>${WEEK_Q.map(([k,l])=>q(k,l)).join("")}</div>
+    <div class="card stack" style="gap:12px"><h3 style="margin:0">A jövő heted</h3><p class="muted" style="margin:0;font-size:12.5px">Három dolog, ami a legfontosabb a következő héten.</p>${goals}</div>
+    <div class="card stack" style="gap:10px"><h3 style="margin:0">Milyen volt a heted?</h3>${moods}</div>
+    <div class="row between"><button class="btn ghost" data-act="revclose">Később folytatom</button><button class="btn" data-act="revsave">${d.doneBefore?"Mentés":"Kész, lezárom a hetet"}</button></div>`;
+  const stp=MONTH_STEPS[d.step],last=d.step===MONTH_STEPS.length-1;
+  let inner="";
+  if(stp[0]==="szamok"){const g=S.goals[d.key.slice(2)];inner=statsHTML(st)+(g?`<div class="list" style="margin-top:6px">${[["szem","Személyes forgalom",g.szem&&g.szem.teny],["csop","Csoportforgalom",g.csop&&g.csop.teny]].filter(x=>g[x[0]]&&+g[x[0]].cel).map(([k,l,v])=>`<div class="li"><div class="grow t">${l}</div><span class="chip ${+v>=+g[k].cel?"good":""}">${nfmt(v||0)} / ${nfmt(g[k].cel)}</span></div>`).join("")}</div>`:"")}
+  else if(stp[3])inner=stp[3].map(([k,l])=>q(k,l)).join("");
+  else if(stp[0]==="jovo")inner=`<label class="f">A következő hónap fő fókusza<input type="text" data-revfocus="1" maxlength="120" value="${esc(d.focus)}" placeholder="Például: 10 új kapcsolat és heti 3 Reel"></label>`+goals;
+  else inner=moods+`<label class="f">Egy mondat magadnak a hónap végén (nem kötelező)<textarea data-rev="note" rows="2">${esc(d.a.note||"")}</textarea></label>`;
+  return back+head("Havi értékelő",revLabel(d.key))+`<div class="card stack revstep" style="gap:14px"><div class="row between"><div class="eyebrow">${d.step+1}. lépés / ${MONTH_STEPS.length}</div><div class="ob-prog" style="max-width:220px"><i style="width:${(d.step+1)/MONTH_STEPS.length*100}%"></i></div></div><h2 style="margin:0">${stp[1]}</h2>${stp[2]?`<p class="lead muted" style="margin:0">${stp[2]}</p>`:""}${inner}
+    <div class="row between">${d.step?'<button class="btn ghost" data-act="revprev">Vissza</button>':'<button class="btn ghost" data-act="revclose">Később folytatom</button>'}<button class="btn" data-act="${last?"revsave":"revnext"}">${last?(d.doneBefore?"Mentés":"Kész, lezárom a hónapot"):"Tovább"}</button></div></div>`;
+}
+function revSave(){
+  const d=ui.rev,isW=d.key.startsWith("w:"),[from,to]=revRange(d.key),R=S.reviews=S.reviews||{},first=!(R[d.key]&&R[d.key].done);
+  R[d.key]={done:(R[d.key]&&R[d.key].done)||T,updated:T,a:d.a,goals:d.goals,focus:d.focus,mood:d.mood,stats:rangeStats(from,to)};
+  if(first&&d.toTodos){const goals=d.goals.map(g=>g.trim()).filter(Boolean);if(goals.length){
+    const nk=isW?"w:"+iso(addDays(parse(d.key.slice(2)),7)):"m:"+ym(new Date(+d.key.slice(2,6),+d.key.slice(7,9),1));
+    S.todos=S.todos||{};(S.todos[nk]=S.todos[nk]||[]).push(...goals.map(t=>({id:uid(),t,done:false})))}}
+  if(first)logPt("review");
+  ui.rev=null;save();toast(first?(isW?"Lezártad a hetet. Szép munka!":"Lezártad a hónapot. Gratulálok!"):"Mentve.");render();window.scrollTo(0,0);
+}
 /* ---------- render ---------- */
-const RENDER={ma:vMa,admin:vAdmin,bovitesek:vBovitesek,olvasas:vOlvasas,szokasok:vSzokasok,terkep:vTerkep,matricak:vMatricak,naptar:vNaptar,kapcsolatok:vKapcsolatok,ugyfelek:vUgyfelek,tartalom:vTartalom,csapat:vCsapat,szamok:vSzamok,beallitasok:vBeall};
+const RENDER={ma:vMa,admin:vAdmin,ertekelesek:vErtekelesek,bovitesek:vBovitesek,olvasas:vOlvasas,szokasok:vSzokasok,terkep:vTerkep,matricak:vMatricak,naptar:vNaptar,kapcsolatok:vKapcsolatok,ugyfelek:vUgyfelek,tartalom:vTartalom,csapat:vCsapat,szamok:vSzamok,beallitasok:vBeall};
 function render(){
   const y=window.scrollY;
   $("#view").innerHTML=demoCta()+RENDER[route]()+upStrip(route);
@@ -1235,7 +1367,7 @@ function render(){
   window.scrollTo(0,y);
   checkAch(false);
 }
-function go(){const h=(location.hash||"").slice(1);if(ui.brand&&h!==route){ui.brand=null;ui.brandFor=null;repaint()}route=RENDER[h]?h:"ma";trayOpen=false;ui.sel=null;render();window.scrollTo(0,0)}
+function go(){const h=(location.hash||"").slice(1);if(h!=="ertekelesek"&&ui.rev&&!ui.rev.keep)ui.rev=null;if(ui.brand&&h!==route){ui.brand=null;ui.brandFor=null;repaint()}route=RENDER[h]?h:"ma";trayOpen=false;ui.sel=null;render();window.scrollTo(0,0)}
 window.addEventListener("hashchange",go);
 
 /* ---------- events ---------- */
@@ -1327,7 +1459,7 @@ document.addEventListener("click",e=>{
     case"cdelask":ui.cdel=id;render();break;
     case"cdelno":ui.cdel=null;render();break;
     case"cdel":S.custom=S.custom.filter(x=>x.id!==id);ui.cdel=null;save();toast("Matrica törölve.");render();break;
-    case"toToday":{const k="ma-"+T,arr=S.stickers[k]||(S.stickers[k]=[]);arr.push({id:uid(),k:b.dataset.k,x:40+Math.random()*25,y:35+Math.random()*30,r:Math.round(Math.random()*12-6),s:1});save();toast("Rátettem a mai lapra (Ma oldal).");break}
+    case"toToday":{const k="ma-"+T,arr=S.stickers[k]||(S.stickers[k]=[]);arr.push({id:uid(),k:b.dataset.k,x:40+Math.random()*25,y:35+Math.random()*30,r:Math.round(Math.random()*12-6),s:1});save();toast("Rátettem a mai lapra (Vezérlőpult).");break}
     case"cdone":{const c=find("contacts");c.nextDate="";c.next="";logPt("follow");save();closeForm();toast("Megvolt. Add meg a következő lépést a Kapcsolatoknál.");render();break}
     case"stage":{const c=find("contacts");c.stage=Math.max(0,Math.min(3,c.stage+ +b.dataset.d));save();render();break}
     case"kf":ui.kFilter=b.dataset.k;render();break;
@@ -1388,6 +1520,23 @@ document.addEventListener("click",e=>{
     case"admbplan":admDo("brand.set",{slug:b.dataset.slug,plan:b.dataset.k,upsell:true},"Csomag módosítva.","markak");break;
     case"admbupsell":admDo("brand.set",{slug:b.dataset.slug,plan:b.dataset.plan,upsell:b.dataset.on==="1"},"Mentve.","markak");break;
     case"admbadmdel":admDo("brand.admin.remove",{slug:b.dataset.slug,email:b.dataset.email},"Márka-admin eltávolítva.","markak");break;
+    case"qadd":openQuickAdd();break;
+    case"qakind":{const t=($("#qa-title")||{}).value||"";openQuickAdd(b.dataset.k,($("#qa-date")||{}).value);const i=$("#qa-title");if(i)i.value=t;break}
+    case"tosync":e.preventDefault();location.hash="beallitasok";setTimeout(()=>{const el=$("#naptarszinkron");el&&el.scrollIntoView({behavior:"smooth",block:"center"})},350);break;
+    case"calnew":ui.calOff=false;ctx.calendar("create").then(r=>{ui.cal=Object.assign({},ui.cal,{loaded:true,active:true,created_at:new Date().toISOString(),last_fetch_at:null,url:r.url});render();toast("Kész a naptárlinked. Másold be a naptáradba.")},()=>toast("Nem sikerült. Próbáld újra."));break;
+    case"caloff":ui.calOff=true;render();break;
+    case"caloffno":ui.calOff=false;render();break;
+    case"calrevoke":ui.calOff=false;ctx.calendar("revoke").then(()=>{ui.cal={loaded:true,active:false};render();toast("Naptárlink kikapcsolva.")},()=>toast("Nem sikerült. Próbáld újra."));break;
+    case"calcopy":{const v=($("#cal-url")||{}).value||"";try{navigator.clipboard.writeText(v).then(()=>toast("Kimásolva."),()=>toast("Jelöld ki és másold ki a linket."))}catch(err){toast("Jelöld ki és másold ki a linket.")}break}
+    case"revopen":ui.rev=revDraft(b.dataset.k);revOpenPanel=false;if(route!=="ertekelesek")location.hash="ertekelesek";else{render();window.scrollTo(0,0)}break;
+    case"revclose":ui.rev=null;render();window.scrollTo(0,0);break;
+    case"revhide":S.prefs=S.prefs||{};S.prefs.revHide=Object.assign({},S.prefs.revHide,{[b.dataset.k]:true});save();render();break;
+    case"revmood":ui.rev.mood=ui.rev.mood===+b.dataset.i?null:+b.dataset.i;render();break;
+    case"revtodos":ui.rev.toTodos=!ui.rev.toTodos;render();break;
+    case"revnext":ui.rev.step++;render();window.scrollTo(0,0);break;
+    case"revprev":ui.rev.step--;render();window.scrollTo(0,0);break;
+    case"revsave":revSave();break;
+    case"revpanel":revOpenPanel=!revOpenPanel;drawer();break;
     case"more":openMore();break;
     case"install":ctx.install.prompt().then(ok=>{if(ok)toast("Telepítve. Mostantól a kezdőképernyőről indíthatod.");render()});break;
     case"installhide":S.prefs=S.prefs||{};S.prefs.installHide=true;save();render();break;
@@ -1411,6 +1560,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeForm();if(tray
 document.addEventListener("submit",e=>{
   e.preventDefault();const f=e.target;
   if(f.dataset.form==="ob"){obNext();return}
+  if(f.dataset.form==="qadd"){saveQuickAdd();return}
   if(f.dataset.form==="admsub"){admDo("sub.set",{id:f.dataset.id,plan:$("#as-plan").value,status:$("#as-status").value,current_period_end:$("#as-end").value,note:$("#as-note").value},"Előfizetés mentve.","felhasznalok");return}
   if(f.dataset.form==="admbrand"){admDo("brand.set",{slug:$("#adm-slug").value.trim(),plan:$("#adm-plan").value,upsell:true},"Márka létrehozva.","markak");return}
   if(f.dataset.form==="admbadm"){const em=f.querySelector("input").value.trim();if(em)admDo("brand.admin.add",{slug:f.dataset.slug,email:em},"Márka-admin hozzáadva.","markak");return}
@@ -1434,6 +1584,9 @@ document.addEventListener("submit",e=>{
 document.addEventListener("input",e=>{
   const t=e.target;
   if(t.dataset.ob){obInput(t);return}
+  if(t.dataset.rev&&ui.rev){ui.rev.a[t.dataset.rev]=t.value;return}
+  if(t.dataset.revgoal&&ui.rev){ui.rev.goals[+t.dataset.revgoal]=t.value;return}
+  if(t.dataset.revfocus&&ui.rev){ui.rev.focus=t.value;return}
   if(t.dataset.admq){ui.admQ=t.value;const pos=t.selectionStart;render();const n=document.querySelector("[data-admq]");if(n){n.focus();n.setSelectionRange(pos,pos)}return}
   if(t.dataset.hour||t.dataset.loc){const k=t.dataset.day,h=t.dataset.hour||t.dataset.loc,dd=day(k);
     if(t.dataset.hour){dd.hours=dd.hours||{};if(t.value.trim())dd.hours[h]=t.value;else delete dd.hours[h]}
@@ -1462,6 +1615,7 @@ document.addEventListener("input",e=>{
 });
 document.addEventListener("change",e=>{
   const t=e.target,m=ym(TODAY);
+  if(t.id==="qa-when"){const w=$("#qa-datewrap");if(w)w.hidden=t.value!=="nap";return}
   if(t.dataset.bp||t.dataset.per){render();return}
   if(t.id==="brand-logo"&&t.files&&t.files[0]){const f=t.files[0];if(f.size>300*1024){toast("A logó legfeljebb 300 KB lehet.");return}const r=new FileReader();r.onload=()=>{ui.brand.logo=String(r.result);repaint();render()};r.readAsDataURL(f);return}
   if(t.id==="mk-file"&&t.files&&t.files[0]){const f=t.files[0];const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const mx=360,sc=Math.min(1,mx/Math.max(img.width,img.height));const cv=document.createElement("canvas");cv.width=Math.round(img.width*sc);cv.height=Math.round(img.height*sc);cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);const src=cv.toDataURL(f.type==="image/jpeg"?"image/jpeg":"image/png",.9);S.custom.push({id:uid(),type:"img",src});if(save()){toast("Kép hozzáadva a saját matricáidhoz.")}else{S.custom.pop();toast("Ez a kép túl nagy a prototípusnak. Próbálj kisebbet.")}render()};img.onerror=()=>toast("Ezt a képet nem tudtam megnyitni.");img.src=r.result};r.readAsDataURL(f);return}

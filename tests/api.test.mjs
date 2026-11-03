@@ -176,3 +176,11 @@ test("alap-arculat (superadmin): alap csomag megkapja, white label ráépül és
   assert.equal(w.productName, "Saját"); assert.equal(w.colors.accent, "#112233"); assert.equal(w.colors.highlight, "#F2B84B"); assert.equal(w.fonts, "elegans");
   assert.equal(B().publicBrand({ slug: "alap", plan: "alap" }, {}).themed, undefined); // üres alap-arculat = semleges
 });
+
+test("iCal: időpont, tartalom és utánkövetés kerül bele, a szöveg helyesen escape-elve", () => {
+  const I = require("../api/_ical.js");
+  const out = I.build({ days: { "2026-11-05": { hours: { 14: "Bemutató, Kata; online" }, locs: { 14: "Budapest" } } }, content: [{ id: "c1", date: "2026-11-06", time: "18:00", format: "Reel", title: "Tipp" }], contacts: [{ id: "k1", name: "Minta Zsófi", nextDate: "2026-11-07" }] }, { from: "2026-01-01", to: "2027-01-01" });
+  assert.match(out, /BEGIN:VCALENDAR/); assert.match(out, /DTSTART;TZID=Europe\/Budapest:20261105T140000/);
+  assert.match(out, /SUMMARY:Bemutató\\, Kata\; online/); assert.match(out, /SUMMARY:Reel: Tipp/); assert.match(out, /Utánkövetés: Minta Zsófi/);
+  assert.ok(out.split("\r\n").every((l) => Buffer.byteLength(l) <= 75));
+});

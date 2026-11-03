@@ -160,6 +160,7 @@
       mode: demo ? "demo" : "cloud", cloud: store.cloudAvailable(), user, state: st,
       brand: TH.effectiveBrand(brandRaw), brandRaw, brandAdmin, paintChrome, install, superadmin,
       // superadmin hívás: a jogosultságot a szerver MINDEN kérésnél újra ellenőrzi, ez csak a felület kapuja
+      calendar: async (action) => api("/api/calendar", { method: "POST", body: JSON.stringify({ action }) }),
       admin: async (action, payload) => api("/api/admin", { method: "POST", body: JSON.stringify(Object.assign({ action }, payload || {})) }),
       showAuth: (tab) => { sessionStorage.removeItem(DEMO_CHOSEN); authScreen(tab === "belepes" ? "belepes" : "regisztracio"); },
       logout: async () => { await store.signOut(); sessionStorage.removeItem(DEMO_CHOSEN); location.hash = ""; location.reload(); },

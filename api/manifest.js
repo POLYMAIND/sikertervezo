@@ -28,7 +28,7 @@ module.exports = async function handler(req, res) {
     background_color: hex(c.background, "#F4F4F1"), theme_color: theme, categories: ["productivity", "business"],
     icons,
     shortcuts: [
-      { name: "Ma", url: "/" + q + "#ma" },
+      { name: "Vezérlőpult", url: "/" + q + "#ma" },
       { name: "Naptár", url: "/" + q + "#naptar" },
       { name: "Kapcsolatok", url: "/" + q + "#kapcsolatok" },
     ],
