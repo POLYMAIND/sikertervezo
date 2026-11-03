@@ -52,7 +52,7 @@ drop trigger if exists sikertervezo_signup_gate on auth.users;
 create trigger sikertervezo_signup_gate before insert on auth.users
   for each row execute function public.sikertervezo_signup_gate();
 
--- privát vödör a letölthető anyagoknak (pl. letoltesek/kaoszmanager.pdf)
+-- privát vödör a letölthető anyagoknak (pl. letoltesek/Kaoszmanager.pdf)
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('letoltesek', 'letoltesek', false, 20971520, array['application/pdf'])
 on conflict (id) do nothing;

@@ -6,7 +6,7 @@ const crypto = require("crypto");
 const L = require("./_lib");
 
 const BUCKET = "letoltesek";
-const FILE = () => L.env("LEAD_FILE", "kaoszmanager.pdf");
+const FILE = () => L.env("LEAD_FILE", "Kaoszmanager.pdf");
 const FILE_NAME = () => L.env("LEAD_FILE_NAME", "Kaoszmanager.pdf");
 const TTL = 7 * 864e5;
 
