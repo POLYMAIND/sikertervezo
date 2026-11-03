@@ -414,7 +414,7 @@ html.signup-open .when-closed{display:none!important}
   .wlthumb{width:64px}
   .wltitle{font-size:16px}
 }
-@media (max-width:420px){.wlthumb{display:none}}
+/* (kis képernyőn a borító a cím mellett marad, lásd lent) */
 
 /* hero: zárt regisztrációnál a jobb oldalon az ajándékkártya áll (a minta-felület helyett) */
 .hero-side{align-self:center;position:relative}
@@ -436,3 +436,20 @@ html:not(.signup-open) .hero h1{font-size:clamp(36px,4.6vw,56px)}
 .hero-side .wlthumb{width:96px}
 .hero-side .wlcard{padding:24px 22px 22px;gap:18px}
 @media (max-width:980px){html:not(.signup-open) .hero .grid2{grid-template-columns:1fr;gap:28px}}
+/* mobilon: a borító a felirat és a cím mellett, az űrlap alattuk teljes szélességben */
+@media (max-width:760px){
+  .wlcard{display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:14px;align-items:start}
+  .wlcard .wlbody{display:contents}
+  .wlcard .wlthumb{display:block;grid-column:1;grid-row:1/span 2;width:62px;transform:rotate(-5deg) translateY(2px)}
+  .wlcard .wlkick,.wlcard .wltitle{grid-column:2}
+  .wlcard .wlkick{font-size:11.5px;align-self:end}
+  .wlcard .wltitle{margin-bottom:12px}
+  .wlcard .wlform,.wlcard .wltrust,.wlcard .wlok{grid-column:1/-1}
+  .hero-side .wlthumb{width:62px}
+}
+@media (max-width:760px){
+  .wlcard,.hero-side .wlcard{row-gap:0}
+  .wlcard .wlthumb,.hero-side .wlthumb{width:70px;align-self:center}
+  .wlcard .wlmsg:empty{display:none}
+  .wlcard .wltrust{margin-top:12px}
+}
