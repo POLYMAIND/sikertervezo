@@ -87,10 +87,12 @@
   // Alap csomagnál a márka-mezők közül CSAK a semleges értékek élnek — akármit is tartalmaz a brand.
   function effectiveBrand(brand) {
     const b = brand || {};
-    const wl = b.plan === "whitelabel";
+    const wl0 = b.plan === "whitelabel";
+    // a mezőket akkor fogadjuk el, ha white label márka, VAGY a szerver az app (superadmin által beállított) alap-arculatát küldte
+    const wl = wl0 || b.themed === true;
     const c = (wl && b.colors) || {};
     return {
-      plan: wl ? "whitelabel" : "alap",
+      plan: wl0 ? "whitelabel" : "alap",
       slug: b.slug || "alap",
       productName: (wl && b.productName) || "Sikertervező",
       tagline: (wl && b.tagline) || "Napi tervező a vállalkozásodhoz",

@@ -7,7 +7,7 @@ const hex = (v, d) => (typeof v === "string" && /^#[0-9a-fA-F]{6}$/.test(v) ? v 
 module.exports = async function handler(req, res) {
   const slug = B.resolveSlug(req);
   const b = B.publicBrand(await B.loadBrand(slug));
-  const wl = b.plan === "whitelabel";
+  const wl = b.plan === "whitelabel" || b.themed === true; // az alap-arculat is lehet egyedi (superadmin)
   const c = (wl && b.colors) || {};
   const accent = hex(c.accent, "#6D4AFF");
   const theme = c.sidebar === "accent" ? accent : c.sidebar === "light" ? "#FFFFFF" : "#1F2024";

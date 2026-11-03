@@ -1030,15 +1030,10 @@ async function pxPush(b){
 /* ---------- arculat ---------- */
 function bgPrefs(){S.prefs=S.prefs||{};return Object.assign({},TH.DEFAULT_PREFS,BR.defaultBg?{bgColor:BR.defaultBg}:{},S.prefs.bg||{})}
 function repaint(){TH.apply(ui.brand||ctx.brandRaw,bgPrefs());if(ctx.paintChrome)ctx.paintChrome(ui.brand||ctx.brandRaw)}
-function brandCard(){
-  const bp=bgPrefs(),ink=TH.palette().ink;
-  const pats=Object.entries(TH.BG_PATTERNS).map(([k,p])=>`<button class="bgopt" data-act="bgpat" data-k="${k}" aria-pressed="${bp.bgPattern===k}" style="background-color:${bp.bgColor};background-image:${p.image(`color-mix(in srgb,${ink} ${k==="pont"?16:7}%,transparent)`)};--sz:${p.size}"><span>${esc(p.label)}</span></button>`).join("");
-  const cols=TH.BG_COLORS.map(([n,c])=>`<button class="swatch" data-act="bgcol" data-c="${c}" aria-pressed="${bp.bgColor.toUpperCase()===c.toUpperCase()}" style="background:${c}" aria-label="${n}" title="${n}"></button>`).join("");
-  let wl="";
-  if(BR.plan==="whitelabel"&&(ctx.brandAdmin||DEMO)){
-    const d=ui.brand||(ui.brand=JSON.parse(JSON.stringify(ctx.brandRaw||{})));d.colors=d.colors||{};const e=TH.effectiveBrand(d);
-    wl=`<div class="card stack" id="markaszerk" style="gap:14px"><div class="row between"><h3 style="margin:0">Márka (white label)</h3><span class="chip on">${ctx.brandAdmin?"Te kezeled":"Bemutató"}</span></div>
-      <p class="muted" style="margin:0;font-size:12.5px">Ez minden felhasználódnál megjelenik: név, logó, kiemelőszínek, betűk. A háttérmintát mindenki maga választja.</p>
+function brandEditor(d,o){
+  d.colors=d.colors||{};const e=TH.effectiveBrand(d);
+  return `<div class="card stack" id="${o.id}" style="gap:14px"><div class="row between"><h3 style="margin:0">${o.title}</h3><span class="chip on">${o.badge}</span></div>
+      <p class="muted" style="margin:0;font-size:12.5px">${o.note}</p>
       <div class="grid g2"><label class="f">A tervező neve<input type="text" data-brand="productName" value="${esc(d.productName||"")}" placeholder="Sikertervező" maxlength="40"></label><label class="f">Alcím<input type="text" data-brand="tagline" value="${esc(d.tagline||"")}" maxlength="60"></label>
       <label class="f full">A márka gazdája (oklevél aláírása, idézetek szerzője)<input type="text" data-brand="ownerName" value="${esc(d.ownerName||"")}" maxlength="40"></label></div>
       <div class="row" style="gap:14px"><span class="logoprev">${e.logo?`<img src="${esc(e.logo)}" alt="Logó">`:TH.svg(MARK_SVG)}</span><div class="stack" style="gap:6px"><label class="btn ghost small" for="brand-logo" style="cursor:pointer;align-self:flex-start">Logó feltöltése</label><input type="file" id="brand-logo" accept="image/png,image/svg+xml,image/webp,image/jpeg" hidden>${e.logo?'<button class="chip" data-act="brandlogodel" style="align-self:flex-start">Logó törlése</button>':""}<span class="muted" style="font-size:12px">Átlátszó hátterű PNG vagy SVG, legfeljebb 300 KB.</span></div></div>
@@ -1048,7 +1043,16 @@ function brandCard(){
       <div class="stack" style="gap:8px"><button class="cbx" data-act="brandfounder" aria-pressed="${!!(d.founder&&d.founder.enabled)}" aria-label="Alapító tagság" style="display:none"></button><label class="row" style="gap:8px;font-size:13px"><button type="button" class="cbx" data-act="brandfounder" aria-pressed="${!!(d.founder&&d.founder.enabled)}">${d.founder&&d.founder.enabled?"✓":""}</button>Alapító tagsági program (oklevél, külön érem)</label>
       ${d.founder&&d.founder.enabled?`<label class="f">Az alapító tagok kedvezménye<input type="text" data-brandf="perk" value="${esc(d.founder.perk||"")}" maxlength="200" placeholder="Például: örökre a mostani áron használod a tervezőt."></label>`:""}</div>
       <label class="f">Saját idézetek a napi gondolatokhoz (soronként egy; üresen a beépítettek)<textarea data-brandq="1" rows="4">${esc((d.quotes||[]).join("\n"))}</textarea></label>
-      <div class="row"><button class="btn" data-act="brandsave">Márka mentése</button><button class="btn ghost" data-act="brandreset">Elvetés</button></div></div>`;
+      <div class="row"><button class="btn" data-act="${o.saveAct}">${o.saveLabel}</button><button class="btn ghost" data-act="${o.resetAct}">Elvetés</button>${o.extra||""}</div></div>`;
+}
+function brandCard(){
+  const bp=bgPrefs(),ink=TH.palette().ink;
+  const pats=Object.entries(TH.BG_PATTERNS).map(([k,p])=>`<button class="bgopt" data-act="bgpat" data-k="${k}" aria-pressed="${bp.bgPattern===k}" style="background-color:${bp.bgColor};background-image:${p.image(`color-mix(in srgb,${ink} ${k==="pont"?16:7}%,transparent)`)};--sz:${p.size}"><span>${esc(p.label)}</span></button>`).join("");
+  const cols=TH.BG_COLORS.map(([n,c])=>`<button class="swatch" data-act="bgcol" data-c="${c}" aria-pressed="${bp.bgColor.toUpperCase()===c.toUpperCase()}" style="background:${c}" aria-label="${n}" title="${n}"></button>`).join("");
+  let wl="";
+  if(BR.plan==="whitelabel"&&(ctx.brandAdmin||DEMO)){
+    const d=ui.brand||(ui.brand=JSON.parse(JSON.stringify(ctx.brandRaw||{})));
+    wl=brandEditor(d,{id:"markaszerk",title:"Márka (white label)",badge:ctx.brandAdmin?"Te kezeled":"Bemutató",note:"Ez minden felhasználódnál megjelenik: név, logó, kiemelőszínek, betűk. A háttérmintát mindenki maga választja.",saveAct:"brandsave",resetAct:"brandreset",saveLabel:"Márka mentése"});
   }else if(BR.plan!=="whitelabel"&&BR.upsell){
     wl=`<div class="card stack lockcard"><h3 style="margin:0">Saját márkával szeretnéd?</h3><p style="margin:0;font-size:13px">A <b>white label</b> csomagban a tervező a te nevedet, logódat, színeidet és betűidet viseli, és így adhatod tovább a csapatodnak, ügyfeleidnek.</p><a class="btn small ghost" style="align-self:flex-start" href="${esc(PX.upsellUrl("whitelabel",BR.slug))}" target="_blank" rel="noopener">Érdekel a white label</a></div>`;
   }
@@ -1158,7 +1162,7 @@ function checklistCard(){
   <div class="list">${items.map(([l,ok,act])=>`<div class="li ${ok?"done":""}"><span class="cbx" aria-hidden="true" ${ok?'aria-pressed="true"':""}>${ok?"✓":""}</span><div class="grow t">${l}</div>${ok?"":act}</div>`).join("")}</div></div>`;
 }
 /* ---------- superadmin (Polymaind) ---------- */
-const ADM_TABS=[["attekintes","Áttekintés"],["felhasznalok","Regisztrálók"],["markak","Márkák"],["naplo","Napló"]];
+const ADM_TABS=[["attekintes","Áttekintés"],["felhasznalok","Regisztrálók"],["arculat","Sikertervező-arculat"],["markak","Márkák"],["naplo","Napló"]];
 const SUB_PLANS=[["ingyenes","Ingyenes"],["alap","Alap"],["whitelabel","White label"]];
 const SUB_STATUS=[["probaido","Próbaidő"],["aktiv","Aktív"],["lejart","Lejárt"],["lemondva","Lemondva"],["ajandek","Ajándék"]];
 const lbl=(arr,k)=>(arr.find(x=>x[0]===k)||[k,k])[1];
@@ -1170,6 +1174,9 @@ async function admLoad(what){
     if(what==="felhasznalok")ui.adm.users=(await ctx.admin("users")).users;
     if(what==="markak")ui.adm.brands=(await ctx.admin("brands")).brands;
     if(what==="naplo"){const r=await ctx.admin("audit");ui.adm.audit=r.audit;ui.adm.auditMissing=r.missing}
+    if(what==="arculat"){const r=await ctx.admin("platform.get");ui.adm.platform=r;
+      // élő előnézet: a szerkesztett alap-arculat azonnal ráül az appra (mentésig csak nálad látszik)
+      ui.brand=Object.assign(JSON.parse(JSON.stringify(r.config||{})),{slug:ctx.brandRaw.slug,plan:ctx.brandRaw.plan,upsell:ctx.brandRaw.upsell,themed:true});ui.brandFor="platform";repaint()}
   }catch(e){ui.adm.err=e.status===403?"Ehhez nincs jogosultságod.":"Nem sikerült betölteni. Próbáld újra."}
   ui.adm.loading="";render();
 }
@@ -1177,7 +1184,7 @@ function vAdmin(){
   activeBoard=null;
   if(!ctx.superadmin)return head("Admin","Nincs hozzáférés")+'<div class="card empty">Ez az oldal csak a superadminnak érhető el.</div>';
   const a=ui.adm=ui.adm||{},tab=ui.admTab||"attekintes";
-  const need={attekintes:"overview",felhasznalok:"users",markak:"brands",naplo:"audit"}[tab];
+  const need={attekintes:"overview",felhasznalok:"users",arculat:"platform",markak:"brands",naplo:"audit"}[tab];
   if(!a[need]&&a.loading!==tab&&!a.err)setTimeout(()=>admLoad(tab),0);
   const tabs=`<div class="tabs">${ADM_TABS.map(([k,l])=>`<button data-act="admtab" data-k="${k}" aria-pressed="${tab===k}">${l}</button>`).join("")}<button data-act="admreload" data-k="${tab}">↻ Frissítés</button></div>`;
   let body="";
@@ -1190,6 +1197,11 @@ function vAdmin(){
   else if(tab==="felhasznalok"){const q=(ui.admQ||"").toLowerCase();const list=a.users.filter(u=>!q||(u.email+" "+u.name).toLowerCase().includes(q));
     body=`<div class="card"><div class="row between" style="margin-bottom:10px"><input type="text" data-admq="1" value="${esc(ui.admQ||"")}" placeholder="Keresés név vagy e-mail szerint" aria-label="Keresés" style="max-width:340px"><span class="muted" style="font-size:12.5px">${list.length} / ${a.users.length} fő</span></div>
     <div class="tablewrap"><table><thead><tr><th>Felhasználó</th><th>Regisztrált</th><th>Utoljára aktív</th><th>Márka</th><th>Előfizetés</th><th></th></tr></thead><tbody>${list.map(u=>`<tr><td><strong>${esc(u.name||"–")}</strong>${u.superadmin?' <span class="chip on">fő admin</span>':u.admin?' <span class="chip on">admin</span>':""}<div class="muted" style="font-size:12px">${esc(u.email)}${u.confirmed?"":' · <span style="color:var(--warn)">nincs megerősítve</span>'}${u.banned?' · <span style="color:var(--warn)">letiltva</span>':""}</div></td><td class="num">${dt(u.created_at)}</td><td class="num">${dt(u.last_active||u.last_sign_in_at)}</td><td>${esc(u.brand||"–")}</td><td>${u.sub?`<span class="chip ${u.sub.status==="aktiv"||u.sub.status==="ajandek"?"good":u.sub.status==="lejart"||u.sub.status==="lemondva"?"warn":""}">${lbl(SUB_PLANS,u.sub.plan)} · ${lbl(SUB_STATUS,u.sub.status)}</span>${u.sub.current_period_end?`<div class="muted" style="font-size:11.5px">eddig: ${fmtDate(u.sub.current_period_end)}</div>`:""}`:'<span class="chip">Ingyenes</span>'}</td><td><button class="btn small ghost" data-act="admuser" data-id="${u.id}">Kezelés</button></td></tr>`).join("")||'<tr><td colspan="6" class="empty">Nincs találat.</td></tr>'}</tbody></table></div></div>`;}
+  else if(tab==="arculat"){const pl=a.platform;
+    body=pl.missing?'<div class="card"><p style="margin:0">Az arculat táblája még nincs létrehozva (0004_platform_theme.sql).</p></div>':
+    `<div class="card status" style="box-shadow:none"><div class="grow"><b>Ez a Sikertervező alapkinézete.</b><div class="muted" style="font-size:12.5px">Minden alap csomagos felhasználó és a bemutató mód ezt látja. A white label ügyfelek saját arculata erre épül: amit ők beállítanak, az felülírja. Szerkesztés közben a változás csak nálad látszik, a <b>Mentés</b> után mindenkinél (legfeljebb fél perc).${pl.updated_at?` Utoljára mentve: ${dt(pl.updated_at)}.`:""}</div></div></div>`
+    +brandEditor(ui.brand||{},{id:"platszerk",title:"Sikertervező-arculat",badge:"Superadmin",note:"Név, alcím, logó, színek, oldalsáv, betűk, saját idézetek. Üresen hagyott mező = a semleges alapérték.",saveAct:"platsave",resetAct:"platreset",saveLabel:"Mentés mindenkinek",
+      extra:ui.platClear?'<button class="btn ghost" data-act="platclearyes">Igen, visszaállítom semlegesre</button><button class="nc-skip" data-act="platclearno">Mégse</button>':'<button class="nc-skip" style="color:var(--muted)" data-act="platclear">Visszaállítás semlegesre</button>'});}
   else if(tab==="markak"){
     body=`<div class="card stack" style="gap:10px"><h3 style="margin:0">Új márka (white label ügyfél)</h3><form class="row" data-form="admbrand" style="align-items:flex-end"><label class="f" style="flex:1;min-width:180px">Azonosító (kisbetű, kötőjel)<input type="text" id="adm-slug" placeholder="pl. ceged" pattern="[a-z0-9][a-z0-9-]{0,39}" required></label><label class="f" style="min-width:160px">Csomag<select id="adm-plan">${[["alap","Alap"],["whitelabel","White label"]].map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select></label><button class="btn">Létrehozás</button></form><p class="muted" style="margin:0;font-size:12px">A márka címe: <code>/?brand=azonosító</code>, vagy saját domain a BRAND_HOSTS beállítással. Az arculatot a márka-admin a Beállításokban állítja be.</p></div>
     ${a.brands.map(x=>`<div class="card stack" style="gap:10px"><div class="row between"><h3 style="margin:0">${esc(x.slug)}</h3><span class="row" style="gap:6px">${[["alap","Alap"],["whitelabel","White label"]].map(([k,l])=>`<button class="mood" data-act="admbplan" data-slug="${esc(x.slug)}" data-k="${k}" aria-pressed="${x.plan===k}">${l}</button>`).join("")}<button class="chip" data-act="admbupsell" data-slug="${esc(x.slug)}" data-plan="${x.plan}" data-on="${x.upsell?0:1}">${x.upsell?"PolyOS-ajánló: be":"PolyOS-ajánló: ki"}</button></span></div>
@@ -1223,7 +1235,7 @@ function render(){
   window.scrollTo(0,y);
   checkAch(false);
 }
-function go(){const h=(location.hash||"").slice(1);route=RENDER[h]?h:"ma";trayOpen=false;ui.sel=null;render();window.scrollTo(0,0)}
+function go(){const h=(location.hash||"").slice(1);if(ui.brand&&h!==route){ui.brand=null;ui.brandFor=null;repaint()}route=RENDER[h]?h:"ma";trayOpen=false;ui.sel=null;render();window.scrollTo(0,0)}
 window.addEventListener("hashchange",go);
 
 /* ---------- events ---------- */
@@ -1356,7 +1368,14 @@ document.addEventListener("click",e=>{
     case"obnopt":if(ui.ob){ui.ob.d.pt=false;obNext()}break;
     case"pttoggle":S.settings.ptOff=!S.settings.ptOff;save();render();break;
     case"checkhide":S.prefs=S.prefs||{};S.prefs.checklistHide=true;save();render();break;
-    case"admtab":ui.admTab=b.dataset.k;render();break;
+    case"admtab":if(ui.brandFor==="platform"&&b.dataset.k!=="arculat"){ui.brand=null;ui.brandFor=null;repaint()}ui.admTab=b.dataset.k;render();break;
+    case"platsave":{const d=ui.brand;if(!d)break;const cfg=JSON.parse(JSON.stringify(d));["slug","plan","upsell","themed"].forEach(k=>delete cfg[k]);b.disabled=true;
+      ctx.admin("platform.set",{config:cfg}).then(()=>{toast("Mentve. Mindenkinél ez az új alapkinézet. Újratöltöm…");setTimeout(()=>location.reload(),900)},()=>{b.disabled=false;toast("Nem sikerült menteni. Próbáld újra.")});break}
+    case"platreset":ui.brand=null;ui.brandFor=null;ui.adm.platform=null;repaint();admLoad("arculat");break;
+    case"platclear":ui.platClear=true;render();break;
+    case"platclearno":ui.platClear=false;render();break;
+    case"platclearyes":ui.platClear=false;ctx.admin("platform.set",{config:{}}).then(()=>{toast("Visszaállítva a semleges alapkinézetre. Újratöltöm…");setTimeout(()=>location.reload(),900)},()=>toast("Nem sikerült. Próbáld újra."));break;
+
     case"admreload":ui.adm=ui.adm||{};ui.adm.err="";admLoad(b.dataset.k);break;
     case"admuser":ui.admConfirm=null;admUserSheet(id);break;
     case"admconf":ui.admConfirm=id;admUserSheet(id);break;

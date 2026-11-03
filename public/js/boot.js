@@ -49,6 +49,7 @@
     const logo = eb.logo ? `<img class="logo" src="${esc(eb.logo)}" alt="${esc(eb.productName)} logó">` : `<span class="logo" aria-hidden="true">${TH.svg(TH.MARK).replace('width="48" height="48"', 'width="72" height="72"')}</span>`;
     $("#brandrow").innerHTML = `${logo}<div class="brand">${esc(eb.productName)}<small>${esc(eb.tagline)}</small></div>`;
     document.title = eb.productName;
+    const fi = document.querySelector('link[rel="icon"]'); if (fi) fi.setAttribute("href", eb.logo || "/favicon.svg");
     const at = document.querySelector('meta[name="apple-mobile-web-app-title"]'); if (at) at.setAttribute("content", eb.productName);
     const mf = $("#manifest"); if (mf) mf.setAttribute("href", "/api/manifest" + location.search);
     const ai = $("#appleicon"); if (ai) ai.setAttribute("href", eb.logo ? "/api/icon?size=180" + (location.search ? "&" + location.search.slice(1) : "") : "/icons/apple-touch-icon.png");

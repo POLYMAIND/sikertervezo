@@ -49,13 +49,42 @@ function sanitize(input) {
   return out;
 }
 
-// Amit a böngésző megkap. Alap csomagnál a white label mezők NEM mennek ki.
-function publicBrand(row) {
+// Amit a böngésző megkap.
+//   - Az app ALAP-arculata (a superadmin „Sikertervező-arculat" beállítása) minden márkára érvényes.
+//   - Alap csomagú márka: CSAK az alap-arculatot kapja (a saját white label mezői nem jutnak ki).
+//   - White label márka: az alap-arculatra ráépül a saját beállítása (ami ki van töltve, az felülír).
+function hasTheme(c) {
+  return !!(c && (c.productName || c.tagline || c.ownerName || c.logo || c.fonts || (c.quotes && c.quotes.length) || (c.founder && c.founder.enabled) || (c.colors && Object.keys(c.colors).length)));
+}
+function overlay(base, top) {
+  const out = JSON.parse(JSON.stringify(base));
+  ["productName", "tagline", "ownerName", "logo", "fonts"].forEach((k) => { if (top[k]) out[k] = top[k]; });
+  out.colors = Object.assign({}, base.colors, top.colors || {});
+  if (top.quotes && top.quotes.length) out.quotes = top.quotes;
+  if (top.books && top.books.length) out.books = top.books;
+  if (top.founder && top.founder.enabled) out.founder = top.founder;
+  return out;
+}
+function publicBrand(row, platform) {
   const r = row || DEFAULT;
   const plan = PLANS.includes(r.plan) ? r.plan : "alap";
   const base = { slug: r.slug || "alap", plan, upsell: r.upsell !== false };
-  if (plan !== "whitelabel") return base;
-  return Object.assign(sanitize(r.config || r), base);
+  const plat = platform && hasTheme(platform) ? sanitize(platform) : null;
+  if (plan !== "whitelabel") return plat ? Object.assign(plat, base, { themed: true }) : base;
+  const own = sanitize(r.config || r);
+  return Object.assign(plat ? overlay(plat, own) : own, base);
+}
+
+// Az app alap-arculata (sikertervezo_platform, id='default'). Rövid cache, hogy ne minden kérés menjen az adatbázisig.
+let _plat = { at: 0, val: null };
+async function loadPlatform(fresh) {
+  if (!fresh && Date.now() - _plat.at < 30000) return _plat.val;
+  let val = null;
+  if (L.serviceReady()) {
+    try { const rows = await L.sb("sikertervezo_platform?id=eq.default&select=config&limit=1"); val = (rows && rows[0] && rows[0].config) || null; } catch (e) { val = null; }
+  }
+  _plat = { at: Date.now(), val };
+  return val;
 }
 
 function resolveSlug(req) {
@@ -86,4 +115,4 @@ async function loadBrand(slug) {
   return Object.assign({}, DEFAULT, { slug: slug === "alap" ? "alap" : slug });
 }
 
-module.exports = { sanitize, publicBrand, resolveSlug, loadBrand, cleanLogo, DEFAULT, PLANS, SLUG_RE };
+module.exports = { sanitize, publicBrand, loadPlatform, hasTheme, resolveSlug, loadBrand, cleanLogo, DEFAULT, PLANS, SLUG_RE };

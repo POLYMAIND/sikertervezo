@@ -6,7 +6,7 @@ const P = require("./_polyos");
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET") return L.send(res, 405, { error: "method_not_allowed" });
-  const brand = B.publicBrand(await B.loadBrand(B.resolveSlug(req)));
+  const brand = B.publicBrand(await B.loadBrand(B.resolveSlug(req)), await B.loadPlatform());
   L.send(res, 200, {
     brand,
     supabase: L.supabaseReady() ? { url: L.SB_URL(), anonKey: L.SB_ANON() } : null,

@@ -11,6 +11,7 @@
 //   { action:"brands" }                                   -> márkák + adminjaik
 //   { action:"brand.set", slug, plan, upsell }            -> márka létrehozása / csomag váltása
 //   { action:"brand.admin.add" | "brand.admin.remove", slug, email }
+//   { action:"platform.get" | "platform.set", config }    az app alap-arculata (név, logó, színek, betűk…)
 //   { action:"audit" }                                    -> utolsó 100 napló-esemény
 const L = require("./_lib");
 const B = require("./_brands");
@@ -115,6 +116,17 @@ module.exports = async function handler(req, res) {
         await L.sb(`sikertervezo_superadmins?user_id=eq.${b.id}`, { method: "DELETE" });
       }
       await audit(user, action, b.id, { email: target.email });
+      return L.send(res, 200, { ok: true });
+    }
+    if (action === "platform.get") {
+      const rows = await safe(L.sb("sikertervezo_platform?id=eq.default&select=config,updated_at&limit=1"), null);
+      return L.send(res, 200, { ok: true, config: (rows && rows[0] && rows[0].config) || {}, updated_at: rows && rows[0] ? rows[0].updated_at : null, missing: rows === null });
+    }
+    if (action === "platform.set") {
+      const config = B.sanitize(b.config);
+      await L.sb("sikertervezo_platform?on_conflict=id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ id: "default", config, updated_by: user.id, updated_at: new Date().toISOString() }) });
+      await B.loadPlatform(true); // a cache azonnal frissül ezen a példányon; a többi 30 mp-en belül
+      await audit(user, "platform.set", "default", { productName: config.productName || "", colors: config.colors, fonts: config.fonts || "", logo: config.logo ? "van" : "nincs" });
       return L.send(res, 200, { ok: true });
     }
     if (action === "sub.set") {

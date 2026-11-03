@@ -4,8 +4,8 @@ const B = require("./_brands");
 
 module.exports = async function handler(req, res) {
   const size = { 180: "apple-touch-icon", 192: "icon-192", 512: "icon-512" }[new URL(req.url, "http://x").searchParams.get("size")] || "icon-512";
-  const b = B.publicBrand(await B.loadBrand(B.resolveSlug(req)));
-  const m = b.plan === "whitelabel" && typeof b.logo === "string" && b.logo.match(/^data:(image\/(?:png|webp|jpeg));base64,([A-Za-z0-9+/=]+)$/);
+  const b = B.publicBrand(await B.loadBrand(B.resolveSlug(req)), await B.loadPlatform());
+  const m = (b.plan === "whitelabel" || b.themed) && typeof b.logo === "string" && b.logo.match(/^data:(image\/(?:png|webp|jpeg));base64,([A-Za-z0-9+/=]+)$/);
   if (!m) { res.statusCode = 302; res.setHeader("Location", `/icons/${size}.png`); return res.end(); }
   res.statusCode = 200;
   res.setHeader("Content-Type", m[1]);

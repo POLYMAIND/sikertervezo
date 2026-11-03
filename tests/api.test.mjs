@@ -167,3 +167,12 @@ test("superadmin: kinevezett admin csak akkor admin, ha van fő admin beállítv
   // a mock /rest/v1/ minden lekérdezésre üres listát ad → nincs kinevezett admin → idegen fiók nem admin
   assert.equal((await adminCall("whoami", { id: "x", email: "hello@pelda.hu", email_confirmed_at: "2026-11-01" }, "web@polymaind.hu")).body.superadmin, false);
 });
+
+test("alap-arculat (superadmin): alap csomag megkapja, white label ráépül és felülír", () => {
+  const plat = { productName: "Minta Tervező", colors: { accent: "#0f766e", highlight: "#F2B84B" }, fonts: "elegans" };
+  const a = B().publicBrand({ slug: "alap", plan: "alap", config: { productName: "Titok" } }, plat);
+  assert.equal(a.themed, true); assert.equal(a.productName, "Minta Tervező"); assert.equal(a.colors.accent, "#0F766E");
+  const w = B().publicBrand({ slug: "minta", plan: "whitelabel", config: { productName: "Saját", colors: { accent: "#112233" } } }, plat);
+  assert.equal(w.productName, "Saját"); assert.equal(w.colors.accent, "#112233"); assert.equal(w.colors.highlight, "#F2B84B"); assert.equal(w.fonts, "elegans");
+  assert.equal(B().publicBrand({ slug: "alap", plan: "alap" }, {}).themed, undefined); // üres alap-arculat = semleges
+});
