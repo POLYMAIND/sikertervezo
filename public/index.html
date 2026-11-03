@@ -56,13 +56,21 @@
       <h1>A vállalkozásod napi terve. <mark>Egy helyen.</mark></h1>
       <p class="lead">Teendők, naptár, kapcsolatok, ügyfelek, tartalom és célok – nem öt appban és tíz cetlin, hanem egy nyugodt felületen, amit reggel kinyitsz, és tudod, mi a dolgod.</p>
       <div class="when-closed">
-        <form class="wlform" data-src="hero" novalidate>
-          <div class="wlrow"><label class="sr" for="wl-hero">E-mail-cím</label><input id="wl-hero" type="email" name="email" placeholder="E-mail-címed" autocomplete="email" required><button class="btn" type="submit">Feliratkozom</button></div>
-          <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
-          <label class="wlcons"><input type="checkbox" name="consent" required> <span>Feliratkozom a várólistára. Az e-mail-címemet a Polymaind csak az indulásról szóló értesítéshez és az ajándék elküldéséhez használja; bármikor kérhetem a törlését (hello@polymaind.hu).</span></label>
-          <p class="wlmsg" role="status" aria-live="polite"></p>
-        </form>
-        <p class="gift">🎁 Feliratkozás után azonnal letöltheted a <a href="#varolista">Káoszmanagert</a>, a nyomtatható tervező- és matricacsomagunkat. <a class="demo" href="/app?bemutato">Vagy nézz körül a bemutatóban →</a></p>
+        <div class="wlcard">
+          <img class="wlthumb" src="/img/km/1.webp" alt="" width="380" height="537">
+          <div class="wlbody">
+            <p class="wlkick"><span>🎁</span> Ingyenes ajándék a feliratkozóknak</p>
+            <p class="wltitle">Kérd most a <b>Káoszmanagert</b>, és a nyitáskor elsőként szólunk.</p>
+            <form class="wlform" data-src="hero" novalidate>
+              <div class="wlrow"><label class="sr" for="wl-hero">E-mail-cím</label><input id="wl-hero" type="email" name="email" placeholder="E-mail-címed" autocomplete="email" required><button class="btn gold" type="submit">Kérem ingyen <span aria-hidden="true">→</span></button></div>
+              <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+              <label class="wlcons"><input type="checkbox" name="consent" required> <span>Kérem a nyitásról szóló értesítést és az ajándékot. A Polymaind csak erre használja a címemet, és bármikor kérhetem a törlését (hello@polymaind.hu).</span></label>
+              <p class="wlmsg" role="status" aria-live="polite"></p>
+            </form>
+            <ul class="wltrust"><li>Azonnal letölthető PDF</li><li>9 nyomtatható oldal</li><li>Nincs spam</li></ul>
+          </div>
+        </div>
+        <p class="gift"><a class="demo" href="/app?bemutato">Addig is nézz körül a bemutatóban →</a></p>
       </div>
       <div class="when-open">
         <div class="ctas">
@@ -117,8 +125,8 @@
 
 <!-- FUTÓSZALAG -->
 <div class="marquee" aria-hidden="true"><div class="mq-track">
-  <span>Teendők</span><span>Naptár</span><span>Ügyfelek</span><span>Kapcsolatok</span><span>Tartalom</span><span>Célok</span><span>Szokások</span><span>Gondolattérkép</span><span>Hétértékelő</span><span>Számok</span>
-  <span>Teendők</span><span>Naptár</span><span>Ügyfelek</span><span>Kapcsolatok</span><span>Tartalom</span><span>Célok</span><span>Szokások</span><span>Gondolattérkép</span><span>Hétértékelő</span><span>Számok</span>
+  <span>Teendők</span><span>Naptár</span><span>Ügyfelek</span><span>Kapcsolatok</span><span>Tartalom</span><span>Célok</span><span>Szokások</span><span>Gondolattérkép</span><span>Hétértékelő</span><span>Matricák</span>
+  <span>Teendők</span><span>Naptár</span><span>Ügyfelek</span><span>Kapcsolatok</span><span>Tartalom</span><span>Célok</span><span>Szokások</span><span>Gondolattérkép</span><span>Hétértékelő</span><span>Matricák</span>
 </div></div>
 
 <!-- PROBLÉMA -->
@@ -145,7 +153,6 @@
       <article class="feat"><span class="ic">🧠</span><h3>Gondolattérkép kérdéssorral</h3><p>Nem üres lappal indulsz: egy kérdéssor végigvezet, és a válaszaidból magától összeáll a térképed.</p></article>
       <article class="feat"><span class="ic">🤝</span><h3>Kapcsolatok és ügyfelek</h3><p>Kivel hol tartasz, mikor kell visszahívni, ki mit szeret. Egyszerű ügyfélnyilvántartás, CRM-tudomány nélkül.</p><span class="tag">Pro</span></article>
       <article class="feat"><span class="ic">✍️</span><h3>Tartalomtervező</h3><p>Témapillérek, ötletek, poszt-naptár. Tudni fogod, mit teszel ki jövő kedden.</p><span class="tag">Pro</span></article>
-      <article class="feat"><span class="ic">📈</span><h3>Számok</h3><p>Bevétel, rendelések, havi cél: látod, hol tartasz, táblázatok nélkül.</p><span class="tag">Pro</span></article>
       <article class="feat"><span class="ic">🔁</span><h3>Heti és havi értékelő</h3><p>Pénteken jelentkezik a hétértékelő, hó végén a havi. Pár kérdés, és tisztán látod, mi működött.</p></article>
       <article class="feat"><span class="ic">🌱</span><h3>Szokások, célok, olvasás</h3><p>Szokáskövető, célok lépésekre bontva, olvasólista. A kis lépésekből lesz a nagy eredmény.</p></article>
       <article class="feat"><span class="ic">🏅</span><h3>Matricák és oklevél</h3><p>A haladásodat érmek és oklevél ünneplik. Mert a sikert meg is kell élni.</p></article>
@@ -220,7 +227,6 @@
           <li><b>Minden, ami az Ingyenesben</b></li>
           <li>Kapcsolatok és ügyfelek</li>
           <li>Tartalomtervező</li>
-          <li>Számok (bevétel, rendelések)</li>
           <li>Naptár-szinkron Google- és iPhone-naptárral</li>
           <li>Más naptárak behúzása</li>
           <li>E-mail küldése az appból</li>
@@ -271,7 +277,7 @@
     <h2 class="c">Gyakori kérdések</h2>
     <div class="faq">
       <details><summary>Tényleg ingyenes?</summary><p>Igen. Az Ingyenes csomag nem próbaidőszak, hanem örökre használható. Bankkártyát sem kérünk a regisztrációnál.</p></details>
-      <details><summary>Mit kapok a Próban?</summary><p>A Kapcsolatok, Ügyfelek, Tartalom és Számok részt, a naptár szinkronját Google- és iPhone-naptárral, más naptárak behúzását, és e-mail küldését közvetlenül az appból. Havi 3 999 Ft, bármikor lemondható.</p></details>
+      <details><summary>Mit kapok a Próban?</summary><p>A Kapcsolatok, Ügyfelek és Tartalom részt, a naptár szinkronját Google- és iPhone-naptárral, más naptárak behúzását, és e-mail küldését közvetlenül az appból. Havi 3 999 Ft, bármikor lemondható.</p></details>
       <details><summary>Telefonon is működik?</summary><p>Igen. A böngészőből a kezdőképernyőre teheted, és appként működik iPhone-on és Androidon is. Amit a telefonon beírsz, a gépeden is ott lesz.</p></details>
       <details><summary>Össze tudom kötni a Google-naptárammal?</summary><p>Igen. A Pro csomagban a Sikermaker naptárára feliratkozhatsz a Google- vagy iPhone-naptáradból, és a meglévő naptáraidat is behúzhatod a Sikermakerbe.</p></details>
       <details><summary>Hol tárolódnak az adataim?</summary><p>Az Európai Unióban, titkosított kapcsolaton keresztül. A tervedet csak te látod. Az adataidat nem adjuk el, és nem használjuk hirdetésre.</p></details>
@@ -304,9 +310,9 @@
         <li>Napi és heti értékelő, káoszkiürítő mindmap</li>
       </ul>
       <form class="wlform" data-src="ajandek" novalidate>
-          <div class="wlrow"><label class="sr" for="wl-ajandek">E-mail-cím</label><input id="wl-ajandek" type="email" name="email" placeholder="E-mail-címed" autocomplete="email" required><button class="btn" type="submit">Feliratkozom</button></div>
+          <div class="wlrow"><label class="sr" for="wl-ajandek">E-mail-cím</label><input id="wl-ajandek" type="email" name="email" placeholder="E-mail-címed" autocomplete="email" required><button class="btn gold" type="submit">Kérem ingyen <span aria-hidden="true">→</span></button></div>
           <input class="hp" type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
-          <label class="wlcons"><input type="checkbox" name="consent" required> <span>Feliratkozom a várólistára. Az e-mail-címemet a Polymaind csak az indulásról szóló értesítéshez és az ajándék elküldéséhez használja; bármikor kérhetem a törlését (hello@polymaind.hu).</span></label>
+          <label class="wlcons"><input type="checkbox" name="consent" required> <span>Kérem a nyitásról szóló értesítést és az ajándékot. A Polymaind csak erre használja a címemet, és bármikor kérhetem a törlését (hello@polymaind.hu).</span></label>
           <p class="wlmsg" role="status" aria-live="polite"></p>
         </form>
     </div>

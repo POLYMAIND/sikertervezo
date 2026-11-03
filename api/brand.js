@@ -60,6 +60,7 @@ module.exports = async function handler(req, res) {
     if (current.plan !== "whitelabel") return L.send(res, 403, { error: "plan_required" }); // alap csomagban nincs mit menteni
     const b = await L.body(req);
     const config = B.sanitize(b.brand);
+    config.features = B.cleanFeatures(current.config && current.config.features); // a funkciókat a márka gazdája nem állíthatja
     await L.sb(`sikertervezo_brands?slug=eq.${encodeURIComponent(slug)}`, {
       method: "PATCH", headers: { Prefer: "return=minimal" },
       body: JSON.stringify({ config, updated_by: user.id, updated_at: new Date().toISOString() }),

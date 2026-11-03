@@ -62,7 +62,7 @@
       msg.className = "wlmsg"; msg.textContent = "";
       if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(em)) { msg.className = "wlmsg err"; msg.textContent = ERR.bad_email; f.elements.email.focus(); return; }
       if (!f.elements.consent.checked) { msg.className = "wlmsg err"; msg.textContent = "Pipáld be a hozzájárulást, és már küldjük is."; return; }
-      btn.disabled = true; btn.textContent = "Küldés…";
+      var orig = btn.innerHTML; btn.disabled = true; btn.textContent = "Küldés…";
       fetch("/api/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: em, consent: true, website: f.elements.website.value, source: "landing-" + (f.getAttribute("data-src") || "") }) })
         .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, j: j }; }); })
         .then(function (x) {
@@ -73,7 +73,7 @@
           f.parentNode.replaceChild(box, f);
         })
         .catch(function (err) {
-          btn.disabled = false; btn.textContent = "Feliratkozom"; msg.className = "wlmsg err";
+          btn.disabled = false; btn.innerHTML = orig; msg.className = "wlmsg err";
           msg.textContent = ERR[err.message] || "Most nem sikerült. Próbáld újra pár perc múlva, vagy írj nekünk: hello@polymaind.hu.";
         });
     });

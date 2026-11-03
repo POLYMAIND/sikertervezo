@@ -9,6 +9,8 @@ const BR=ctx.brand, TH=ST.theme, PX=ST.polyos, DEMO=ctx.mode!=="cloud";
 // csomag: ingyenes / pro. A white label márka felhasználói Pro-t kapnak.
 const PRO=ctx.plan==="pro"||BR.plan==="whitelabel";
 const PRO_VIEWS=["tartalom","kapcsolatok","ugyfelek","szamok"];
+// márkánként bekapcsolható funkciók (a superadmin kapcsolja be egy white label márkának); alapból kikapcsolva
+const FEAT=k=>!!(BR.features&&BR.features[k]);
 // bemutatóban a Pro funkciókat egy kis „PRO” címke jelöli, hogy egyértelmű legyen, mi tartozik a Pro csomaghoz
 const SHOWPRO=DEMO&&PRO;
 const proTag=(cls)=>SHOWPRO?`<span class="protag${cls?" "+cls:""}" title="A Pro csomag része">PRO</span>`:"";
@@ -53,7 +55,7 @@ function sample(){
   }
   return {
     v:1,
-    settings:{name:"Anna",cur:"Ft",steps:["Poszt","Sztori","Új kapcsolat","Utánkövetés","Csapat"]},
+    settings:{name:"Anna",cur:"Ft",steps:["Poszt","Sztori","Új kapcsolat","Utánkövetés",FEAT("csapat")?"Csapat":"Tanulás"]},
     days,
     contacts:[
       {id:uid(),name:"Horváth Rita",src:"Instagram",interest:"Üzlet",stage:2,next:"Bemutató online",nextDate:d(0),note:"Két gyerek, otthonról dolgozna",created:d(-9)},
@@ -237,6 +239,7 @@ function bindBoards(){
 
 /* ---------- nav ---------- */
 const VIEWS=[["ma","Vezérlőpult"],["naptar","Naptár"],["szokasok","Szokások"],["terkep","Gondolattérkép"],["olvasas","Olvasás"],["kapcsolatok","Kapcsolatok"],["ugyfelek","Ügyfelek"],["tartalom","Tartalom"],["csapat","Csapat"],["szamok","Számok"],["ertekelesek","Értékelések"],["matricak","Matricák"],["bovitesek","Bővítések"],["beallitasok","Beállítások"]];
+[["csapat","csapat"],["szamok","szamok"]].forEach(([v,f])=>{if(!FEAT(f)){const i=VIEWS.findIndex(x=>x[0]===v);if(i>=0)VIEWS.splice(i,1)}});
 if(BR.plan==="whitelabel"&&(ctx.brandAdmin||ctx.mode!=="cloud"))VIEWS.push(["markam","Márkám"]);
 if(ctx.superadmin)VIEWS.push(["admin","Admin"]);
 let route="ma";
@@ -318,8 +321,8 @@ function monthStats(m){
 function proBlock(dc,rc,bd,cont,st){return `  <div class="grid g4">
     <div class="card kpi"><div class="v num red">${st.contacts}</div><div class="l">új kapcsolat ebben a hónapban</div></div>
     <div class="card kpi"><div class="v num">${st.clients}</div><div class="l">új ügyfél</div></div>
-    <div class="card kpi"><div class="v num">${st.team}</div><div class="l">új csapattag</div></div>
-    <div class="card kpi"><div class="v num">${money(st.revenue)}</div><div class="l">bevétel a rendelésekből</div></div>
+    ${FEAT("csapat")?`<div class="card kpi"><div class="v num">${st.team}</div><div class="l">új csapattag</div></div>`:""}
+    ${FEAT("szamok")?`<div class="card kpi"><div class="v num">${money(st.revenue)}</div><div class="l">bevétel a rendelésekből</div></div>`:""}
   </div>
   <div class="grid g3">
     <div class="card"><h3>Kit keress meg ma?</h3><div class="list">${dc.map(c=>`<div class="li"><div class="grow"><div class="t">${esc(c.name)}</div><div class="s">${esc(c.next)} · ${STAGES[c.stage]}</div></div>${c.nextDate<T?`<span class="chip warn">${-diff(c.nextDate)} napja</span>`:'<span class="chip">ma</span>'}<button class="iconbtn" data-act="msg" data-k="${c.stage===1?"bemutato":"utankovetes"}" data-type="contact" data-id="${c.id}" aria-label="Üzenetvázlat" title="Üzenetvázlat">${MSGICON}</button><button class="iconbtn" data-act="cdone" data-id="${c.id}" aria-label="Megvolt" title="Megvolt">✓</button></div>`).join("")||'<div class="empty">Mára nincs esedékes utánkövetés.</div>'}</div></div>
@@ -573,8 +576,8 @@ function vBeall(){
       ${questions().map((q,i)=>`<label class="f">${i+1}. kérdés<input type="text" id="set-q-${i}" data-qset="${i}" value="${esc(q)}"></label>`).join("")}</div>
     ${calSyncCard()}
   </div>
-  <div class="card stack"><h3>Üzenetvázlataid</h3><p class="muted" style="margin:0;font-size:12.5px">A {nev} helyére az ember keresztneve, a {termek} helyére a kedvenc terméke, a {sajat} helyére a Te neved kerül.</p>
-    <div class="grid g2">${Object.keys(TPL_DEFAULT).map(k=>`<label class="f">${esc(TPL_DEFAULT[k][0])}<textarea id="tpl-${k}" data-tpl="${k}" rows="4">${esc(tpl(k))}</textarea>${S.tpl&&S.tpl[k]!=null?`<button type="button" class="chip" data-act="tplreset" data-k="${k}" style="align-self:flex-start">Eredeti szöveg visszaállítása</button>`:""}</label>`).join("")}</div></div>
+  ${FEAT("sablonok")?`<div class="card stack"><h3>Üzenetvázlataid</h3><p class="muted" style="margin:0;font-size:12.5px">A {nev} helyére az ember keresztneve, a {termek} helyére a kedvenc terméke, a {sajat} helyére a Te neved kerül.</p>
+    <div class="grid g2">${Object.keys(TPL_DEFAULT).map(k=>`<label class="f">${esc(TPL_DEFAULT[k][0])}<textarea id="tpl-${k}" data-tpl="${k}" rows="4">${esc(tpl(k))}</textarea>${S.tpl&&S.tpl[k]!=null?`<button type="button" class="chip" data-act="tplreset" data-k="${k}" style="align-self:flex-start">Eredeti szöveg visszaállítása</button>`:""}</label>`).join("")}</div></div>`:""}
   ${periodsCard()}
   <div class="grid g2" style="align-items:start">${remindersCard()}
     ${BR.founder.enabled?`<div class="card stack"><h3>Tagság</h3>${S.settings.founder?`<div class="row" style="gap:18px;flex-wrap:nowrap;align-items:center">${achHTML(FOUNDER)}<div class="stack" style="gap:6px"><b>Alapító tag vagy${S.settings.founderSince?" "+fmtDate(S.settings.founderSince)+" óta":""}.</b><span style="font-size:13px">${esc(BR.founder.perk)}</span><button class="btn small" data-act="cert" data-id="alapito" style="align-self:flex-start">Alapító oklevél</button></div></div>`:`<p style="margin:0">Nem vagy alapító tag.</p>`}
@@ -586,7 +589,7 @@ const MSGICON='<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true
 function habitCount(h){return Object.keys(h.days||{}).filter(k=>h.days[k]&&k>=h.start&&k<iso(addDays(parse(h.start),h.len))).length}
 function monthGoalHit(){const m=ym(TODAY),g=S.goals[m];if(!g)return false;const st=monthStats(m);const act={szem:g.szem&&g.szem.teny,csop:g.csop&&g.csop.teny,bev:st.revenue,kap:st.contacts,ugy:st.clients,tag:st.team};return Object.keys(act).some(k=>g[k]&&+g[k].cel>0&&+act[k]>=+g[k].cel)}
 function closedDays(){return Object.values(S.days).filter(d=>d.close&&(d.close.mood!=null||(d.close.a||[]).some(x=>x&&String(x).trim()))).length}
-const ACH=[
+const ACH_ALL=[
   {id:"elso-ertekeles",t:"Első értékelés",n:"✍",d:"Kitöltötted az első heti vagy havi értékelődet.",test:()=>Object.values(S.reviews||{}).some(r=>r&&r.done)},
   {id:"elso-lepes",t:"Első lépés",n:"1",d:"Kipipáltad az első napi lépésed.",test:()=>Object.values(S.days).some(d=>d.steps&&d.steps.some(Boolean))},
   {id:"tokeletes-nap",t:"Tökéletes nap",n:"5/5",d:"Egy nap alatt mind az 5 napi lépés.",test:()=>Object.values(S.days).some(d=>d.steps&&d.steps.filter(Boolean).length===5)},
@@ -605,6 +608,7 @@ const ACH=[
   {id:"pontcel",t:"Pontcél teljesítve",n:"★",d:"Elérted a periódus személyes pontcélját.",test:()=>+S.settings.ptGoal>0&&bpPeriod().personal>=+S.settings.ptGoal},
   {id:"havi-cel",t:"Elért havi cél",n:"★",d:"Teljesítettél egy havi célt a Számoknál.",test:()=>monthGoalHit()}
 ];
+const ACH=ACH_ALL.filter(a=>FEAT("csapat")||!/csapat/.test(a.id));
 function achHTML(a,locked){return `<span class="medal${locked?" locked":""}${a.founder?" founder":""}"><span class="m-c"><span class="m-n">${esc(a.n)}</span>${locked?'<span class="m-lock" aria-hidden="true"><svg viewBox="0 0 16 16" width="14" height="14"><rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" fill="none" stroke="currentColor" stroke-width="1.6"/></svg></span>':""}</span><span class="m-cap">${esc(a.t)}</span></span>`}
 let celebQ=[];
 function checkAch(silent){
@@ -638,7 +642,7 @@ function openMsg(k,v,done){
   $("#layer").innerHTML=`<div class="modal" data-act="close"><div class="sheet" role="dialog" aria-label="Üzenet"><div class="row between"><div><div class="eyebrow">Üzenetvázlat</div><h2>${esc(TPL_DEFAULT[k][0])}${v.full?": "+esc(v.full):""}</h2></div><button type="button" class="iconbtn" data-act="close" aria-label="Bezárás">×</button></div>
   ${PRO&&!DEMO&&ctx.emailReady?`<div class="grid g2"><label class="f">E-mail-cím<input type="email" id="msgto" value="${esc(v.email||"")}" placeholder="pelda@pelda.hu"></label><label class="f">Tárgy<input type="text" id="msgsubj" maxlength="150" value="${esc(TPL_DEFAULT[k][0])}"></label></div>`:""}
   <label class="f">Igazítsd a saját szavaidra, aztán ${PRO&&!DEMO&&ctx.emailReady?"küldd el e-mailben, vagy ":""}másold be Messengerbe vagy SMS-be.<textarea id="msgtext" rows="6">${esc(fillTpl(k,v))}</textarea></label>
-  <div class="row between"><span class="muted" style="font-size:12px">A sablonokat a Beállításokban írhatod át.</span><span class="row">${PRO&&!DEMO&&!ctx.emailReady?'<button class="btn" data-act="msgcopy">Másolás</button><span class="chip" title="Az e-mail-küldés bekapcsolása folyamatban">E-mail: hamarosan</span>':PRO&&!DEMO?'<button class="btn" data-act="msgsend">Küldés e-mailben</button><button class="btn ghost" data-act="msgcopy">Másolás</button>':!PRO?'<button class="btn" data-act="msgcopy">Másolás</button><a class="chip" href="#kapcsolatok" title="E-mail küldése a Pro csomagban">E-mail: Pro</a>':'<button class="btn" data-act="msgcopy">Másolás</button>'}${done?`<button class="btn ghost" data-act="${done.act}" data-id="${done.id}">${esc(done.label)}</button>`:""}</span></div></div></div>`;
+  <div class="row between"><span class="muted" style="font-size:12px">${FEAT("sablonok")?"A sablonokat a Beállításokban írhatod át.":""}</span><span class="row">${PRO&&!DEMO&&!ctx.emailReady?'<button class="btn" data-act="msgcopy">Másolás</button><span class="chip" title="Az e-mail-küldés bekapcsolása folyamatban">E-mail: hamarosan</span>':PRO&&!DEMO?'<button class="btn" data-act="msgsend">Küldés e-mailben</button><button class="btn ghost" data-act="msgcopy">Másolás</button>':!PRO?'<button class="btn" data-act="msgcopy">Másolás</button><a class="chip" href="#kapcsolatok" title="E-mail küldése a Pro csomagban">E-mail: Pro</a>':'<button class="btn" data-act="msgcopy">Másolás</button>'}${done?`<button class="btn ghost" data-act="${done.act}" data-id="${done.id}">${esc(done.label)}</button>`:""}</span></div></div></div>`;
 }
 
 /* ---------- következő lépés ---------- */
@@ -737,7 +741,7 @@ function needLine(have,goal,left){if(!goal)return"";const miss=Math.max(0,goal-h
 function periodHead(p){return p?`${esc(p.name)} · ${fmtDate(p.start)} – ${fmtDate(p.end)}`:"Nincs aktív periódus"}
 function countdownHTML(p,big){if(!p)return `<span class="muted">Adj meg periódust a Beállításokban.</span>`;const c=cdParts(p.end),urgent=c&&c.d<3;return `<span class="cd${big?" big":""}${urgent?" urgent":""}" data-countdown="${p.end}">${cdText(p.end)}</span>`}
 function bpStrip(){
-  if(S.settings.ptOff)return "";
+  if(S.settings.ptOff||!FEAT("szamok"))return "";
   const b=bpPeriod(),p=b.p,pg=+S.settings.ptGoal||0,gg=+S.settings.gpGoal||0,pn=ptName();
   const pp=pg?Math.min(100,b.personal/pg*100):0,gp=gg?Math.min(100,b.group/gg*100):0;
   return `<div class="card bpstrip"><div class="row between" style="gap:12px"><div class="eyebrow">Napi állás · ${periodHead(p)}</div><a class="btn ghost small" href="#szamok" data-act="toallas">Mai állás rögzítése</a></div>
@@ -771,6 +775,7 @@ function bpSection(){
   </div>`;
 }
 function periodsCard(){
+  if(!FEAT("szamok"))return "";
   const ps=periods();
   return `<div class="card stack" id="periodusok"><h3>Periódusok</h3><p class="muted" style="margin:0;font-size:12.5px">Nem kell a hónaphoz igazodnia. Add meg, nálad mikor kezdődik és mikor zárul egy időszak (katalógus, kampány, elszámolás). A napi állás és a visszaszámlálás ehhez igazodik, a naptárban pedig jelölve lesz a kezdet és a zárás.</p>
   ${ps.map(p=>`<div class="prow${curPeriod()&&curPeriod().id===p.id?" cur":""}"><label class="f" style="flex:1.4;min-width:140px">Név<input type="text" id="pn-${p.id}" data-per="${p.id}" data-pf="name" value="${esc(p.name)}"></label><label class="f" style="flex:1;min-width:130px">Kezdet<input type="date" id="ps-${p.id}" data-per="${p.id}" data-pf="start" value="${p.start}"></label><label class="f" style="flex:1;min-width:130px">Zárás<input type="date" id="pe-${p.id}" data-per="${p.id}" data-pf="end" value="${p.end}"></label><button class="iconbtn" data-act="perdel" data-id="${p.id}" aria-label="Periódus törlése" style="align-self:flex-end;margin-bottom:6px">×</button></div>`).join("")||'<div class="empty">Még nincs periódus.</div>'}
@@ -1025,7 +1030,7 @@ function openForm(type,item,preset){
 function closeForm(){$("#layer").innerHTML=""}
 
 /* ---------- üres terv (valódi, belépett felhasználó első indulása) ---------- */
-function blank(){return {v:1,blank:true,settings:{name:(ctx.user&&ctx.user.name)||"",cur:"Ft",steps:["Poszt","Sztori","Új kapcsolat","Utánkövetés","Csapat"]},days:{},contacts:[],clients:[],orders:[],content:[],ideas:[],team:[],goals:{},stickers:{},prefs:{}}}
+function blank(){return {v:1,blank:true,settings:{name:(ctx.user&&ctx.user.name)||"",cur:"Ft",steps:["Poszt","Sztori","Új kapcsolat","Utánkövetés",FEAT("csapat")?"Csapat":"Tanulás"]},days:{},contacts:[],clients:[],orders:[],content:[],ideas:[],team:[],goals:{},stickers:{},prefs:{}}}
 function syncBadge(){return ""}
 /* a semleges alap-logó (white label csomagban a márka saját logója váltja) */
 const MARK_SVG=TH.MARK;
@@ -1132,7 +1137,7 @@ function installCard(where){
 }
 /* ---------- bevezető (első belépés) és „Első lépések" lista ---------- */
 const PROFILES=[
-  {k:"mlm",l:"Közvetlen értékesítés, csapatépítés",d:"Termékeket ajánlasz, ügyfélkört és csapatot építesz (pl. kozmetikum, étrend-kiegészítő).",steps:["Poszt","Sztori","Új kapcsolat","Utánkövetés","Csapat"],pt:true},
+  {k:"mlm",l:"Közvetlen értékesítés, csapatépítés",d:"Termékeket ajánlasz, ügyfélkört és csapatot építesz (pl. kozmetikum, étrend-kiegészítő).",steps:["Poszt","Sztori","Új kapcsolat","Utánkövetés",FEAT("csapat")?"Csapat":"Tanulás"],pt:true},
   {k:"szolg",l:"Saját szolgáltatás vagy termék",d:"Szolgáltatást nyújtasz vagy saját terméket árulsz (pl. coach, szépségipar, kézműves).",steps:["Tartalom","Új érdeklődő","Utánkövetés","Ügyfélmunka","Tanulás"],pt:false},
   {k:"tartalom",l:"Tartalomgyártás, személyes márka",d:"A közösségi médiában építed a márkádat és a közösségedet.",steps:["Poszt","Sztori","Közösség","Új kapcsolat","Ötletgyűjtés"],pt:false},
   {k:"egyeb",l:"Valami más",d:"Egyszerűen jól akarod szervezni a napjaidat és a kapcsolataidat.",steps:["Tervezés","Új kapcsolat","Utánkövetés","Tartalom","Önfejlesztés"],pt:false}
@@ -1271,6 +1276,7 @@ function vAdmin(){
   else if(tab==="markak"){
     body=`<div class="card stack" style="gap:10px"><h3 style="margin:0">Új márka (white label ügyfél)</h3><form class="row" data-form="admbrand" style="align-items:flex-end"><label class="f" style="flex:1;min-width:180px">Azonosító (kisbetű, kötőjel)<input type="text" id="adm-slug" placeholder="pl. ceged" pattern="[a-z0-9][a-z0-9-]{0,39}" required></label><label class="f" style="min-width:160px">Csomag<select id="adm-plan">${[["alap","Alap"],["whitelabel","White label"]].map(([k,l])=>`<option value="${k}">${l}</option>`).join("")}</select></label><button class="btn">Létrehozás</button></form><p class="muted" style="margin:0;font-size:12px">A márka címe: <code>/?brand=azonosító</code>, vagy saját domain a BRAND_HOSTS beállítással. Az arculatot a márka-admin a Beállításokban állítja be.</p></div>
     ${a.brands.map(x=>`<div class="card stack" style="gap:10px"><div class="row between"><h3 style="margin:0">${esc(x.slug)}</h3><span class="row" style="gap:6px">${[["alap","Alap"],["whitelabel","White label"]].map(([k,l])=>`<button class="mood" data-act="admbplan" data-slug="${esc(x.slug)}" data-k="${k}" aria-pressed="${x.plan===k}">${l}</button>`).join("")}<button class="chip" data-act="admbupsell" data-slug="${esc(x.slug)}" data-plan="${x.plan}" data-on="${x.upsell?0:1}">${x.upsell?"PolyOS-ajánló: be":"PolyOS-ajánló: ki"}</button></span></div>
+      ${x.plan==="whitelabel"?`<div class="row" style="gap:6px;flex-wrap:wrap"><span class="muted" style="font-size:12.5px;margin-right:4px">Extra funkciók:</span>${[["csapat","Csapat"],["sablonok","Üzenetsablonok"],["szamok","Számok"]].map(([k,l])=>`<button class="mood" data-act="admbfeat" data-slug="${esc(x.slug)}" data-k="${k}" aria-pressed="${!!(x.features&&x.features[k])}">${l}</button>`).join("")}</div>`:""}
       ${x.plan==="whitelabel"?`<div class="row" style="gap:8px"><a class="btn small" href="/app?brand=${encodeURIComponent(x.slug)}#markam">Megnyitom és beállítom</a><span class="muted" style="font-size:12px">Az ő márkájában nyílik meg; minden mentésed naplózva lesz („támogatói hozzáférés”). A felhasználói ezen a linken regisztrálnak: <code>${esc(location.origin)}/app?brand=${esc(x.slug)}</code></span></div>`:""}
       <div><div class="lab2">Márka-adminok (ők szerkesztik az arculatot)</div>${x.admins.length?`<div class="row" style="gap:6px">${x.admins.map(e=>`<span class="chip">${esc(e)} <button class="cadd" style="opacity:1;width:18px;height:18px;font-size:13px" data-act="admbadmdel" data-slug="${esc(x.slug)}" data-email="${esc(e)}" aria-label="Eltávolítás">×</button></span>`).join("")}</div>`:'<div class="empty">Még nincs.</div>'}</div>
       <form class="row" data-form="admbadm" data-slug="${esc(x.slug)}" style="flex-wrap:nowrap"><input type="email" placeholder="Regisztrált felhasználó e-mail-címe" aria-label="Márka-admin e-mail" required><button class="btn small">Hozzáadás</button></form></div>`).join("")}`;}
@@ -1341,7 +1347,7 @@ function calSyncCard(){
 
 /* ---------- heti és havi értékelő ---------- */
 const WEEK_Q=[["best","Mi sikerült a héten a legjobban?"],["hard","Mi nem úgy alakult, ahogy szeretted volna? Miért?"],["learn","Mit tanultál a héten?"],["thanks","Kinek vagy hálás ezen a héten?"]];
-const MONTH_STEPS=[
+const MONTH_STEPS_ALL=[
   ["szamok","A hónap számokban","Nézd meg, hol tartasz. Ezeket a tervező számolta ki a hónapodból."],
   ["siker","Sikerek",null,[["win","Mi volt a hónap legnagyobb sikere?"],["proud","Mire vagy a legbüszkébb?"]]],
   ["kihivas","Kihívások",null,[["hard","Mi volt a legnehezebb?"],["diff","Mit csinálnál másképp, ha újrakezdhetnéd a hónapot?"]]],
@@ -1349,6 +1355,7 @@ const MONTH_STEPS=[
   ["jovo","A következő hónap","Válassz egy fő fókuszt és három célt. A célokat felvehetjük a jövő havi teendőid közé."],
   ["zaras","Zárás","Egy szóban vagy egy pontszámmal: milyen volt ez a hónap?"]
 ];
+const MONTH_STEPS=MONTH_STEPS_ALL.filter(x=>x[0]!=="szamok"||FEAT("szamok"));
 const monthStart=k=>k+"-01";
 const monthEnd=m=>{const[Y,M]=m.split("-").map(Number);return iso(new Date(Y,M,0))};
 const revStart=()=>S.onboarded||Object.keys(S.days||{}).sort()[0]||T;
@@ -1423,7 +1430,8 @@ function revSave(){
   ui.rev=null;save();toast(first?(isW?"Lezártad a hetet. Szép munka!":"Lezártad a hónapot. Gratulálok!"):"Mentve.");render();window.scrollTo(0,0);
 }
 /* ---------- csomagok: ingyenes / pro ---------- */
-const PRO_LIST=[["tartalom","Tartalomtervező","Havi tartalomnaptár, pillér-egyensúly, ötletbank hookkal és CTA-val."],["kapcsolatok","Kapcsolatok","Négylépcsős folyamat, utánkövetési emlékeztetők, üzenetvázlatok."],["ugyfelek","Ügyfelek","Rendelések, újrarendelési és szülinapi emlékeztető."],["szamok","Számok","Havi célok, bevétel, pontrendszer napi bontásban."],["naptar","Naptár-szinkron","A tervező naptára a Google Naptárban és a telefonodon, és a többi naptárad bekötése."],["email","E-mail","Üzenetek küldése a kapcsolataidnak és ügyfeleidnek, közvetlenül a tervezőből (hamarosan)."]];
+const PRO_LIST_ALL=[["tartalom","Tartalomtervező","Havi tartalomnaptár, pillér-egyensúly, ötletbank hookkal és CTA-val."],["kapcsolatok","Kapcsolatok","Négylépcsős folyamat, utánkövetési emlékeztetők, üzenetvázlatok."],["ugyfelek","Ügyfelek","Rendelések, újrarendelési és szülinapi emlékeztető."],["szamok","Számok","Havi célok, bevétel, pontrendszer napi bontásban."],["naptar","Naptár-szinkron","A tervező naptára a Google Naptárban és a telefonodon, és a többi naptárad bekötése."],["email","E-mail","Üzenetek küldése a kapcsolataidnak és ügyfeleidnek, közvetlenül a tervezőből (hamarosan)."]];
+const PRO_LIST=PRO_LIST_ALL.filter(x=>VIEWS.some(v=>v[0]===x[0]));
 function proUrl(){
   if(DEMO)return null;
   const u=ctx.user||{};return "mailto:hello@polymaind.hu?subject="+encodeURIComponent(BR.productName+" Pro előfizetés")+"&body="+encodeURIComponent(`Szia!\n\nSzeretnék Pro-ra váltani (${PRO_PRICE}).\nA fiókom e-mail-címe: ${u.email||""}\n\nKöszönöm!`);
@@ -1700,7 +1708,7 @@ function render(){
   window.scrollTo(0,y);
   checkAch(false);
 }
-function go(){const h=(location.hash||"").slice(1);if(h!=="ertekelesek"&&ui.rev&&!ui.rev.keep)ui.rev=null;if(ui.brand&&h!==route){ui.brand=null;ui.brandFor=null;repaint()}route=RENDER[h]?h:"ma";trayOpen=false;ui.sel=null;render();window.scrollTo(0,0)}
+function go(){const h=(location.hash||"").slice(1);if(h!=="ertekelesek"&&ui.rev&&!ui.rev.keep)ui.rev=null;if(ui.brand&&h!==route){ui.brand=null;ui.brandFor=null;repaint()}route=RENDER[h]&&VIEWS.some(v=>v[0]===h)?h:"ma";trayOpen=false;ui.sel=null;render();window.scrollTo(0,0)}
 window.addEventListener("hashchange",go);
 
 /* ---------- events ---------- */
@@ -1863,6 +1871,7 @@ document.addEventListener("click",e=>{
     case"admwl":{const slug=($("#as-wl").value||"").trim().toLowerCase(),email=b.dataset.email;
       if(!/^[a-z0-9][a-z0-9-]{1,39}$/.test(slug)||slug==="alap"){toast("Az azonosító kisbetű, szám és kötőjel lehet (2–40 karakter), például: minta-marka.");break}
       (async()=>{try{await ctx.admin("brand.set",{slug,plan:"whitelabel",upsell:true});await ctx.admin("brand.admin.add",{slug,email});closeForm();toast("Kész: saját márkát kapott ("+slug+").");ui.admTab="markak";admLoad("markak")}catch(e){toast(e.message==="bad_slug"?"Ez az azonosító nem használható.":"Nem sikerült. Próbáld újra.")}})();break}
+    case"admbfeat":{const br=(ui.adm.brands||[]).find(x=>x.slug===b.dataset.slug);if(!br)break;const f=Object.assign({},br.features||{});f[b.dataset.k]=!f[b.dataset.k];if(!f[b.dataset.k])delete f[b.dataset.k];admDo("brand.features",{slug:br.slug,features:f},"Funkciók mentve.","markak");break}
     case"admbplan":admDo("brand.set",{slug:b.dataset.slug,plan:b.dataset.k,upsell:true},"Csomag módosítva.","markak");break;
     case"admbupsell":admDo("brand.set",{slug:b.dataset.slug,plan:b.dataset.plan,upsell:b.dataset.on==="1"},"Mentve.","markak");break;
     case"admbadmdel":admDo("brand.admin.remove",{slug:b.dataset.slug,email:b.dataset.email},"Márka-admin eltávolítva.","markak");break;

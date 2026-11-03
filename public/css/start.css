@@ -389,3 +389,29 @@ html.signup-open .when-closed{display:none!important}
   .gift-sec.scrolly-on{height:250vh;padding:0}
   .gift-sec.scrolly-on>.in{position:sticky;top:0;min-height:100vh;align-content:center;padding-block:40px}
 }
+
+/* ================= HÍVOGATÓBB CTA (ajándékkártya) ================= */
+.wlcard{position:relative;display:flex;gap:20px;align-items:flex-start;max-width:600px;padding:22px 22px 20px;border-radius:24px;background:linear-gradient(135deg,#FFFDF6 0%,var(--hl-200) 140%);border:1.5px solid color-mix(in srgb,var(--hl-500) 35%,transparent);box-shadow:0 18px 44px rgba(201,147,27,.16),0 2px 6px rgba(31,32,36,.05)}
+.wlthumb{flex:none;width:92px;height:auto;border-radius:6px;box-shadow:0 10px 24px rgba(31,32,36,.28);transform:rotate(-6deg) translateY(4px)}
+.motion .wlthumb{animation:wlwig 5s ease-in-out 2s infinite}
+@keyframes wlwig{0%,86%,100%{transform:rotate(-6deg) translateY(4px)}90%{transform:rotate(-1deg) translateY(0)}94%{transform:rotate(-9deg) translateY(4px)}}
+.wlbody{flex:1;min-width:0}
+.wlkick{display:inline-flex;align-items:center;gap:6px;margin:0 0 6px;font-size:12.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--hl-500)}
+.wltitle{margin:0 0 14px;font-size:18px;line-height:1.35;font-weight:600}
+.wltitle b{font-weight:800;background:linear-gradient(transparent 60%,var(--hl-300) 60%)}
+.wlcard .wlform{margin:0;max-width:none}
+.wlcard .wlrow{border-color:color-mix(in srgb,var(--ink) 85%,transparent)}
+.btn.gold{background:linear-gradient(135deg,#F7D987,#E0A93A);color:var(--ink);border-color:transparent;font-weight:800}
+.btn.gold:hover{box-shadow:0 10px 24px rgba(201,147,27,.38)}
+.btn.gold span{display:inline-block;transition:transform .2s}
+.btn.gold:hover span{transform:translateX(4px)}
+.wlcard .wlcons{font-size:12px;margin-top:10px}
+.wltrust{list-style:none;padding:0;margin:12px 0 0;display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;font-weight:600;color:var(--muted)}
+.wltrust li::before{content:"✓ ";color:var(--hl-500);font-weight:800}
+.wlok{border-color:color-mix(in srgb,var(--hl-500) 35%,transparent)}
+@media (max-width:760px){
+  .wlcard{padding:18px 16px;gap:14px}
+  .wlthumb{width:64px}
+  .wltitle{font-size:16px}
+}
+@media (max-width:420px){.wlthumb{display:none}}

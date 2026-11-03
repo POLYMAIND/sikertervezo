@@ -65,6 +65,13 @@ function overlay(base, top) {
   if (top.founder && top.founder.enabled) out.founder = top.founder;
   return out;
 }
+// Márkánként bekapcsolható funkciók. Csak a superadmin állítja (Admin -> Márkák), a márka gazdája nem.
+const FEATURES = ["csapat", "sablonok", "szamok"];
+function cleanFeatures(f) {
+  const out = {};
+  if (f && typeof f === "object") FEATURES.forEach((k) => { if (f[k] === true) out[k] = true; });
+  return out;
+}
 function publicBrand(row, platform) {
   const r = row || DEFAULT;
   const plan = PLANS.includes(r.plan) ? r.plan : "alap";
@@ -72,7 +79,7 @@ function publicBrand(row, platform) {
   const plat = platform && hasTheme(platform) ? sanitize(platform) : null;
   if (plan !== "whitelabel") return plat ? Object.assign(plat, base, { themed: true }) : base;
   const own = sanitize(r.config || r);
-  return Object.assign(plat ? overlay(plat, own) : own, base);
+  return Object.assign(plat ? overlay(plat, own) : own, base, { features: cleanFeatures((r.config || r).features) });
 }
 
 // Az app alap-arculata (sikertervezo_platform, id='default'). Rövid cache, hogy ne minden kérés menjen az adatbázisig.
@@ -115,4 +122,4 @@ async function loadBrand(slug) {
   return Object.assign({}, DEFAULT, { slug: slug === "alap" ? "alap" : slug });
 }
 
-module.exports = { sanitize, publicBrand, loadPlatform, hasTheme, resolveSlug, loadBrand, cleanLogo, DEFAULT, PLANS, SLUG_RE };
+module.exports = { FEATURES, cleanFeatures, sanitize, publicBrand, loadPlatform, hasTheme, resolveSlug, loadBrand, cleanLogo, DEFAULT, PLANS, SLUG_RE };

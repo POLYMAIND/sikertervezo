@@ -99,6 +99,7 @@
       ownerName: (wl && b.ownerName) || "",
       // a Sikermaker saját logója az alap; white label márka logó nélkül a márkaszínű jelet kapja (MARK)
       logo: (wl && b.logo) || (wl0 ? "" : LOGO),
+      features: wl0 && b.features && typeof b.features === "object" ? b.features : {},
       accent: isHex(c.accent) ? c.accent : NEUTRAL.accent,
       highlight: isHex(c.highlight) ? c.highlight : NEUTRAL.highlight,
       sidebar: ["dark", "accent", "light"].includes(c.sidebar) ? c.sidebar : NEUTRAL.sidebar,
