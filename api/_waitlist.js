@@ -15,7 +15,10 @@ async function signupOpen(fresh) {
   if (!fresh && Date.now() - _flag.at < 15000) return _flag.val;
   let val = false; // fail-closed: hiba vagy hiányzó sor esetén zárt
   if (L.serviceReady()) {
-    try { const r = await L.sb("sikertervezo_flags?id=eq.default&select=signup_open&limit=1"); val = !!(r && r[0] && r[0].signup_open); } catch (e) { val = false; }
+    try { const r = await L.sb("sikertervezo_flags?id=eq.default&select=signup_open&limit=1"); val = !!(r && r[0] && r[0].signup_open); }
+    // a 0009 migráció előtt (nincs tábla, 404) a korábbi állapot él: nincs várólista, nincs adatbázis-kapu.
+    // Minden más hiba esetén zárt (fail-closed).
+    catch (e) { val = e.status === 404; }
   }
   _flag = { at: Date.now(), val };
   return val;
