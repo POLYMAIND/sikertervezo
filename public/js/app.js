@@ -323,7 +323,7 @@ function monthStats(m){
   };
 }
 
-function proBlock(dc,rc,bd,cont,st){return `  <div class="grid g4">
+function proBlock(dc,rc,bd,cont,st){return `  <div class="grid g4 kpirow">
     <div class="card kpi"><div class="v num red">${st.contacts}</div><div class="l">új kapcsolat ebben a hónapban</div></div>
     <div class="card kpi"><div class="v num">${st.clients}</div><div class="l">új ügyfél</div></div>
     ${FEAT("csapat")?`<div class="card kpi"><div class="v num">${st.team}</div><div class="l">új csapattag</div></div>`:""}
@@ -335,6 +335,14 @@ function proBlock(dc,rc,bd,cont,st){return `  <div class="grid g4">
     <div class="card"><h3>Mai tartalom</h3><div class="list">${cont.map(c=>`<div class="li"><span class="dot" style="background:var(--p${c.pillar+1})"></span><div class="grow"><div class="t">${esc(c.title)}</div><div class="s">${c.format} · ${PILLARS[c.pillar]}</div></div><button class="chip" data-act="cstat" data-id="${c.id}">${CSTATUS[c.status]}</button></div>`).join("")||'<div class="empty">Mára nincs betervezett tartalom.</div>'}</div><div style="margin-top:10px"><a class="btn ghost small" href="#tartalom" style="text-decoration:none">Tartalomnaptár</a></div></div>
   </div>
 `}
+/* ---------- Vezérlőpult: átrendezhető blokkok ----------
+   A blokkok sorrendje, mérete és láthatósága a felhasználó tervében él (S.prefs.dash), így minden eszközén ugyanaz.
+   Méret: a 6 oszlopos rácsban hány oszlopot foglal (2 = keskeny, 3 = fél, 4 = széles, 6 = teljes). */
+const DASH_DEF=[["kovetkezo","A következő lépésed",6],["lepesek","A mai napi lépéseid",4],["lendulet","Napi lendület",2],["allas","Napi állás",6],["pro","Kapcsolatok, ügyfelek, tartalom",6],["beosztas","Mai beosztás",3],["teendok","Mai teendők",3],["szokasok","Szokások",3],["zaras","Napzárás",3]];
+const DASH_SIZES=[[2,"Keskeny"],[3,"Fél"],[4,"Széles"],[6,"Teljes"]];
+function dashPrefs(){S.prefs=S.prefs||{};const d=S.prefs.dash||(S.prefs.dash={});d.order=Array.isArray(d.order)?d.order:[];d.hidden=Array.isArray(d.hidden)?d.hidden:[];d.size=d.size&&typeof d.size==="object"?d.size:{};return d}
+function dashOrder(){const d=dashPrefs(),ids=DASH_DEF.map(x=>x[0]);return d.order.filter(k=>ids.includes(k)).concat(ids.filter(k=>!d.order.includes(k)))}
+function dashSize(k){const d=dashPrefs(),def=(DASH_DEF.find(x=>x[0]===k)||[])[2]||6,v=+d.size[k];return [2,3,4,6].includes(v)?v:def}
 function vMa(){
   extLoad();
   activeBoard="ma-"+T;
@@ -344,18 +352,59 @@ function vMa(){
   const cont=S.content.filter(c=>c.date===T);
   const st=monthStats(ym(TODAY));
   const done=day(T).steps.filter(Boolean).length;
-  return installCard("ma")+head("Szia,",longDate(T),BR.founder.enabled&&S.settings.founder?'<button class="chip founderchip" data-act="cert" data-id="alapito" title="Alapító oklevél">Alapító tag</button>':"",(greetName()||"")+"!")+(()=>{const q=quoteOfDay();return `<p class="qday">„${esc(q.t)}”${q.a?` <span class="qday-a">${esc(q.a)}</span>`:""}</p>`})()+consentCard()+revBanner()+checklistCard()+nextCard()+`
-  <div class="grid herogrid">
-  <div class="card hero page"><div class="row between" style="align-items:flex-start"><div class="stack" style="gap:4px;max-width:60ch">
+  const B={
+    kovetkezo:()=>nextCard(),
+    lepesek:()=>`<div class="card hero page"><div class="row between" style="align-items:flex-start"><div class="stack" style="gap:4px;max-width:60ch">
     <div class="eyebrow">A mai napi lépéseid</div><div class="big">${done===5?"Mind az 5 megvan. Büszke lehetsz Magadra!":done?`${done} / 5 kész, így tovább!`:"Ma is közelebb kerülhetsz a céljaidhoz."}</div></div>
     <div class="chip good">${streak()} napos sorozat</div></div>
-    <div style="margin-top:14px">${stepsHTML(T)}</div>${board(activeBoard)}</div>
-  ${pointsCard()}</div>
-  ${bpStrip()}
-  ${PRO?proBlock(dc,rc,bd,cont,st):proTeaser()}
-  <div class="grid g2"><div class="card"><div class="row between" style="margin-bottom:6px"><h3 style="margin:0">Mai beosztás</h3><button class="btn ghost small" data-act="opennap" data-k="${T}">Napi nézet</button></div><div class="list">${[...hoursOf(T).map(([h,v])=>({t:pad(h)+":00",own:[h,v]})),...extOf(T).map(e=>({t:e.allDay?"00:00":e.start,ext:e}))].sort((a,b)=>a.t.localeCompare(b.t)).map(x=>{if(x.ext){const e=x.ext;return `<div class="li"><span class="num tm">${e.allDay?"egész nap":e.start}</span><div class="grow"><div class="t">${esc(e.title)}</div><div class="s"><span class="dot" style="background:${esc(e.color)};width:8px;height:8px"></span> ${esc(e.calName)}${e.location?" · "+esc(e.location):""}</div></div></div>`}const[h,v]=x.own,loc=locOf(T,h);return `<div class="li"><span class="num tm ${+h===new Date().getHours()?"now":""}">${pad(h)}:00</span><div class="grow"><div class="t">${esc(v)}</div>${loc?`<div class="s">${esc(loc)}</div>`:""}</div>${apptLinks(T,h,v,loc)}</div>`}).join("")||'<div class="empty">Mára nincs beírt időpont.</div>'}</div></div>
-  <div class="card"><h3>Mai teendők</h3>${tasksHTML(T)}</div></div>
-  <div class="grid g2">${habitsToday()}${closeHTML(T,true)}</div>`;
+    <div style="margin-top:14px">${stepsHTML(T)}</div></div>`,
+    lendulet:()=>pointsCard(),
+    allas:()=>bpStrip(),
+    pro:()=>`<div class="stack" style="gap:var(--gap,18px)">${PRO?proBlock(dc,rc,bd,cont,st):proTeaser()}</div>`,
+    beosztas:()=>`<div class="card"><div class="row between" style="margin-bottom:6px"><h3 style="margin:0">Mai beosztás</h3><button class="btn ghost small" data-act="opennap" data-k="${T}">Napi nézet</button></div><div class="list">${[...hoursOf(T).map(([h,v])=>({t:pad(h)+":00",own:[h,v]})),...extOf(T).map(e=>({t:e.allDay?"00:00":e.start,ext:e}))].sort((a,b)=>a.t.localeCompare(b.t)).map(x=>{if(x.ext){const e=x.ext;return `<div class="li"><span class="num tm">${e.allDay?"egész nap":e.start}</span><div class="grow"><div class="t">${esc(e.title)}</div><div class="s"><span class="dot" style="background:${esc(e.color)};width:8px;height:8px"></span> ${esc(e.calName)}${e.location?" · "+esc(e.location):""}</div></div></div>`}const[h,v]=x.own,loc=locOf(T,h);return `<div class="li"><span class="num tm ${+h===new Date().getHours()?"now":""}">${pad(h)}:00</span><div class="grow"><div class="t">${esc(v)}</div>${loc?`<div class="s">${esc(loc)}</div>`:""}</div>${apptLinks(T,h,v,loc)}</div>`}).join("")||'<div class="empty">Mára nincs beírt időpont.</div>'}</div></div>`,
+    teendok:()=>`<div class="card"><h3>Mai teendők</h3>${tasksHTML(T)}</div>`,
+    szokasok:()=>habitsToday(),
+    zaras:()=>closeHTML(T,true),
+  };
+  const ed=!!ui.dashEdit,d=dashPrefs(),order=dashOrder();
+  if(ed){activeBoard=null;trayOpen=false}
+  const blocks=order.map(k=>{
+    const name=(DASH_DEF.find(x=>x[0]===k)||[k,k])[1];
+    if(d.hidden.includes(k))return "";
+    const html=(B[k]||(()=>""))();
+    if(!html||!String(html).trim())return "";
+    const sz=dashSize(k);
+    const tools=ed?`<div class="dtools" role="group" aria-label="${esc(name)}"><span class="dgrip" data-grip="${k}" title="Húzd az áthelyezéshez" aria-hidden="true">⠿</span><b>${esc(name)}</b>
+      <span class="row" style="gap:4px;flex-wrap:nowrap"><button class="dbtn" data-act="dmove" data-k="${k}" data-d="-1" aria-label="Feljebb">↑</button><button class="dbtn" data-act="dmove" data-k="${k}" data-d="1" aria-label="Lejjebb">↓</button>
+      <button class="dbtn" data-act="dsize" data-k="${k}" title="Méret">${(DASH_SIZES.find(x=>x[0]===sz)||[0,""])[1]}</button><button class="dbtn" data-act="dhide" data-k="${k}" aria-label="Elrejtés">Elrejt</button></span></div>`:"";
+    return `<div class="dblock" data-dk="${k}" style="--span:${sz}">${tools}<div class="dinner">${html}</div></div>`}).join("");
+  const hiddenList=ed?DASH_DEF.filter(x=>d.hidden.includes(x[0])):[];
+  const bar=ed?`<div class="card dashbar"><div class="grow"><b>A Vezérlőpult szerkesztése</b><div class="muted" style="font-size:12.5px">Fogd meg a ⠿ jelet, és húzd a blokkot a helyére (vagy használd a ↑ ↓ gombokat). A méret gomb a szélességet váltja.</div>
+      ${hiddenList.length?`<div class="row" style="gap:6px;margin-top:8px"><span class="muted" style="font-size:12.5px">Elrejtve:</span>${hiddenList.map(x=>`<button class="chip" data-act="dshow" data-k="${x[0]}">＋ ${esc(x[1])}</button>`).join("")}</div>`:""}</div>
+      <div class="row" style="gap:8px"><button class="nc-skip" data-act="dreset">Alaphelyzet</button><button class="btn" data-act="dedit">Kész</button></div></div>`
+    :`<div class="dashedit-row"><button class="chip" data-act="dedit">✎ Vezérlőpult szerkesztése</button></div>`;
+  return installCard("ma")+head("Szia,",longDate(T),BR.founder.enabled&&S.settings.founder?'<button class="chip founderchip" data-act="cert" data-id="alapito" title="Alapító oklevél">Alapító tag</button>':"",(greetName()||"")+"!")+(()=>{const q=quoteOfDay();return `<p class="qday">„${esc(q.t)}”${q.a?` <span class="qday-a">${esc(q.a)}</span>`:""}</p>`})()+consentCard()+revBanner()+checklistCard()+bar+
+  `<div class="dash${ed?" editing":""}" id="dash">${blocks}${ed?"":board(activeBoard)}</div>`;
+}
+/* Vezérlőpult: blokkok húzása (egér és érintés is, pointer eseményekkel) */
+function bindDash(){
+  const dash=$("#dash");if(!dash||!dash.classList.contains("editing"))return;
+  dash.querySelectorAll("[data-grip]").forEach(g=>{
+    g.addEventListener("pointerdown",e=>{
+      const blk=g.closest(".dblock");if(!blk)return;e.preventDefault();
+      g.setPointerCapture(e.pointerId);blk.classList.add("dragging");dash.classList.add("dragmode");
+      const move=ev=>{
+        const t=document.elementFromPoint(ev.clientX,ev.clientY),over=t&&t.closest(".dblock");
+        if(over&&over!==blk&&over.parentNode===dash){const r=over.getBoundingClientRect(),before=(ev.clientY<r.top+r.height/2)||(ev.clientY<r.bottom&&ev.clientX<r.left+r.width/2&&r.width<dash.clientWidth*0.9);dash.insertBefore(blk,before?over:over.nextSibling)}
+        const dr=dash.getBoundingClientRect();if(ev.clientY<80)window.scrollBy(0,-14);else if(ev.clientY>innerHeight-80)window.scrollBy(0,14);void dr;
+      };
+      const up=()=>{g.removeEventListener("pointermove",move);g.removeEventListener("pointerup",up);g.removeEventListener("pointercancel",up);
+        blk.classList.remove("dragging");dash.classList.remove("dragmode");
+        const d=dashPrefs(),shown=[...dash.querySelectorAll(".dblock")].map(x=>x.dataset.dk);
+        d.order=shown.concat(dashOrder().filter(k=>!shown.includes(k)));save();render()};
+      g.addEventListener("pointermove",move);g.addEventListener("pointerup",up);g.addEventListener("pointercancel",up);
+    });
+  });
 }
 const MODES=[["honap","Havi"],["het","Heti"],["nap","Napi"]];
 const HOURS=[];for(let h=7;h<=21;h++)HOURS.push(h);
@@ -1709,7 +1758,7 @@ const RENDER={ma:vMa,markam:vMarkam,admin:vAdmin,ertekelesek:vErtekelesek,bovite
 function render(){
   const y=window.scrollY;
   $("#view").innerHTML=demoCta()+(!PRO&&PRO_VIEWS.includes(route)?vPro(route):RENDER[route]()+upStrip(route));
-  nav();drawer();bindBoards();bindMap();
+  nav();drawer();bindBoards();bindMap();bindDash();
   window.scrollTo(0,y);
   checkAch(false);
 }
@@ -1828,6 +1877,12 @@ document.addEventListener("click",e=>{
     case"pxdelno":ui.pxdel=false;render();break;
     case"pxdisconnect":ui.pxdel=false;ctx.polyosDisconnect().then(()=>{toast("Leválasztva a PolyOS-ről.");render()},()=>toast("Nem sikerült. Próbáld újra."));break;
     case"uphide":S.prefs=S.prefs||{};S.prefs.upHide=Object.assign({},S.prefs.upHide,{[b.dataset.k]:true});save();render();break;
+    case"dedit":ui.dashEdit=!ui.dashEdit;ui.sel=null;render();break;
+    case"dmove":{const d=dashPrefs(),o=dashOrder().filter(k=>!d.hidden.includes(k)),i=o.indexOf(b.dataset.k),j=i+(+b.dataset.d);if(i<0||j<0||j>=o.length)break;[o[i],o[j]]=[o[j],o[i]];d.order=o.concat(dashOrder().filter(k=>!o.includes(k)));save();render();break}
+    case"dsize":{const d=dashPrefs(),k=b.dataset.k,cur=dashSize(k),list=[2,3,4,6];d.size[k]=list[(list.indexOf(cur)+1)%list.length];save();render();break}
+    case"dhide":{const d=dashPrefs();if(!d.hidden.includes(b.dataset.k))d.hidden.push(b.dataset.k);save();render();break}
+    case"dshow":{const d=dashPrefs();d.hidden=d.hidden.filter(k=>k!==b.dataset.k);save();render();break}
+    case"dreset":S.prefs.dash={};save();render();toast("A Vezérlőpult visszaállt az alap elrendezésre.");break;
     case"authshow":ctx.showAuth("belepes");break;
     case"signup":ctx.showAuth("regisztracio");break;
     case"logout":ctx.logout();break;
