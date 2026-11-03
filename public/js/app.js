@@ -909,6 +909,30 @@ function pointsCard(){
 
 /* ---------- gondolattérkép ---------- */
 const MAP_W=1400,MAP_H=900;
+const mapW=m=>m.w||MAP_W,mapH=m=>m.h||MAP_H;
+const mapZoom=m=>{const z=(S.prefs&&S.prefs.mapZoom||{})[m.id];return z?Math.min(2,Math.max(0.3,z)):1};
+function setMapZoom(m,z,keepCenter){
+  const w=$("#mapwrap"),old=mapZoom(m);z=Math.round(Math.min(2,Math.max(0.3,z))*100)/100;
+  const cx=w?(w.scrollLeft+w.clientWidth/2)/old:mapW(m)/2,cy=w?(w.scrollTop+w.clientHeight/2)/old:mapH(m)/2;
+  S.prefs=S.prefs||{};S.prefs.mapZoom=Object.assign({},S.prefs.mapZoom,{[m.id]:z});save();
+  const cv=$("#mapcanvas"),sz=$("#mapsizer"),lb=$("#mapzoomlbl");
+  if(cv){cv.style.transform=`scale(${z})`;sz.style.width=mapW(m)*z+"px";sz.style.height=mapH(m)*z+"px";if(lb)lb.textContent=Math.round(z*100)+"%"}
+  if(w&&keepCenter!==false){w.scrollLeft=cx*z-w.clientWidth/2;w.scrollTop=cy*z-w.clientHeight/2}
+}
+function fitMap(m){const w=$("#mapwrap");if(!w)return;const z=Math.min(w.clientWidth/mapW(m),w.clientHeight/mapH(m))*0.98;setMapZoom(m,z,false);w.scrollLeft=0;w.scrollTop=0}
+// becsült doboz-méret (px) egy ág szövegéhez — az ütközésfeloldáshoz
+function nodeBox(m,n){const l=nodeLevel(m,n),len=String(n.t||"").length||1;const cw=l===0?11:7.3,maxw=l===0?300:190,pad=l===0?44:30;const w=Math.min(maxw,len*cw+pad);const lines=Math.max(1,Math.ceil(len*cw/(w-pad)));return {w,h:l===0?lines*25+30:lines*17+20}}
+// egymásra lógó ágak széttolása (a középpont helyben marad)
+function relaxMap(m,iter){
+  const N=m.nodes,W=mapW(m),H=mapH(m),B=N.map(n=>nodeBox(m,n)),gap=16;
+  for(let it=0;it<(iter||120);it++){let moved=false;
+    for(let i=0;i<N.length;i++)for(let j=i+1;j<N.length;j++){const a=N[i],b=N[j],A=B[i],Bb=B[j];
+      const ox=(A.w+Bb.w)/2+gap-Math.abs(a.x-b.x),oy=(A.h+Bb.h)/2+gap-Math.abs(a.y-b.y);if(ox<=0||oy<=0)continue;moved=true;
+      const ra=a.p?1:0,rb=b.p?1:0,tot=(ra+rb)||1;
+      if(ox<oy){const d=(a.x<b.x?-1:1)*ox;a.x+=d*ra/tot;b.x-=d*rb/tot}else{const d=(a.y<b.y?-1:1)*oy;a.y+=d*ra/tot;b.y-=d*rb/tot}}
+    N.forEach((n,i)=>{n.x=Math.round(Math.min(W-B[i].w/2-6,Math.max(B[i].w/2+6,n.x)));n.y=Math.round(Math.min(H-B[i].h/2-6,Math.max(B[i].h/2+6,n.y)))});
+    if(!moved)break}
+}
 const curMap=()=>(S.maps||[]).find(m=>m.id===ui.mapId)||(S.maps||[])[0];
 function sampleMap(){
   const r=uid(),a=uid(),b=uid(),c=uid(),d=uid();
@@ -938,7 +962,8 @@ function vTerkep(){
       <span class="row" style="gap:6px;align-self:flex-end"><button class="btn small" data-act="mchild">Új ág innen</button>${sel.p?`<button class="btn ghost small" data-act="msib">Új testvér</button>`:""}
       <span class="row" style="gap:4px">${SC().map((c,i)=>`<button class="eswatch light" data-act="mcolor" data-i="${i}" style="background:${c.main}" aria-label="${c.n}" title="${c.n}" aria-pressed="${sel.c===i}"></button>`).join("")}<button class="chip" data-act="mcolor" data-i="-1">Alap</button></span>
       ${sel.p?`<button class="btn ghost small" data-act="mdel">Ág törlése</button>`:""}<button class="iconbtn" data-act="mdesel" aria-label="Kijelölés megszüntetése">×</button></span>`:`<span class="muted" style="font-size:13px">Koppints egy ágra a szerkesztéshez, húzd, ahová szeretnéd. Új ágat a kijelölt ágból indíthatsz.</span><button class="btn small" data-act="mchild">Új ág a középpontból</button>`}</div>
-    <div class="mapwrap" id="mapwrap"><div class="mapcanvas page" id="mapcanvas" style="width:${MAP_W}px;height:${MAP_H}px"><svg class="mlines" width="${MAP_W}" height="${MAP_H}" viewBox="0 0 ${MAP_W} ${MAP_H}" aria-hidden="true">${mapLines(m)}</svg>${nodes}${board(activeBoard)}</div></div>
+    <div class="mapzoom" role="group" aria-label="Nagyítás"><button type="button" class="iconbtn" data-act="mzoom" data-d="-1" aria-label="Kicsinyítés">−</button><span id="mapzoomlbl" class="num">${Math.round(mapZoom(m)*100)}%</span><button type="button" class="iconbtn" data-act="mzoom" data-d="1" aria-label="Nagyítás">+</button><button type="button" class="chip" data-act="mfit">Teljes térkép</button><button type="button" class="chip" data-act="mrelax" title="Széttolja az egymásra lógó ágakat">Rendezés</button></div>
+    <div class="mapwrap" id="mapwrap"><div id="mapsizer" style="width:${mapW(m)*mapZoom(m)}px;height:${mapH(m)*mapZoom(m)}px;position:relative"><div class="mapcanvas page" id="mapcanvas" style="width:${mapW(m)}px;height:${mapH(m)}px;transform:scale(${mapZoom(m)});transform-origin:0 0"><svg class="mlines" width="${mapW(m)}" height="${mapH(m)}" viewBox="0 0 ${mapW(m)} ${mapH(m)}" aria-hidden="true">${mapLines(m)}</svg>${nodes}${board(activeBoard)}</div></div></div>
   </div>`;
 }
 function redrawEdges(m){const svg=document.querySelector(".mlines");if(svg)svg.innerHTML=mapLines(m)}
@@ -946,12 +971,16 @@ let mapCentered=null;
 function bindMap(){
   if(route!=="terkep")return;
   const m=curMap(),cv=$("#mapcanvas"),wrap=$("#mapwrap");if(!cv||!m)return;
-  if(mapCentered!==m.id){mapCentered=m.id;const r=m.nodes.find(n=>!n.p);if(r){wrap.scrollLeft=r.x-wrap.clientWidth/2;wrap.scrollTop=r.y-wrap.clientHeight/2}}
+  const Z=()=>mapZoom(m);
+  if(mapCentered!==m.id){mapCentered=m.id;if(m.fitOnOpen){delete m.fitOnOpen;fitMap(m)}else{const r=m.nodes.find(n=>!n.p);if(r){wrap.scrollLeft=r.x*Z()-wrap.clientWidth/2;wrap.scrollTop=r.y*Z()-wrap.clientHeight/2}}}
+  // Ctrl/⌘ + görgetés és csippentés (érintőpad) = nagyítás
+  if(!wrap.dataset.zb){wrap.dataset.zb="1";wrap.addEventListener("wheel",e=>{if(!(e.ctrlKey||e.metaKey))return;e.preventDefault();setMapZoom(curMap(),mapZoom(curMap())*(e.deltaY<0?1.1:0.9))},{passive:false});
+    let pd=0;wrap.addEventListener("touchmove",e=>{if(e.touches.length!==2)return;const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(pd){e.preventDefault();setMapZoom(curMap(),mapZoom(curMap())*d/pd)}pd=d},{passive:false});wrap.addEventListener("touchend",()=>{pd=0})}
   cv.querySelectorAll(".mnode").forEach(el=>{
     let sx,sy,ox,oy,moved=false;const n=m.nodes.find(x=>x.id===el.dataset.nid);
     el.addEventListener("pointerdown",e=>{sx=e.clientX;sy=e.clientY;ox=n.x;oy=n.y;moved=false;el.setPointerCapture(e.pointerId);e.preventDefault()});
     el.addEventListener("pointermove",e=>{if(!el.hasPointerCapture(e.pointerId))return;const dx=e.clientX-sx,dy=e.clientY-sy;if(Math.abs(dx)+Math.abs(dy)>4)moved=true;if(!moved)return;
-      n.x=Math.min(MAP_W-40,Math.max(40,ox+dx));n.y=Math.min(MAP_H-24,Math.max(24,oy+dy));el.style.left=n.x+"px";el.style.top=n.y+"px";redrawEdges(m)});
+      n.x=Math.round(Math.min(mapW(m)-40,Math.max(40,ox+dx/Z())));n.y=Math.round(Math.min(mapH(m)-24,Math.max(24,oy+dy/Z())));el.style.left=n.x+"px";el.style.top=n.y+"px";redrawEdges(m)});
     el.addEventListener("pointerup",e=>{if(!el.hasPointerCapture(e.pointerId))return;el.releasePointerCapture(e.pointerId);if(moved){save()}else{ui.mapSel=n.id;render();const i=document.getElementById("mnode-"+n.id);i&&i.focus()}});
     el.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();ui.mapSel=n.id;render()}});
   });
@@ -960,7 +989,7 @@ function addMapNode(m,par){
   const root=m.nodes.find(n=>!n.p);const kids=m.nodes.filter(n=>n.p===par.id).length;let x,y;
   if(!par.p){const a=(-90+kids*55)*Math.PI/180;x=par.x+260*Math.cos(a);y=par.y+180*Math.sin(a)}
   else{const base=Math.atan2(par.y-root.y,par.x-root.x),off=(kids%2?1:-1)*Math.ceil(kids/2)*.5,a=base+off;x=par.x+190*Math.cos(a);y=par.y+120*Math.sin(a)}
-  const n={id:uid(),x:Math.round(Math.min(MAP_W-80,Math.max(80,x))),y:Math.round(Math.min(MAP_H-30,Math.max(30,y))),t:"Új ág",p:par.id};
+  const n={id:uid(),x:Math.round(Math.min(mapW(m)-80,Math.max(80,x))),y:Math.round(Math.min(mapH(m)-30,Math.max(30,y))),t:"Új ág",p:par.id};
   m.nodes.push(n);return n;
 }
 
@@ -1525,14 +1554,24 @@ function mzTree(st){
 }
 // automatikus elrendezés: főágak ellipszisen a középpont körül, levelek kifelé legyezőben
 function mzLayout(tree){
-  const cx=MAP_W/2,cy=MAP_H/2,n=tree.branches.length,nodes=[],r={id:uid(),x:cx,y:cy,t:tree.center,p:null};nodes.push(r);
-  const clamp=(v,lo,hi)=>Math.round(Math.min(hi,Math.max(lo,v)));
+  const W=1900,H=1250,cx=W/2,cy=H/2,n=tree.branches.length,nodes=[],r={id:uid(),x:cx,y:cy,t:tree.center,p:null};nodes.push(r);
   tree.branches.forEach((b,i)=>{
-    const ang=-Math.PI/2+i*2*Math.PI/n,bx=cx+360*Math.cos(ang),by=cy+250*Math.sin(ang),bn={id:uid(),x:clamp(bx,110,MAP_W-110),y:clamp(by,40,MAP_H-40),t:b.t,p:r.id};nodes.push(bn);
-    const k=b.leaves.length;b.leaves.forEach((l,j)=>{const off=(j-(k-1)/2)*0.5,la=ang+off;nodes.push({id:uid(),x:clamp(bn.x+250*Math.cos(la),100,MAP_W-100),y:clamp(bn.y+120*Math.sin(la)+(Math.abs(Math.cos(ang))>0.7?(j-(k-1)/2)*58:0),26,MAP_H-26),t:l.t,p:bn.id,open:l.open||undefined})});
+    const ang=-Math.PI/2+i*2*Math.PI/n,c=Math.cos(ang),sn=Math.sin(ang);
+    const bn={id:uid(),x:Math.round(cx+470*c),y:Math.round(cy+330*sn),t:b.t,p:r.id};nodes.push(bn);
+    const k=b.leaves.length,side=Math.abs(c)>0.35;
+    b.leaves.forEach((l,j)=>{const off=j-(k-1)/2;
+      // oldalsó ágaknál a levelek oszlopban kifelé, a felső/alsó ágaknál sorban fölötte/alatta
+      const x=side?bn.x+Math.sign(c)*270:bn.x+off*215,y=side?bn.y+off*82+sn*40:bn.y+Math.sign(sn)*150+Math.abs(off)*Math.sign(sn)*20;
+      nodes.push({id:uid(),x:Math.round(x),y:Math.round(y),t:l.t,p:bn.id,open:l.open||undefined})});
   });
-  return nodes;
+  return {nodes,w:W,h:H};
 }
+function mzSplitParts(t){
+  const m=/^([^:„"]{2,30}):\s*(.*)$/.exec(String(t||""));const lab=m?m[1]:"",body=(m?m[2]:String(t||"")).replace(/…$/,"");
+  const parts=body.split(/\s*(?:[,;]|\s+majd\s+)\s*/i).map(x=>x.trim()).filter(x=>x.length>1);
+  return parts.length>1?parts.map((p,i)=>(i===0&&lab?lab+": ":"")+p.charAt(0).toUpperCase()+p.slice(1)):[String(t||"")];
+}
+function mzGrow(){document.querySelectorAll("#mapquiz .mz-lt").forEach(t=>{t.style.height="auto";t.style.height=t.scrollHeight+"px"})}
 function mzStart(fromMap){
   const prev=fromMap&&fromMap.quiz;
   const prof=MZ_PROFMAP[S.settings.profile]||"";
@@ -1555,9 +1594,11 @@ function mzRender(){
     <div class="ob-body"><h2>Így néz ki a térképed</h2><p class="lead">Átírhatod vagy törölheted az ágakat, mielőtt a lapra kerülnek. A halvány „Nyitott” levelek azok, amikre még nem volt válasz: ezek a következő lépéseid.</p>
     <label class="f">Középpont<input type="text" data-mzt="c" value="${esc(z.tree.center)}"></label>
     ${z.tree.branches.map((b,i)=>`<div class="mz-branch"><div class="row" style="gap:8px;flex-wrap:nowrap"><input type="text" class="mz-bt" data-mzt="b${i}" value="${esc(b.t)}" aria-label="Főág"><button type="button" class="iconbtn" data-act="mzdelb" data-i="${i}" aria-label="Főág törlése">×</button></div>
-      ${b.leaves.map((l,j)=>`<div class="row mz-leaf${l.open?" open":""}" style="gap:8px;flex-wrap:nowrap"><input type="text" data-mzt="l${i}_${j}" value="${esc(l.t)}" aria-label="Levél"><button type="button" class="iconbtn" data-act="mzdell" data-i="${i}" data-j="${j}" aria-label="Levél törlése">×</button></div>`).join("")||'<div class="muted" style="font-size:12.5px;padding-left:14px">Üres ág, később bővítheted.</div>'}</div>`).join("")}</div>
+      ${b.leaves.map((l,j)=>`<div class="row mz-leaf${l.open?" open":""}" style="gap:8px;flex-wrap:nowrap"><textarea rows="1" class="mz-lt" data-mzt="l${i}_${j}" aria-label="Levél">${esc(l.t)}</textarea>${mzSplitParts(l.t).length>1?`<button type="button" class="iconbtn" data-act="mzsplit" data-i="${i}" data-j="${j}" aria-label="Szétszedés külön levelekre" title="Szétszedés külön levelekre">⇆</button>`:""}<button type="button" class="iconbtn" data-act="mzdell" data-i="${i}" data-j="${j}" aria-label="Levél törlése">×</button></div>`).join("")||'<div class="muted" style="font-size:12.5px;padding-left:14px">Üres ág, később bővítheted.</div>'}
+      <button type="button" class="chip mz-add" data-act="mzaddl" data-i="${i}">+ Új levél</button></div>`).join("")}
+    <button type="button" class="btn ghost small" data-act="mzaddb" style="align-self:flex-start">+ Új főág</button></div>
     <div class="ob-nav"><button type="button" class="btn ghost" data-act="mzbackq">Vissza a kérdésekhez</button><button type="button" class="btn" data-act="mzapply">Térképre rakom</button></div></div>`;
-    return;
+    mzGrow();return;
   }
   const steps=mzSteps(z.st);z.i=Math.min(z.i,steps.length-1);const s=steps[z.i],a=z.st.a;
   const canNext=s.type!=="choice"||!!a[s.k];const need=s.req&&!String(a[s.k]||"").trim();
@@ -1574,9 +1615,9 @@ function mzNext(skip){
   z.tree=mzTree(z.st);mzRender();
 }
 function mzApply(){
-  const z=ui.mz,t=z.tree;const nodes=mzLayout(t);
+  const z=ui.mz,t=z.tree;t.branches=t.branches.filter(b=>String(b.t).trim()).map(b=>Object.assign(b,{leaves:b.leaves.filter(l=>String(l.t).trim())}));const L=mzLayout(t),nodes=L.nodes;
   const title=mzShort(t.center.replace(/\s*\([^)]*\)$/,""),40)+(z.rerun?" · "+fmtDate(T):"");
-  const m={id:uid(),title,nodes,quiz:{v:1,a:Object.assign({},z.st.a),at:T}};
+  const m={id:uid(),title,nodes,w:L.w,h:L.h,fitOnOpen:true,quiz:{v:1,a:Object.assign({},z.st.a),at:T}};relaxMap(m,250);
   S.maps=S.maps||[];S.maps.push(m);ui.mapId=m.id;ui.mapSel=null;mapCentered=null;save();mzClose();
   if(route!=="terkep")location.hash="terkep";else render();
   toast(z.rerun?"Elkészült az új változat. A régit a fülek között találod, így látszik, mi változott.":"Kész a térképed. Húzd az ágakat, ahová szeretnéd, és bővítsd bátran.");
@@ -1651,7 +1692,10 @@ document.addEventListener("click",e=>{
     case"mcolor":{const m=curMap();const n=m.nodes.find(x=>x.id===ui.mapSel);if(!n)break;const i=+b.dataset.i;if(i<0)delete n.c;else n.c=i;save();render();break}
     case"mdel":{const m=curMap();const kill=new Set([ui.mapSel]);let grow=true;while(grow){grow=false;m.nodes.forEach(n=>{if(n.p&&kill.has(n.p)&&!kill.has(n.id)){kill.add(n.id);grow=true}})}m.nodes=m.nodes.filter(n=>!kill.has(n.id));ui.mapSel=null;save();render();toast(kill.size>1?`Törölve ${kill.size} ág.`:"Ág törölve.");break}
     case"mdesel":ui.mapSel=null;render();break;
-    case"mcenter":{const m=curMap(),w=$("#mapwrap"),r=m.nodes.find(n=>!n.p);if(w&&r)w.scrollTo({left:r.x-w.clientWidth/2,top:r.y-w.clientHeight/2,behavior:"smooth"});break}
+    case"mcenter":{const m=curMap(),w=$("#mapwrap"),r=m.nodes.find(n=>!n.p),z=mapZoom(m);if(w&&r)w.scrollTo({left:r.x*z-w.clientWidth/2,top:r.y*z-w.clientHeight/2,behavior:"smooth"});break}
+    case"mzoom":{const m=curMap();setMapZoom(m,mapZoom(m)*(+b.dataset.d>0?1.2:1/1.2));break}
+    case"mfit":fitMap(curMap());break;
+    case"mrelax":{const m=curMap();relaxMap(m,200);save();render();toast("Széttoltam az egymásra lógó ágakat.");break}
 
     case"task":{const t=day(b.dataset.day).tasks.find(x=>x.id===id);t.done=!t.done;save();render();break}
     case"taskdel":{const dd=day(b.dataset.day);dd.tasks=dd.tasks.filter(x=>x.id!==id);save();render();break}
@@ -1781,6 +1825,9 @@ document.addEventListener("click",e=>{
     case"mzbackq":ui.mz.tree=null;mzRender();break;
     case"mzdelb":ui.mz.tree.branches.splice(+b.dataset.i,1);mzRender();break;
     case"mzdell":ui.mz.tree.branches[+b.dataset.i].leaves.splice(+b.dataset.j,1);mzRender();break;
+    case"mzaddl":{const br=ui.mz.tree.branches[+b.dataset.i];br.leaves.push({t:""});mzRender();const all=document.querySelectorAll(`#mapquiz [data-mzt^="l${b.dataset.i}_"]`);const last=all[all.length-1];if(last)last.focus();break}
+    case"mzaddb":{ui.mz.tree.branches.push({k:"x"+uid(),t:"Új főág",leaves:[]});mzRender();const all=document.querySelectorAll("#mapquiz .mz-bt");const last=all[all.length-1];if(last){last.focus();last.select()}break}
+    case"mzsplit":{const br=ui.mz.tree.branches[+b.dataset.i],j=+b.dataset.j,l=br.leaves[j];br.leaves.splice(j,1,...mzSplitParts(l.t).map(t=>({t,open:l.open})));mzRender();break}
     case"mzapply":mzApply();break;
     case"more":openMore();break;
     case"install":ctx.install.prompt().then(ok=>{if(ok)toast("Telepítve. Mostantól a kezdőképernyőről indíthatod.");render()});break;
@@ -1833,6 +1880,7 @@ document.addEventListener("input",e=>{
   const t=e.target;
   if(t.dataset.ob){obInput(t);return}
   if(t.dataset.mz&&ui.mz){ui.mz.st.a[t.dataset.mz]=t.value;const nb=document.querySelector('#mapquiz [data-act="mznext"]');if(nb){const st=mzSteps(ui.mz.st)[ui.mz.i];nb.disabled=!!(st&&st.req&&!t.value.trim())}return}
+  if(t.classList&&t.classList.contains("mz-lt")){t.style.height="auto";t.style.height=t.scrollHeight+"px"}
   if(t.dataset.mzt&&ui.mz&&ui.mz.tree){const k=t.dataset.mzt,T2=ui.mz.tree;if(k==="c")T2.center=t.value;else if(k[0]==="b")T2.branches[+k.slice(1)].t=t.value;else{const[i,j]=k.slice(1).split("_").map(Number);T2.branches[i].leaves[j].t=t.value}return}
   if(t.dataset.rev&&ui.rev){ui.rev.a[t.dataset.rev]=t.value;return}
   if(t.dataset.revgoal&&ui.rev){ui.rev.goals[+t.dataset.revgoal]=t.value;return}

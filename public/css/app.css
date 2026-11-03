@@ -676,3 +676,9 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:4px 0;width:100%}
 .mzstart .grow{flex:1;min-width:240px;display:flex;flex-direction:column;gap:4px}
 .mzstart .s{font-size:13px;color:var(--muted)}
 @media (max-width:860px){#mapquiz{padding:0;place-items:stretch}#mapquiz .ob{width:100%;max-height:none;height:100dvh;border-radius:0}}
+.mz-lt{flex:1;min-height:42px;resize:none;overflow:hidden;line-height:1.4;font-size:14px}
+.mz-add{align-self:flex-start;margin-left:14px;background:var(--surface);border:1px dashed var(--soft2)}
+.mz-add:hover{border-color:var(--accent);color:var(--accent)}
+.mapzoom{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mapzoom #mapzoomlbl{min-width:46px;text-align:center;font-size:13px;font-weight:600;color:var(--muted)}
+.mapcanvas{will-change:transform}
