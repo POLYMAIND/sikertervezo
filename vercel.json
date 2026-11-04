@@ -53,6 +53,21 @@
       "source": "/app.html",
       "destination": "/app",
       "permanent": true
+    },
+    {
+      "source": "/belepes",
+      "destination": "/app?belepes",
+      "permanent": false
+    },
+    {
+      "source": "/regisztracio",
+      "destination": "/app?regisztracio",
+      "permanent": false
+    },
+    {
+      "source": "/bemutato",
+      "destination": "/app?bemutato",
+      "permanent": false
     }
   ]
 }
