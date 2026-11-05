@@ -1,0 +1,38 @@
+# Sikermaker
+
+> A Sikermaker magyar nyelvű napi tervező app vállalkozóknak (egyéni vállalkozóknak, coachoknak, szépségipari és szolgáltató vállalkozásoknak, tartalomgyártóknak). Egy felületen kezelhetők a napi lépések, teendők, naptár, kapcsolatok, ügyfelek, tartalomterv, célok és szokások. Böngészőben és telefonon (telepíthető webappként) is működik. Az alapcsomag ingyenes. Fejlesztő és üzemeltető: polymAInd Kft. (Polymaind), Magyarország. A Sikermaker a PolyOS üzleti rendszer alapmodulja.
+
+## Tények
+
+- Név: Sikermaker
+- Weboldal: https://sikermaker.hu
+- Nyelv: magyar
+- Platform: web, iOS és Android (telepíthető webapp, alkalmazásbolt nélkül)
+- Üzemeltető: polymAInd Kft., 2013 Pomáz, Nyár utca 46/A 1. ajtó; adószám: 32793363-2-13
+- Kapcsolat: hello@polymaind.hu, +36 70 600 5655
+- Nyitás: 2026. november 7. (addig várólista; a feliratkozók ajándékba letölthetik a „Káoszmanager” nyomtatható tervezőcsomagot)
+
+## Csomagok
+
+- Ingyenes (0 Ft, időkorlát nélkül): Vezérlőpult és napi lépések, naptár az appon belül, gondolattérkép kérdéssorral, célok, szokások, olvasólista, heti és havi értékelő, matricák és oklevél.
+- Pro (1 990 Ft / hó, bármikor lemondható): az Ingyenes csomagon felül Kapcsolatok, Ügyfelek, Tartalomtervező, naptár-szinkron Google- és iPhone-naptárral, más naptárak behúzása, e-mail-küldés az appból.
+- White label (egyedi ajánlat): coachoknak, oktatóknak és közösségeknek; a tervező a partner nevével, logójával és színeivel jelenik meg a tagjainak.
+
+## Fő funkciók
+
+- Vezérlőpult: a nap lépései, teendői, időpontjai; átrendezhető és szerkeszthető blokkok, szabadon felragasztható matricák.
+- Naptár: havi, heti és napi nézet, gyors hozzáadás; feliratkozás a Sikermaker naptárára Google- vagy iPhone-naptárból (Pro).
+- Gondolattérkép: kérdéssor alapján felépülő térkép a vállalkozás céljairól.
+- Kapcsolatok és Ügyfelek: egyszerű ügyfélnyilvántartás utánkövetéssel, újrarendelési és születésnapi emlékeztetővel (Pro).
+- Tartalomtervező: témapillérek, ötletbank, poszt-naptár (Pro).
+- Heti és havi értékelő, esti zárás saját kérdésekkel, szokáskövető.
+- Adatvédelem: az adatok az EU-ban (Frankfurt) tárolódnak; nincs süti és nyomkövetés.
+
+## Oldalak
+
+- [Főoldal](https://sikermaker.hu/): a termék bemutatása, árak, gyakori kérdések, várólista
+- [Bemutató](https://sikermaker.hu/bemutato): regisztráció nélkül kipróbálható, mintaadatokkal
+- [Általános Szerződési Feltételek](https://sikermaker.hu/aszf)
+- [Adatkezelési tájékoztató](https://sikermaker.hu/adatkezeles)
+- [Impresszum](https://sikermaker.hu/impresszum)
+- [PolyOS](https://www.polyos.hu/): a Polymaind üzleti rendszere (CRM, foglalás, feladatkezelő, cashflow, kampánytervező)

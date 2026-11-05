@@ -24,6 +24,13 @@ def page(slug, title, lead, body):
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <link rel="stylesheet" href="/css/start.css">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="Sikermaker">
+<meta property="og:title" content="{html.escape(title)} – Sikermaker">
+<meta property="og:url" content="https://sikermaker.hu/{slug}">
+<meta property="og:image" content="https://sikermaker.hu/img/og.jpg">
+<meta property="og:locale" content="hu_HU">
+<script defer src="/_vercel/insights/script.js"></script>
 </head>
 <body class="legalpage">
 <header class="top scrolled"><div class="in">
@@ -76,7 +83,7 @@ adat = [
 
 feldolgozok = [
     ("Supabase", "Adatbázis, belépés és fájltárolás (a letölthető anyagok)", "EU (Frankfurt)"),
-    ("Vercel", "Az alkalmazás kiszolgálása", "EU (Frankfurt) / USA"),
+    ("Vercel", "Az alkalmazás kiszolgálása; sütimentes, összesített látogatottsági statisztika", "EU (Frankfurt) / USA"),
     ("Brevo (Sendinblue SAS)", "E-mailek kézbesítése (regisztráció, belépő link, jelszó, várólista, az appból küldött levelek); a kézbesítés technikai adatai (kézbesítve, megnyitva)", "EU (Franciaország)"),
     ("Google", "Betűtípusok kiszolgálása (Google Fonts): a betöltéskor az IP-címed a Google-hoz kerül", "USA"),
     ("PolyOS (polymAInd Kft.)", "Csak ha összekapcsolod: az általad egyenként átküldött tételek (pl. egy kapcsolat vagy egy teendő) a PolyOS-fiókodba", "EU"),
@@ -116,7 +123,8 @@ adatkezeles = f"""
   <p>A várólistára az e-mail-címed megadásával és a hozzájárulásod bejelölésével iratkozol fel. Ekkor egy levelet küldünk a Káoszmanager letöltő linkjével (7 napig érvényes), és a Sikermaker nyitásakor egy értesítést. Más levelet a hozzájárulásod alapján nem küldünk. A hozzájárulást bármikor visszavonhatod egy, a {EMAIL} címre küldött levéllel; ekkor a címedet töröljük.</p>
 
   <h2>7. Sütik és helyi tárolás</h2>
-  <p>Nem használunk marketing- vagy nyomkövető sütiket, és nem mérjük a látogatásaidat. A böngésződ helyi tárolójában kizárólag a működéshez szükséges adatok vannak: a belépési munkamenet, a beállításaid (pl. a választott háttér), és bemutató módban a mintaadatok.</p>
+  <p>Nem használunk sütiket, marketing- vagy nyomkövető eszközöket. A böngésződ helyi tárolójában kizárólag a működéshez szükséges adatok vannak: a belépési munkamenet, a beállításaid (pl. a választott háttér), és bemutató módban a mintaadatok.</p>
+  <p><b>Látogatottsági statisztika.</b> Az oldalak látogatottságát összesítve, sütik nélkül mérjük (Vercel Web Analytics): hány megtekintés volt, melyik oldalon, milyen eszköztípusról és országból érkeztek. Nem tárolunk IP-címet, nem rakunk le sütit, és nem azonosítunk senkit; a látogatókat a rendszer csak egy naponta megújuló, visszafejthetetlen lenyomattal különbözteti meg. Jogalap: jogos érdek (a szolgáltatás fejlesztése, GDPR 6. cikk (1) f).</p>
 
   <h2>8. Jogaid</h2>
   <ul>

@@ -1,0 +1,23 @@
+# Sikermaker — https://sikermaker.hu
+# A nyilvános oldalak (főoldal, jogi oldalak) indexelhetők; az app és a szerver-végpontok nem.
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /app
+
+# AI-keresők és -asszisztensek: a nyilvános oldalakat olvashatják (GEO), az appot és az API-t nem.
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-User
+User-agent: Claude-SearchBot
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /api/
+Disallow: /app
+
+Sitemap: https://sikermaker.hu/sitemap.xml
