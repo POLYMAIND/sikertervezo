@@ -1,7 +1,9 @@
 // POST /api/stripe-webhook — a Stripe ide jelzi az előfizetés változásait. Aláírás-ellenőrzés kötelező (STRIPE_WEBHOOK_SECRET).
-// Figyelt események: checkout.session.completed, customer.subscription.created/updated/deleted.
+// Figyelt események: checkout.session.completed, customer.subscription.created/updated/deleted, invoice.paid
+// (ez utóbbira Számlázz.hu-számla készül minden sikeres fizetésről: api/_szamlazz.js).
 const L = require("./_lib");
 const ST = require("./_stripe");
+const SZ = require("./_szamlazz");
 
 async function rawBody(req) {
   if (typeof req.body === "string") return req.body;
@@ -31,6 +33,10 @@ module.exports = async function handler(req, res) {
       await upsertFromSubscription(sub, o.client_reference_id || (o.metadata && o.metadata.user_id));
     } else if (/^customer\.subscription\.(created|updated|deleted)$/.test(ev.type) && o) {
       await upsertFromSubscription(o, null);
+    } else if (ev.type === "invoice.paid" && o) {
+      const meta = (o.subscription_details && o.subscription_details.metadata) || (o.parent && o.parent.subscription_details && o.parent.subscription_details.metadata) || {};
+      const uid = /^[0-9a-f-]{36}$/i.test(meta.user_id || "") ? meta.user_id : null;
+      await SZ.invoiceForStripe(o, uid); // átmeneti hibánál dob → 500 → a Stripe újrapróbálja (idempotens)
     }
     return L.send(res, 200, { received: true });
   } catch (e) {
