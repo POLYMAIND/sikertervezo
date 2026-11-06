@@ -69,5 +69,16 @@
       "destination": "/app?bemutato",
       "permanent": false
     }
-  ]
+  ],
+  "crons": [
+    {
+      "path": "/api/crm-sync",
+      "schedule": "17 4 * * *"
+    }
+  ],
+  "functions": {
+    "api/crm-sync.js": {
+      "maxDuration": 60
+    }
+  }
 }
