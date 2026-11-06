@@ -4,7 +4,6 @@
 // kulcsolt hash-ként tároljuk). A címlista böngészőből nem olvasható (RLS, policy nélkül).
 const L = require("./_lib");
 const W = require("./_waitlist");
-const LD = require("./_leads");
 
 const EMAIL_RE = /^[^\s@<>"',;]+@[^\s@<>"',;]+\.[a-z]{2,}$/i;
 const HOURLY = 8;
@@ -69,16 +68,13 @@ module.exports = async function handler(req, res) {
     const since = new Date(Date.now() - 36e5).toISOString();
     const recent = await L.sb(`sikertervezo_waitlist?ip_hash=eq.${ip}&created_at=gte.${encodeURIComponent(since)}&select=id`);
     if ((recent || []).length >= HOURLY) return L.send(res, 429, { error: "rate_limited" });
-    let row = null;
     try {
-      const ins = await L.sb("sikertervezo_waitlist", { method: "POST", headers: { Prefer: "return=representation" }, body: JSON.stringify({ email, source, consent_at: new Date().toISOString(), ip_hash: ip }) });
-      row = Array.isArray(ins) ? ins[0] : null;
+      await L.sb("sikertervezo_waitlist", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ email, source, consent_at: new Date().toISOString(), ip_hash: ip }) });
     } catch (e) {
       if (e.status !== 409) throw e;
       return L.send(res, 200, { ok: true, already: true, download: link });
     }
-    // a levél és a PolyOS-átküldés párhuzamosan; a PolyOS hibája/lassúsága nem rontja el a feliratkozást
-    await Promise.all([mail(email, link, whenText((await W.signupState()).launchAt)), row ? LD.syncOne(row) : null]);
+    await mail(email, link, whenText((await W.signupState()).launchAt));
     return L.send(res, 200, { ok: true, already: false, download: link });
   } catch (e) {
     return L.send(res, 500, { error: "waitlist_error" });

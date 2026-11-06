@@ -251,27 +251,3 @@ test("Márkám névsor: nem márka-admin nem kérheti le, a hozzájárulás nél
     assert.equal(r.body.stats.total, 2); assert.equal(r.body.stats.named, 1);
   } finally { globalThis.fetch = realFetch; ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"].forEach((k) => delete process.env[k]); }
 });
-
-test("várólista → PolyOS: beállítás nélkül nem küld, beállítva Bearer kulccsal, címkével küld; hiba nem dob", async () => {
-  const LD = () => fresh("../api/_leads.js");
-  delete process.env.POLYOS_LEADS_URL; delete process.env.POLYOS_LEADS_KEY;
-  const orig = globalThis.fetch;
-  let calls = [];
-  globalThis.fetch = async (url, opts) => { calls.push({ url, opts }); return { ok: true, status: 200 }; };
-  try {
-    assert.equal(await LD().push({ id: 1, email: "a@b.hu" }), false);
-    assert.equal(calls.length, 0);
-    process.env.POLYOS_LEADS_URL = "https://polyos.example/api/v1/leads"; process.env.POLYOS_LEADS_KEY = "titok";
-    assert.equal(await LD().push({ id: 7, email: "Anna@Pelda.HU", source: "landing", consent_at: "2026-11-01T10:00:00Z", created_at: "2026-11-01T10:00:00Z" }), true);
-    assert.equal(calls[0].url, "https://polyos.example/api/v1/leads");
-    assert.equal(calls[0].opts.headers.Authorization, "Bearer titok");
-    const body = JSON.parse(calls[0].opts.body);
-    assert.deepEqual(body, { email: "anna@pelda.hu", source: "landing", tags: ["sikermaker-varolista"], consent_at: "2026-11-01T10:00:00Z", subscribed_at: "2026-11-01T10:00:00Z", external_id: "sikermaker-waitlist:7" });
-    globalThis.fetch = async () => ({ ok: false, status: 500 });
-    assert.equal(await LD().push({ id: 8, email: "x@y.hu" }), false);
-    globalThis.fetch = async () => { throw new Error("network"); };
-    assert.equal(await LD().push({ id: 9, email: "x@y.hu" }), false);
-  } finally {
-    globalThis.fetch = orig; delete process.env.POLYOS_LEADS_URL; delete process.env.POLYOS_LEADS_KEY;
-  }
-});
