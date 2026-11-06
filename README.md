@@ -70,6 +70,7 @@ node tests/smoke.mjs http://localhost:3000
 3. **White label ügyfél:** sor a `sikertervezo_brands` táblába (`plan='whitelabel'`), az admin(ok) a
    `sikertervezo_brand_admins`-ba; saját domainhez `BRAND_HOSTS`. Az arculatot ezután az admin maga állítja be a felületen.
 4. **PolyOS-híd:** a `docs/polyos-integracio.md` szerinti végpontok a PolyOS-ben, majd a `POLYOS_*` és `LINK_ENC_KEY` változók.
+5. **Fizetés (Stripe) + számla (Számlázz.hu):** lásd `docs/fizetes-szamlazas.md`.
 
 ## Biztonság röviden
 
