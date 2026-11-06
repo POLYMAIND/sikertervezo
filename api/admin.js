@@ -18,11 +18,14 @@
 //   { action:"signup.set", open }                         -> a regisztráció nyitása / zárása (az adatbázis kényszeríti ki)
 //   { action:"waitlist.notify", test? }                   -> nyitási értesítő: test = próbalevél magadnak; különben a még
 //                                                             nem értesített feliratkozóknak, 100-asával (a kliens ismétli)
+//   { action:"waitlist.polyos" }                         -> a még át nem küldött feliratkozók átküldése a PolyOS CRM-be,
+//                                                             50-esével (a kliens ismétli) -> { sent, failed, left }
 //   { action:"launch.set", at }                           -> a nyitás időpontja (visszaszámláló, automatikus nyitás)
 const L = require("./_lib");
 const B = require("./_brands");
 const W = require("./_waitlist");
 const LM = require("./_launchmail");
+const LD = require("./_leads");
 
 const PLANS = ["ingyenes", "pro"];
 const STATUSES = ["probaido", "aktiv", "lejart", "lemondva", "ajandek"];
@@ -174,9 +177,11 @@ module.exports = async function handler(req, res) {
       return L.send(res, 200, { ok: true });
     }
     if (action === "waitlist") {
-      const rows = await safe(L.sb("sikertervezo_waitlist?select=email,source,created_at,downloads,notified_at&order=created_at.desc&limit=5000"), null);
+      let rows = await safe(L.sb("sikertervezo_waitlist?select=email,source,created_at,downloads,notified_at,polyos_synced_at&order=created_at.desc&limit=5000"), null);
+      const syncCol = rows !== null; // a 0011 migráció előtt nincs polyos_synced_at oszlop
+      if (rows === null) rows = await safe(L.sb("sikertervezo_waitlist?select=email,source,created_at,downloads,notified_at&order=created_at.desc&limit=5000"), null);
       const st = await W.signupState(true);
-      return L.send(res, 200, { ok: true, waitlist: rows || [], missing: rows === null, signupOpen: st.open, launchAt: st.launchAt });
+      return L.send(res, 200, { ok: true, waitlist: rows || [], missing: rows === null, signupOpen: st.open, launchAt: st.launchAt, polyos: { ready: LD.ready(), column: syncCol } });
     }
     if (action === "signup.set") {
       const open = b.open === true;
@@ -204,6 +209,12 @@ module.exports = async function handler(req, res) {
       const left = await L.sb("sikertervezo_waitlist?notified_at=is.null&select=id&limit=1");
       await audit(user, "waitlist.notify", "batch", { ok: true, count: rows.length });
       return L.send(res, 200, { ok: true, sent: rows.length, left: (left || []).length });
+    }
+    if (action === "waitlist.polyos") {
+      if (!LD.ready()) return L.send(res, 503, { error: "polyos_leads_not_configured" });
+      const r = await LD.syncBatch(50);
+      if (r.sent || r.failed) await audit(user, "waitlist.polyos", "batch", r);
+      return L.send(res, 200, Object.assign({ ok: true }, r));
     }
     if (action === "launch.set") {
       // { at: ISO időpont | null } — a nyitás időpontja (visszaszámláló); null = nincs időzített nyitás

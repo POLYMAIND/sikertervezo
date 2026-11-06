@@ -95,6 +95,30 @@ Válasz: `{ "id": "<a PolyOS-rekord azonosítója>", "url": "https://www.polyos.
 A token érvénytelenítése (a tervező „Leválasztás" gombja hívja). A PolyOS-ben a felhasználónak is legyen
 „Összekapcsolt alkalmazások" listája, ahonnan maga is visszavonhatja.
 
+
+### 6. `POST /api/v1/leads` — a Sikermaker várólistájának feliratkozói (szerver → szerver)
+
+Ez **nem** a felhasználónkénti összekapcsolás: egyetlen, titkos kulccsal védett csatorna, amin a Sikermaker a
+várólistára feliratkozókat lead-ként a **Polymaind saját PolyOS-fiókjának** CRM-jébe küldi (`api/_leads.js`).
+
+```
+POST /api/v1/leads
+Authorization: Bearer <POLYOS_LEADS_KEY>
+X-Polyos-Client: sikermaker
+{ "email": "anna@pelda.hu", "source": "landing", "tags": ["sikermaker-varolista"],
+  "consent_at": "2026-11-06T10:00:00Z", "subscribed_at": "2026-11-06T10:00:00Z",
+  "external_id": "sikermaker-waitlist:42" }
+```
+Válasz: bármilyen `2xx` (pl. `{ "id": "…" }`). Minden más (vagy 4 mp-en túli válasz) = sikertelen; a Sikermaker
+később újrapróbálja (Admin → Várólista → „Átküldés a PolyOS-be”).
+
+- A kulcs a PolyOS-ben **egy fix tenanthoz** (Polymaind) kötött; a tenant a kulcsból jön, sosem a kérésből.
+  Kulcs összehasonlítása időzítés-biztosan (`timingSafeEqual`), tárolás hash-elve / env-ben.
+- **Idempotens upsert** a `(tenant_id, lower(email))` kulcsra: újraküldve nem duplikál, a `tags`-et összefésüli.
+- CRM-kontakt lead típussal, pipeline-lépcső: az első (pl. „Új”), forrás: `source`, címke: `sikermaker-varolista`.
+- A `consent_at` a hozzájárulás időpontja (GDPR-nyilvántartás). Append-only audit (`logReq`).
+- Bemenet-validálás: e-mail formátum, max 254 karakter; ismeretlen mezők eldobva.
+
 ## A tervező oldalán szükséges beállítások
 
 | Változó | Honnan |
@@ -103,6 +127,8 @@ A token érvénytelenítése (a tervező „Leválasztás" gombja hívja). A Pol
 | `POLYOS_PUBLIC_URL` | `https://www.polyos.hu` |
 | `POLYOS_CLIENT_ID`, `POLYOS_CLIENT_SECRET` | a PolyOS-ben regisztrált „sikertervezo" kliens |
 | `LINK_ENC_KEY` | `openssl rand -base64 32` |
+| `POLYOS_LEADS_URL` | a 6. pont végpontja, pl. `https://www.polyos.hu/api/v1/leads` |
+| `POLYOS_LEADS_KEY` | a PolyOS-ben a Polymaind-tenanthoz kiadott titkos kulcs (`openssl rand -base64 32`) |
 | `APP_URL` | a tervező címe; a PolyOS-kliensnél a `redirect_uri` = `APP_URL/api/polyos-callback` |
 
 ## Upsell-linkek
