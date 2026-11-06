@@ -4,6 +4,7 @@
 // kulcsolt hash-ként tároljuk). A címlista böngészőből nem olvasható (RLS, policy nélkül).
 const L = require("./_lib");
 const W = require("./_waitlist");
+const CRM = require("./_crm");
 
 const EMAIL_RE = /^[^\s@<>"',;]+@[^\s@<>"',;]+\.[a-z]{2,}$/i;
 const HOURLY = 8;
@@ -75,6 +76,8 @@ module.exports = async function handler(req, res) {
       return L.send(res, 200, { ok: true, already: true, download: link });
     }
     await mail(email, link, whenText((await W.signupState()).launchAt));
+    // → Polymaind PolyOS CRM, „Sikermaker regisztrálók" pipeline, Várólista szakasz (sosem blokkol).
+    await CRM.report("waitlist", { email, consent: true, at: new Date().toISOString(), source: source || "varolista" });
     return L.send(res, 200, { ok: true, already: false, download: link });
   } catch (e) {
     return L.send(res, 500, { error: "waitlist_error" });
