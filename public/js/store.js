@@ -38,7 +38,7 @@
       sp.delete("token_hash"); sp.delete("type");
       history.replaceState(null, "", location.pathname + (sp.toString() ? "?" + sp.toString() : "") + location.hash);
       const r = await sb.auth.verifyOtp({ token_hash: th, type: ty === "magiclink" || ty === "signup" ? "email" : ty });
-      if (r.error) linkError = r.error; else if (ty === "recovery") recovery = true;
+      if (r.error) linkError = r.error; else if (ty === "recovery" || ty === "invite") recovery = true; // meghívottnál: jelszó beállítása
     }
     const { data } = await sb.auth.getSession();
     session = data.session || null;

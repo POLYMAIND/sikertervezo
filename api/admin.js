@@ -13,6 +13,7 @@
 //   { action:"brand.admin.add" | "brand.admin.remove", slug, email }
 //   { action:"brand.delete", slug, confirm }              -> márka törlése (confirm = a slug). A márka-adminok vele
 //                                                             törlődnek (FK cascade); a felhasználók tervei megmaradnak.
+//   { action:"brand.access", slug, access }               -> csak előfizetők / bolt linkje / Shopify-termék(ek)
 //   { action:"brand.features", slug, features }           -> márkánként bekapcsolható funkciók (Csapat, Üzenetsablonok, Számok, Szépség-matricák)
 //   { action:"platform.get" | "platform.set", config }    az app alap-arculata (név, logó, színek, betűk…)
 //   { action:"audit" }                                    -> utolsó 100 napló-esemény
@@ -140,12 +141,12 @@ module.exports = async function handler(req, res) {
     }
     if (action === "brands") {
       const [brands, adminsRows, users] = await Promise.all([
-        L.sb("sikertervezo_brands?select=slug,plan,upsell,updated_at,features:config->features&order=slug.asc"),
+        L.sb("sikertervezo_brands?select=slug,plan,upsell,updated_at,features:config->features,access:config->access&order=slug.asc"),
         safe(L.sb("sikertervezo_brand_admins?select=slug,user_id"), []),
         allUsers(),
       ]);
       const em = {}; users.forEach((u) => { em[u.id] = u.email; });
-      return L.send(res, 200, { ok: true, brands: brands.map((x) => Object.assign(x, { features: B.cleanFeatures(x.features), admins: adminsRows.filter((a) => a.slug === x.slug).map((a) => em[a.user_id] || a.user_id) })) });
+      return L.send(res, 200, { ok: true, brands: brands.map((x) => Object.assign(x, { features: B.cleanFeatures(x.features), access: B.cleanAccess(x.access), admins: adminsRows.filter((a) => a.slug === x.slug).map((a) => em[a.user_id] || a.user_id) })) });
     }
     if (action === "brand.set") {
       if (!B.SLUG_RE.test(b.slug || "")) return L.send(res, 400, { error: "bad_slug" });
@@ -153,6 +154,17 @@ module.exports = async function handler(req, res) {
       if (b.slug === "alap") return L.send(res, 400, { error: "bad_slug" }); // az alap márka nem lehet white label (az a Sikermaker-arculat)
       await L.sb("sikertervezo_brands?on_conflict=slug", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify({ slug: b.slug, plan: b.plan, upsell: b.upsell !== false, updated_by: user.id, updated_at: new Date().toISOString() }) });
       await audit(user, "brand.set", b.slug, { plan: b.plan, upsell: b.upsell !== false });
+      return L.send(res, 200, { ok: true });
+    }
+    if (action === "brand.access") {
+      if (!B.SLUG_RE.test(b.slug || "") || b.slug === "alap") return L.send(res, 400, { error: "bad_slug" });
+      const rows = await L.sb(`sikertervezo_brands?slug=eq.${encodeURIComponent(b.slug)}&select=config&limit=1`);
+      if (!rows || !rows[0]) return L.send(res, 404, { error: "not_found" });
+      const access = B.cleanAccess(b.access);
+      if (access.members && !access.shopUrl) return L.send(res, 400, { error: "shop_url_required" });
+      const config = Object.assign({}, rows[0].config || {}, { access });
+      await L.sb(`sikertervezo_brands?slug=eq.${encodeURIComponent(b.slug)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ config, updated_by: user.id, updated_at: new Date().toISOString() }) });
+      await audit(user, "brand.access", b.slug, access);
       return L.send(res, 200, { ok: true });
     }
     if (action === "brand.features") {

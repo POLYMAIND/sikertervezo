@@ -109,6 +109,7 @@
       quotes: wl && Array.isArray(b.quotes) ? b.quotes.filter((q) => typeof q === "string" && q.trim()).slice(0, 60) : [],
       books: wl && Array.isArray(b.books) ? b.books.filter((x) => Array.isArray(x) && x[0]).slice(0, 30) : [],
       upsell: b.upsell !== false,
+      access: wl0 && b.access && typeof b.access === "object" ? { members: b.access.members === true, shopUrl: /^https:\/\//.test(b.access.shopUrl || "") ? String(b.access.shopUrl) : "" } : { members: false, shopUrl: "" },
     };
   }
 
