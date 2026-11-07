@@ -249,6 +249,8 @@ function bindBoards(){
 /* ---------- nav ---------- */
 const VIEWS=[["ma","Vezérlőpult"],["naptar","Naptár"],["szokasok","Szokások"],["terkep","Gondolattérkép"],["olvasas","Olvasás"],["kapcsolatok","Kapcsolatok"],["ugyfelek","Ügyfelek"],["tartalom","Tartalom"],["csapat","Csapat"],["szamok","Számok"],["ertekelesek","Értékelések"],["matricak","Matricák"],["bovitesek","Bővítések"],["beallitasok","Beállítások"]];
 [["csapat","csapat"],["szamok","szamok"]].forEach(([v,f])=>{if(!FEAT(f)){const i=VIEWS.findIndex(x=>x[0]===v);if(i>=0)VIEWS.splice(i,1)}});
+// kikapcsolt PolyOS-ajánlónál (Admin → Márkák) a Bővítések menüpont sem látszik, hacsak nincs már összekapcsolt PolyOS-modul
+if(!BR.upsell&&!PX.MODULES.some(m=>PX.has(m.key))){const i=VIEWS.findIndex(x=>x[0]==="bovitesek");if(i>=0)VIEWS.splice(i,1)}
 if(BR.plan==="whitelabel"&&(ctx.brandAdmin||ctx.mode!=="cloud"))VIEWS.push(["markam","Márkám"]);
 if(ctx.superadmin)VIEWS.push(["admin","Admin"]);
 let route="ma";
