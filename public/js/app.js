@@ -252,7 +252,8 @@ const VIEWS=[["ma","Vezérlőpult"],["naptar","Naptár"],["szokasok","Szokások"
 // kikapcsolt PolyOS-ajánlónál (Admin → Márkák) a Bővítések menüpont sem látszik, hacsak nincs már összekapcsolt PolyOS-modul
 if(!BR.upsell&&!PX.MODULES.some(m=>PX.has(m.key))){const i=VIEWS.findIndex(x=>x[0]==="bovitesek");if(i>=0)VIEWS.splice(i,1)}
 if(BR.plan==="whitelabel"&&(ctx.brandAdmin||ctx.mode!=="cloud"))VIEWS.push(["markam","Márkám"]);
-if(ctx.superadmin)VIEWS.push(["admin","Admin"]);
+// a központi (Sikermaker) admin csak a Sikermakerben látszik, white label márkán belül nem (ott a Márkám a márkáé)
+if(ctx.superadmin&&BR.plan!=="whitelabel")VIEWS.push(["admin","Admin"]);
 let route="ma";
 let ui={calMonth:ym(TODAY),selDay:T,calMode:"honap",ccMonth:ym(TODAY),cTab:"naptar",kFilter:"all",pFilter:-1,sel:null,mq:{t:"",a:"",editId:null},mqdel:null,skip:[],hdel:null,mapId:null,mapSel:null,mk:{type:"pill",text:"Bemutató 18:00",color:0,editId:null},cdel:null};
 
