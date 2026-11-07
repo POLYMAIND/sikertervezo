@@ -128,7 +128,7 @@
     if (a.dataset.authAct === "demo") { sessionStorage.setItem(DEMO_CHOSEN, "1"); launch(null); }
     if (a.dataset.authAct === "magic") {
       const em = $('#boot input[name="email"]').value.trim(); if (!em) { authScreen("belepes", "Előbb írd be az e-mail-címed."); return; }
-      try { await store.signIn(em); authScreen("belepes", "Elküldtük a belépő linket. Nyisd meg az e-mailt ezen az eszközön."); } catch (err) { authScreen("belepes", errText(err)); }
+      try { await store.signIn(em); authScreen("belepes", "Elküldtük a belépő linket. Nyisd meg az e-mailt, és kattints a gombra."); } catch (err) { authScreen("belepes", errText(err)); }
     }
   });
   document.addEventListener("submit", async (e) => {
@@ -143,7 +143,7 @@
         wlDone = j.download || "/"; authScreen("regisztracio"); return;
       }
       if (f.dataset.auth === "login") {
-        if (!v.password) { await store.signIn(v.email.trim()); authScreen("belepes", "Elküldtük a belépő linket. Nyisd meg az e-mailt ezen az eszközön."); return; }
+        if (!v.password) { await store.signIn(v.email.trim()); authScreen("belepes", "Elküldtük a belépő linket. Nyisd meg az e-mailt, és kattints a gombra."); return; }
         await store.signInPassword(v.email.trim(), v.password); await launch(store.userInfo());
       } else if (f.dataset.auth === "signup") {
         const eb = TH.effectiveBrand(brandRaw);
@@ -251,6 +251,7 @@
     const qs = new URLSearchParams(location.search);
     if (qs.has("bemutato")) { sessionStorage.setItem(DEMO_CHOSEN, "1"); history.replaceState(null, "", location.pathname + location.hash); }
     if (!init.cloud || sessionStorage.getItem(DEMO_CHOSEN)) return launch(null);
+    if (init.linkError) { authScreen("belepes", "Ez a link már lejárt, vagy már felhasználták. Kérj egy újat: írd be az e-mail-címed, és nyomd meg a „Belépő link e-mailben” gombot."); return; }
     authScreen(qs.get("regisztracio") != null ? "regisztracio" : "belepes");
   })();
 })();

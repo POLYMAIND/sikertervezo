@@ -34,10 +34,10 @@ test("regisztráció: verify-link a Supabase-re, névvel, escape-elve", () => {
   const [m] = messages(PAYLOAD);
   assert.equal(m.to, "anna@pelda.hu");
   assert.equal(m.kind, "1-regisztracio-megerositese");
-  assert.equal(m.vars.url, "https://abc.supabase.co/auth/v1/verify?token=th_1&type=signup&redirect_to=https%3A%2F%2Fsikermaker.hu%2Fapp");
+  assert.equal(m.vars.url, "https://sikermaker.hu/app?token_hash=th_1&type=signup");
   const html = render(TPL[m.kind].html, m.vars);
   assert.match(html, /Szia Minta &lt;Anna&gt;!/);
-  assert.match(html, /token=th_1&amp;type=signup/);
+  assert.match(html, /token_hash=th_1&amp;type=signup/);
   assert.doesNotMatch(html, /\{\{/);
 });
 
@@ -107,4 +107,12 @@ test("márkás levél: saját domain (BRAND_HOSTS) vagy ?brand= → a márka nev
   const plain = brandify("<td>Sikermaker</td>", t.subject, null);
   assert.equal(plain.subject, t.subject);
   delete process.env.BRAND_HOSTS;
+});
+
+test("link: az appra visz (márka és #hash megmarad); hibás visszatérési címnél a Supabase /verify marad", () => {
+  setEnv();
+  const { verifyUrl } = fresh("../api/auth-email.js")._test;
+  assert.equal(verifyUrl("h1", "recovery", "https://sikermaker.hu/app?brand=bea-szalon#uj-jelszo"), "https://sikermaker.hu/app?brand=bea-szalon&token_hash=h1&type=recovery#uj-jelszo");
+  assert.equal(verifyUrl("h2", "magiclink", "", "https://enmarkasikertervezo.hu"), "https://enmarkasikertervezo.hu/?token_hash=h2&type=magiclink");
+  assert.equal(verifyUrl("h3", "signup", "javascript:alert(1)"), "https://abc.supabase.co/auth/v1/verify?token=h3&type=signup&redirect_to=javascript%3Aalert%281%29");
 });
