@@ -40,6 +40,17 @@
   ],
   "redirects": [
     {
+      "source": "/",
+      "missing": [
+        {
+          "type": "host",
+          "value": "(?:www\\.)?sikermaker\\.hu|.*\\.vercel\\.app|localhost"
+        }
+      ],
+      "destination": "/app",
+      "permanent": false
+    },
+    {
       "source": "/start",
       "destination": "/",
       "permanent": true
