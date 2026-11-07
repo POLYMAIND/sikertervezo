@@ -35,7 +35,7 @@ function layout({ preheader, title, intro, button, link = "{{ .ConfirmationURL }
       ${cta}
       ${after ? `<p style="margin:26px 0 0;font-size:15px;line-height:1.6">${after}</p>` : ""}
     </td></tr>
-    <tr><td style="padding:18px 0 0">
+    <!--polyos--><tr><td style="padding:18px 0 0">
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:${INK};border-radius:18px"><tr><td style="padding:22px 24px">
         <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:#F4CF72">A Sikermaker a PolyOS része</div>
         <div style="margin:6px 0 14px;font-size:15px;line-height:1.5;color:#FFFFFF">Ha a vállalkozásod kinövi a Sikermakert: CRM, naptár és foglalás, feladatkezelő, cashflow és kampánytervező egy helyen.</div>
@@ -46,7 +46,7 @@ function layout({ preheader, title, intro, button, link = "{{ .ConfirmationURL }
           <tr><td style="padding-right:14px;color:#8A8C93">Online</td><td style="color:#FFFFFF">online, az ország bármely pontjáról</td></tr>
         </table>
       </td></tr></table>
-    </td></tr>
+    </td></tr><!--/polyos-->
     <tr><td style="padding:20px 8px 0;font-size:12px;line-height:1.55;color:${MUTED};text-align:center">
       Ezt a levelet azért kaptad, mert ezzel az e-mail-címmel ({{ .Email }}) műveletet indítottak a Sikermakerben.<br>
       Ha nem te voltál, nyugodtan hagyd figyelmen kívül: semmi nem változik.<br>A Sikermakert a Polymaind üzemelteti.
