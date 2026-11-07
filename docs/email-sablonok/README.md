@@ -12,3 +12,5 @@ Supabase → Authentication → Emails → Templates. Mindegyiknél a **Subject*
 | Reauthentication | `6-megerosito-kod.html` | A megerősítő kódod – Sikermaker |
 
 A feladó neve és címe (most: „Supabase Auth <noreply@mail.app.supabase.io>”) csak saját SMTP-vel cserélhető: Authentication → Emails → SMTP Settings. Brevóval: host `smtp-relay.brevo.com`, port `587`, felhasználó a Brevo SMTP-loginja, jelszó a Brevo **SMTP-kulcsa** (nem az API-kulcs), feladó a Brevóban hitelesített cím, név: Sikermaker.
+
+**Saját küldés (Send Email Hook):** a Supabase a leveleket az app `/api/auth-email` végpontjának adja át, az pedig a Brevo API-n küldi ki ugyanezekkel a sablonokkal (`api/_authmail_tpl.json`, ez a szkript állítja elő). Beállítás: `docs/auth-email-hook.md`.
