@@ -128,7 +128,7 @@
     $("#boot").innerHTML = `<div class="sheet" style="width:min(440px,100%)">
       ${eb.logo ? `<img class="logo-lg" src="${esc(eb.logo)}" alt="">` : `<span class="logo-lg">${TH.svg(TH.MARK)}</span>`}
       <div><h1 style="font-size:30px">${esc(eb.productName)}</h1><p class="sub">${esc(eb.tagline)}</p></div>
-      <div class="status" role="status">${lapsed ? `Az előfizetésed lejárt (${esc(when)}). Hosszabbítsd meg, és ott folytathatod, ahol abbahagytad: a terved megvan.` : `A ${esc(eb.productName)} előfizetéssel használható.`}</div>
+      <div class="status" role="status">${lapsed ? `Az előfizetésed lejárt (${esc(when)}). Hosszabbítsd meg, és ott folytathatod, ahol abbahagytad: a terved megvan.` : `${esc(eb.productName)}: ez a tervező előfizetéssel használható.`}</div>
       <p class="sub" style="margin:0">Ha már előfizettél, ugyanazzal az e-mail-címmel lépj be, amit a vásárlásnál megadtál. Most ezzel vagy bent: <b>${esc((user && user.email) || "")}</b>.</p>
       ${shop ? `<a class="btn" href="${esc(shop)}" target="_blank" rel="noopener">${lapsed ? "Megújítom az előfizetést" : "Előfizetek"}</a>` : ""}
       <button type="button" class="btn ghost" data-auth-act="recheck">Már előfizettem, frissítem</button>
