@@ -11,6 +11,8 @@
 //   { action:"brands" }                                   -> márkák + adminjaik
 //   { action:"brand.set", slug, plan, upsell }            -> márka létrehozása / csomag váltása
 //   { action:"brand.admin.add" | "brand.admin.remove", slug, email }
+//   { action:"brand.delete", slug, confirm }              -> márka törlése (confirm = a slug). A márka-adminok vele
+//                                                             törlődnek (FK cascade); a felhasználók tervei megmaradnak.
 //   { action:"brand.features", slug, features }           -> márkánként bekapcsolható funkciók (Csapat, Üzenetsablonok, Számok, Szépség-matricák)
 //   { action:"platform.get" | "platform.set", config }    az app alap-arculata (név, logó, színek, betűk…)
 //   { action:"audit" }                                    -> utolsó 100 napló-esemény
@@ -162,6 +164,15 @@ module.exports = async function handler(req, res) {
       await L.sb(`sikertervezo_brands?slug=eq.${encodeURIComponent(b.slug)}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ config, updated_by: user.id, updated_at: new Date().toISOString() }) });
       await audit(user, "brand.features", b.slug, { features: config.features });
       return L.send(res, 200, { ok: true });
+    }
+    if (action === "brand.delete") {
+      if (!B.SLUG_RE.test(b.slug || "") || b.slug === "alap") return L.send(res, 400, { error: "bad_slug" });
+      if (b.confirm !== b.slug) return L.send(res, 400, { error: "confirm_required" });
+      const users = await safe(L.sb(`sikertervezo_state?brand_slug=eq.${encodeURIComponent(b.slug)}&select=user_id`), []);
+      const del = await L.sb(`sikertervezo_brands?slug=eq.${encodeURIComponent(b.slug)}`, { method: "DELETE", headers: { Prefer: "return=representation" } });
+      if (!del || !del.length) return L.send(res, 404, { error: "not_found" });
+      await audit(user, "brand.delete", b.slug, { plan: del[0].plan, users: users.length });
+      return L.send(res, 200, { ok: true, users: users.length });
     }
     if (action === "brand.admin.add" || action === "brand.admin.remove") {
       if (!B.SLUG_RE.test(b.slug || "")) return L.send(res, 400, { error: "bad_slug" });
