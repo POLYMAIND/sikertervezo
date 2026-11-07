@@ -103,5 +103,9 @@ for (const [k, v] of Object.entries(T)) {
   md += `| ${NAMES[k]} | \`${k}.html\` | ${v.subject} |\n`;
 }
 md += "\nA feladó neve és címe (most: „Supabase Auth <noreply@mail.app.supabase.io>”) csak saját SMTP-vel cserélhető: Authentication → Emails → SMTP Settings. Brevóval: host `smtp-relay.brevo.com`, port `587`, felhasználó a Brevo SMTP-loginja, jelszó a Brevo **SMTP-kulcsa** (nem az API-kulcs), feladó a Brevóban hitelesített cím, név: Sikermaker.\n";
+md += "\n**Saját küldés (Send Email Hook):** a Supabase a leveleket az app `/api/auth-email` végpontjának adja át, az pedig a Brevo API-n küldi ki ugyanezekkel a sablonokkal (`api/_authmail_tpl.json`, ez a szkript állítja elő). Beállítás: `docs/auth-email-hook.md`.\n";
 fs.writeFileSync(path.join(dir, "README.md"), md);
+// ugyanezek a sablonok a szerver-oldali küldéshez (api/auth-email.js)
+const tpl = {}; for (const [k, v] of Object.entries(T)) tpl[k] = { subject: v.subject, html: v.html };
+fs.writeFileSync(path.join(dir, "..", "..", "api", "_authmail_tpl.json"), JSON.stringify(tpl));
 console.log("ok");
