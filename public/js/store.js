@@ -31,11 +31,20 @@
     if (!c || !c.url || !c.anonKey) { mode = "demo"; return { cloud: false, user: null }; }
     if (!window.supabase) await loadScript(SB_CDN);
     sb = window.supabase.createClient(c.url, c.anonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "pkce" } });
+    // levélből érkező link (?token_hash=…&type=…): itt hitelesítjük, így bármelyik böngészőben működik
+    let linkError = null;
+    const sp = new URLSearchParams(location.search), th = sp.get("token_hash"), ty = sp.get("type");
+    if (th && /^(signup|magiclink|recovery|invite|email_change|email)$/.test(ty || "")) {
+      sp.delete("token_hash"); sp.delete("type");
+      history.replaceState(null, "", location.pathname + (sp.toString() ? "?" + sp.toString() : "") + location.hash);
+      const r = await sb.auth.verifyOtp({ token_hash: th, type: ty === "magiclink" || ty === "signup" ? "email" : ty });
+      if (r.error) linkError = r.error; else if (ty === "recovery") recovery = true;
+    }
     const { data } = await sb.auth.getSession();
     session = data.session || null;
     sb.auth.onAuthStateChange((ev, s) => { session = s; if (ev === "PASSWORD_RECOVERY") recovery = true; });
     mode = session ? "cloud" : "demo";
-    return { cloud: true, user: session ? session.user : null };
+    return { cloud: true, user: session ? session.user : null, linkError };
   }
 
   // a ?brand= megmarad, hogy a levélből visszatérve is a márka (és a márkás levél) jöjjön

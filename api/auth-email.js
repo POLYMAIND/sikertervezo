@@ -80,7 +80,17 @@ function verify(raw, h) {
   });
 }
 
-function verifyUrl(tokenHash, type, redirectTo) {
+// A link közvetlenül az appra visz (?token_hash=…&type=…), az app a böngészőben hitelesíti (verifyOtp). Így a link
+// BÁRMELYIK böngészőben / eszközön működik — a Supabase /verify útvonala PKCE-nél csak abban a böngészőben, ahonnan
+// a linket kérték (máshol csendben visszadobott a belépőre). Hibás visszatérési címnél a régi /verify útvonal marad.
+function verifyUrl(tokenHash, type, redirectTo, siteUrl) {
+  let u = null;
+  for (const c of [redirectTo, siteUrl]) { try { if (c) { u = new URL(c); break; } } catch (e) { /* következő */ } }
+  if (u && /^https?:$/.test(u.protocol)) {
+    u.searchParams.set("token_hash", tokenHash);
+    u.searchParams.set("type", type);
+    return u.toString();
+  }
   const q = new URLSearchParams({ token: tokenHash, type });
   if (redirectTo) q.set("redirect_to", redirectTo);
   return L.SB_URL() + "/auth/v1/verify?" + q.toString();
@@ -99,11 +109,11 @@ function messages(p) {
     // Biztonságos e-mail-csere: mindkét címre megy egy-egy link (mindkettőre kattintani kell). Ha csak egy token
     // van (egyszerű csere), az az új címre megy.
     const out = [];
-    if (u.new_email && d.token_hash) out.push({ to: u.new_email, kind, vars: Object.assign({}, base, { url: verifyUrl(d.token_hash, "email_change", d.redirect_to) }) });
-    if (u.email && d.token_hash_new) out.push({ to: u.email, kind, vars: Object.assign({}, base, { url: verifyUrl(d.token_hash_new, "email_change", d.redirect_to) }) });
+    if (u.new_email && d.token_hash) out.push({ to: u.new_email, kind, vars: Object.assign({}, base, { url: verifyUrl(d.token_hash, "email_change", d.redirect_to, d.site_url) }) });
+    if (u.email && d.token_hash_new) out.push({ to: u.email, kind, vars: Object.assign({}, base, { url: verifyUrl(d.token_hash_new, "email_change", d.redirect_to, d.site_url) }) });
     return out;
   }
-  return [{ to: u.email, kind, vars: Object.assign({}, base, { url: verifyUrl(d.token_hash, VERIFY_TYPE[action], d.redirect_to) }) }];
+  return [{ to: u.email, kind, vars: Object.assign({}, base, { url: verifyUrl(d.token_hash, VERIFY_TYPE[action], d.redirect_to, d.site_url) }) }];
 }
 
 async function send(m, brand) {
