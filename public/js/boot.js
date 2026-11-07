@@ -117,6 +117,8 @@
       ${msg ? `<div class="status" role="status">${esc(msg)}</div>` : ""}
       ${body}
       ${tab === "ujjelszo" || membersOnly() ? (membersOnly() && eb.access.shopUrl && tab !== "ujjelszo" ? `<div class="sep">még nincs előfizetésed?</div><a class="btn ghost" href="${esc(eb.access.shopUrl)}" target="_blank" rel="noopener">Előfizetek</a>` : "") : `<div class="sep">vagy</div><button type="button" class="btn ghost" data-auth-act="demo">Kipróbálom belépés nélkül</button>`}
+    
+      <p class="credit">A fejlesztést a <a href="https://polymaind.hu" target="_blank" rel="noopener">Polymaind Kft.</a> végezte.</p>
     </div>`;
     $("#boot").hidden = false; $("#appshell").hidden = true;
     const f = $("#boot input"); if (f) f.focus();
@@ -133,6 +135,7 @@
       ${shop ? `<a class="btn" href="${esc(shop)}" target="_blank" rel="noopener">${lapsed ? "Megújítom az előfizetést" : "Előfizetek"}</a>` : ""}
       <button type="button" class="btn ghost" data-auth-act="recheck">Már előfizettem, frissítem</button>
       <button type="button" class="chip" data-auth-act="logout" style="align-self:center">Kijelentkezés, másik e-mail-címmel lépek be</button>
+      <p class="credit">A fejlesztést a <a href="https://polymaind.hu" target="_blank" rel="noopener">Polymaind Kft.</a> végezte.</p>
     </div>`;
     $("#boot").hidden = false; $("#appshell").hidden = true;
   }
