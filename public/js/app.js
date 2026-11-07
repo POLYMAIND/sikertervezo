@@ -1497,19 +1497,19 @@ function revForm(){
   const d=ui.rev,isW=d.key.startsWith("w:"),[from,to]=revRange(d.key),st=rangeStats(from,to);
   const q=(k,l)=>`<label class="f">${l}<textarea data-rev="${k}" rows="3">${esc(d.a[k]||"")}</textarea></label>`;
   const goals=`<div class="stack" style="gap:8px">${d.goals.map((g,i)=>`<label class="f">${i+1}. cél<input type="text" data-revgoal="${i}" maxlength="120" value="${esc(g)}"></label>`).join("")}</div><label class="row" style="gap:8px;font-size:13px"><button type="button" class="cbx" data-act="revtodos" aria-pressed="${d.toTodos}">${d.toTodos?"✓":""}</button>Felveszem őket a ${isW?"jövő heti":"jövő havi"} teendőim közé</label>`;
-  const moods=`<div class="moods">${moods().map((m,i)=>`<button type="button" class="mood" data-act="revmood" data-i="${i}" aria-pressed="${d.mood===i}">${m}</button>`).join("")}</div>`;
+  const moodRow=`<div class="moods">${moods().map((m,i)=>`<button type="button" class="mood" data-act="revmood" data-i="${i}" aria-pressed="${d.mood===i}">${m}</button>`).join("")}</div>`;
   const back=`<button class="chip" data-act="revclose" style="align-self:flex-start">← Értékelések</button>`;
   if(isW)return back+head("Heti értékelő",revLabel(d.key))+`<div class="card"><h3>A heted számokban</h3>${statsHTML(st)}</div>
     <div class="card stack" style="gap:14px"><h3 style="margin:0">Visszatekintés</h3>${WEEK_Q.map(([k,l])=>q(k,l)).join("")}</div>
     <div class="card stack" style="gap:12px"><h3 style="margin:0">A jövő heted</h3><p class="muted" style="margin:0;font-size:12.5px">Három dolog, ami a legfontosabb a következő héten.</p>${goals}</div>
-    <div class="card stack" style="gap:10px"><h3 style="margin:0">Milyen volt a heted?</h3>${moods}</div>
+    <div class="card stack" style="gap:10px"><h3 style="margin:0">Milyen volt a heted?</h3>${moodRow}</div>
     <div class="row between"><button class="btn ghost" data-act="revclose">Később folytatom</button><button class="btn" data-act="revsave">${d.doneBefore?"Mentés":"Kész, lezárom a hetet"}</button></div>`;
   const stp=MONTH_STEPS[d.step],last=d.step===MONTH_STEPS.length-1;
   let inner="";
   if(stp[0]==="szamok"){const g=S.goals[d.key.slice(2)];inner=statsHTML(st)+(g?`<div class="list" style="margin-top:6px">${[["szem","Személyes forgalom",g.szem&&g.szem.teny],["csop","Csoportforgalom",g.csop&&g.csop.teny]].filter(x=>g[x[0]]&&+g[x[0]].cel).map(([k,l,v])=>`<div class="li"><div class="grow t">${l}</div><span class="chip ${+v>=+g[k].cel?"good":""}">${nfmt(v||0)} / ${nfmt(g[k].cel)}</span></div>`).join("")}</div>`:"")}
   else if(stp[3])inner=stp[3].map(([k,l])=>q(k,l)).join("");
   else if(stp[0]==="jovo")inner=`<label class="f">A következő hónap fő fókusza<input type="text" data-revfocus="1" maxlength="120" value="${esc(d.focus)}" placeholder="Például: 10 új kapcsolat és heti 3 Reel"></label>`+goals;
-  else inner=moods+`<label class="f">Egy mondat magadnak a hónap végén (nem kötelező)<textarea data-rev="note" rows="2">${esc(d.a.note||"")}</textarea></label>`;
+  else inner=moodRow+`<label class="f">Egy mondat magadnak a hónap végén (nem kötelező)<textarea data-rev="note" rows="2">${esc(d.a.note||"")}</textarea></label>`;
   return back+head("Havi értékelő",revLabel(d.key))+`<div class="card stack revstep" style="gap:14px"><div class="row between"><div class="eyebrow">${d.step+1}. lépés / ${MONTH_STEPS.length}</div><div class="ob-prog" style="max-width:220px"><i style="width:${(d.step+1)/MONTH_STEPS.length*100}%"></i></div></div><h2 style="margin:0">${stp[1]}</h2>${stp[2]?`<p class="lead muted" style="margin:0">${stp[2]}</p>`:""}${inner}
     <div class="row between">${d.step?'<button class="btn ghost" data-act="revprev">Vissza</button>':'<button class="btn ghost" data-act="revclose">Később folytatom</button>'}<button class="btn" data-act="${last?"revsave":"revnext"}">${last?(d.doneBefore?"Mentés":"Kész, lezárom a hónapot"):"Tovább"}</button></div></div>`;
 }
