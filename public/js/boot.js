@@ -74,6 +74,8 @@
     const h = Math.floor((t - Date.now()) / 36e5), d = Math.floor(h / 24);
     return `Nyitás: ${when} (még ${d ? d + " nap " : ""}${h % 24} óra)!`;
   }
+  // „csak előfizetők” white label márka: nincs bemutató mód (az app csak előfizetőknek)
+  const membersOnly = () => { const eb = TH.effectiveBrand(brandRaw); return !!(eb.plan === "whitelabel" && eb.access && eb.access.members); };
   function authScreen(tab, msg) {
     tab = tab || "belepes";
     const hideLogin = !signupOpenNow() && !loginAllowed();
@@ -114,10 +116,25 @@
       ${tab === "ujjelszo" || tab === "elfelejtett" || hideLogin ? "" : tabs}
       ${msg ? `<div class="status" role="status">${esc(msg)}</div>` : ""}
       ${body}
-      ${tab === "ujjelszo" ? "" : `<div class="sep">vagy</div><button type="button" class="btn ghost" data-auth-act="demo">Kipróbálom belépés nélkül</button>`}
+      ${tab === "ujjelszo" || membersOnly() ? (membersOnly() && eb.access.shopUrl && tab !== "ujjelszo" ? `<div class="sep">még nincs előfizetésed?</div><a class="btn ghost" href="${esc(eb.access.shopUrl)}" target="_blank" rel="noopener">Előfizetek</a>` : "") : `<div class="sep">vagy</div><button type="button" class="btn ghost" data-auth-act="demo">Kipróbálom belépés nélkül</button>`}
     </div>`;
     $("#boot").hidden = false; $("#appshell").hidden = true;
     const f = $("#boot input"); if (f) f.focus();
+  }
+  function lockScreen(me, user) {
+    const eb = TH.effectiveBrand(brandRaw), shop = (eb.access && eb.access.shopUrl) || me.shopUrl || "";
+    const lapsed = me.until && Date.parse(me.until) < Date.now();
+    let when = ""; try { if (lapsed) when = new Intl.DateTimeFormat("hu-HU", { year: "numeric", month: "long", day: "numeric" }).format(new Date(me.until)); } catch (e) {}
+    $("#boot").innerHTML = `<div class="sheet" style="width:min(440px,100%)">
+      ${eb.logo ? `<img class="logo-lg" src="${esc(eb.logo)}" alt="">` : `<span class="logo-lg">${TH.svg(TH.MARK)}</span>`}
+      <div><h1 style="font-size:30px">${esc(eb.productName)}</h1><p class="sub">${esc(eb.tagline)}</p></div>
+      <div class="status" role="status">${lapsed ? `Az előfizetésed lejárt (${esc(when)}). Hosszabbítsd meg, és ott folytathatod, ahol abbahagytad: a terved megvan.` : `A ${esc(eb.productName)} előfizetéssel használható.`}</div>
+      <p class="sub" style="margin:0">Ha már előfizettél, ugyanazzal az e-mail-címmel lépj be, amit a vásárlásnál megadtál. Most ezzel vagy bent: <b>${esc((user && user.email) || "")}</b>.</p>
+      ${shop ? `<a class="btn" href="${esc(shop)}" target="_blank" rel="noopener">${lapsed ? "Megújítom az előfizetést" : "Előfizetek"}</a>` : ""}
+      <button type="button" class="btn ghost" data-auth-act="recheck">Már előfizettem, frissítem</button>
+      <button type="button" class="chip" data-auth-act="logout" style="align-self:center">Kijelentkezés, másik e-mail-címmel lépek be</button>
+    </div>`;
+    $("#boot").hidden = false; $("#appshell").hidden = true;
   }
   const HU_ERR = { "Invalid login credentials": "Hibás e-mail-cím vagy jelszó.", "Email not confirmed": "Még nem erősítetted meg az e-mail-címed. Nézd meg a postafiókodat.", "User already registered": "Ezzel az e-mail-címmel már van fiók. Lépj be, vagy kérj új jelszót." };
   const errText = (e) => HU_ERR[e && e.message] || (e && e.message === "wl_email" ? "Ez nem tűnik érvényes e-mail-címnek." : e && e.message === "wl_fail" ? "Most nem sikerült feliratkozni. Próbáld újra pár perc múlva." : e && /signup|saving new user|not allowed/i.test(e.message) ? "Most még nem lehet regisztrálni: iratkozz fel a Várólista fülön, és szólunk, amint nyitunk." : "") || (e && /rate|seconds/i.test(e.message) ? "Túl sok próbálkozás. Várj egy percet, és próbáld újra." : e && /sending|email/i.test(e.message) ? "Most nem sikerült elküldeni a levelet. Próbáld újra néhány perc múlva, vagy írj nekünk: hello@polymaind.hu." : "Valami nem sikerült. Próbáld újra.");
@@ -125,7 +142,9 @@
   document.addEventListener("click", async (e) => {
     const t = e.target.closest("[data-tab]"); if (t && $("#boot") && !$("#boot").hidden) { authScreen(t.dataset.tab); return; }
     const a = e.target.closest("[data-auth-act]"); if (!a) return;
-    if (a.dataset.authAct === "demo") { sessionStorage.setItem(DEMO_CHOSEN, "1"); launch(null); }
+    if (a.dataset.authAct === "demo" && !membersOnly()) { sessionStorage.setItem(DEMO_CHOSEN, "1"); launch(null); }
+    if (a.dataset.authAct === "recheck") { location.reload(); return; }
+    if (a.dataset.authAct === "logout") { try { await store.signOut(); } catch (err) {} authScreen("belepes"); return; }
     if (a.dataset.authAct === "magic") {
       const em = $('#boot input[name="email"]').value.trim(); if (!em) { authScreen("belepes", "Előbb írd be az e-mail-címed."); return; }
       try { await store.signIn(em); authScreen("belepes", "Elküldtük a belépő linket. Nyisd meg az e-mailt, és kattints a gombra."); } catch (err) { authScreen("belepes", errText(err)); }
@@ -186,8 +205,10 @@
     // csomag: belépve a szerver mondja meg (/api/me); bemutató módban a csomagváltó (alapból Pro, hogy minden látszódjon)
     let userPlan = demo ? (["ingyenes", "pro", "whitelabel"].includes(ls.get(DEMO_PLAN_KEY)) ? ls.get(DEMO_PLAN_KEY) : "pro") : "ingyenes";
     if (userPlan === "whitelabel") userPlan = "pro";
-    let planSource = "";
-    if (!demo) { try { const me = await api("/api/me" + location.search); userPlan = me.plan === "pro" ? "pro" : "ingyenes"; planSource = me.source || ""; } catch (e) {} }
+    let planSource = "", meRes = null;
+    if (!demo) { try { meRes = await api("/api/me" + location.search); userPlan = meRes.plan === "pro" ? "pro" : "ingyenes"; planSource = meRes.source || ""; } catch (e) {} }
+    // „csak előfizetők” márka: aki nem aktív előfizető (és nem a márka gazdája), az nem jut be az appba
+    if (meRes && meRes.locked) { lockScreen(meRes, user); return; }
     const payResult = new URLSearchParams(location.search).get("fizetes");
     if (payResult) { const q = new URLSearchParams(location.search); q.delete("fizetes"); history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "") + location.hash); }
     if (!demo) {
@@ -208,6 +229,7 @@
       brandConsent: () => store.brandConsent(TH.effectiveBrand(brandRaw).slug),
       setBrandConsent: (ok) => store.setBrandConsent(TH.effectiveBrand(brandRaw).slug, ok),
       brandMembers: async () => api("/api/brand" + location.search, { method: "POST", body: JSON.stringify({ action: "members" }) }),
+      brandCall: async (body) => api("/api/brand" + location.search, { method: "POST", body: JSON.stringify(body) }),
       email: async (payload) => api("/api/email" + location.search, { method: "POST", body: JSON.stringify(payload) }),
       billing: async (action) => api("/api/billing" + location.search, { method: "POST", body: JSON.stringify({ action }) }),
       billingReady: !!(config.billing && config.billing.enabled),
@@ -250,6 +272,7 @@
     if (init.user) return launch(store.userInfo());
     const qs = new URLSearchParams(location.search);
     if (qs.has("bemutato")) { sessionStorage.setItem(DEMO_CHOSEN, "1"); history.replaceState(null, "", location.pathname + location.hash); }
+    if (membersOnly() && init.cloud) { authScreen(qs.get("regisztracio") != null ? "regisztracio" : "belepes"); return; }
     if (!init.cloud || sessionStorage.getItem(DEMO_CHOSEN)) return launch(null);
     if (init.linkError) { authScreen("belepes", "Ez a link már lejárt, vagy már felhasználták. Kérj egy újat: írd be az e-mail-címed, és nyomd meg a „Belépő link e-mailben” gombot."); return; }
     authScreen(qs.get("regisztracio") != null ? "regisztracio" : "belepes");

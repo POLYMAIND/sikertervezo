@@ -65,6 +65,14 @@ function overlay(base, top) {
   if (top.founder && top.founder.enabled) out.founder = top.founder;
   return out;
 }
+// Hozzáférés (csak a superadmin állítja): members = csak előfizetők léphetnek be; shopUrl = az „Előfizetek” gomb
+// célja; productIds = a Shopify-termék(ek), amelyek kifizetése hozzáférést ad (api/shopify.js).
+function cleanAccess(a) {
+  const x = a && typeof a === "object" ? a : {};
+  const shopUrl = typeof x.shopUrl === "string" && /^https:\/\/[^\s"'<>]{3,300}$/.test(x.shopUrl.trim()) ? x.shopUrl.trim() : "";
+  const ids = (Array.isArray(x.productIds) ? x.productIds : String(x.productIds || "").split(/[\s,;]+/)).map((v) => String(v).trim()).filter((v) => /^\d{1,20}$/.test(v)).slice(0, 10);
+  return { members: x.members === true, shopUrl, productIds: ids };
+}
 // Márkánként bekapcsolható funkciók. Csak a superadmin állítja (Admin -> Márkák), a márka gazdája nem.
 const FEATURES = ["csapat", "sablonok", "szamok", "matricak"];
 function cleanFeatures(f) {
@@ -79,7 +87,8 @@ function publicBrand(row, platform) {
   const plat = platform && hasTheme(platform) ? sanitize(platform) : null;
   if (plan !== "whitelabel") return plat ? Object.assign(plat, base, { themed: true }) : base;
   const own = sanitize(r.config || r);
-  return Object.assign(plat ? overlay(plat, own) : own, base, { features: cleanFeatures((r.config || r).features) });
+  const acc = cleanAccess((r.config || r).access);
+  return Object.assign(plat ? overlay(plat, own) : own, base, { features: cleanFeatures((r.config || r).features), access: { members: acc.members, shopUrl: acc.shopUrl } });
 }
 
 // Az app alap-arculata (sikertervezo_platform, id='default'). Rövid cache, hogy ne minden kérés menjen az adatbázisig.
@@ -122,4 +131,4 @@ async function loadBrand(slug) {
   return Object.assign({}, DEFAULT, { slug: slug === "alap" ? "alap" : slug });
 }
 
-module.exports = { FEATURES, cleanFeatures, sanitize, publicBrand, loadPlatform, hasTheme, resolveSlug, loadBrand, cleanLogo, DEFAULT, PLANS, SLUG_RE };
+module.exports = { FEATURES, cleanFeatures, cleanAccess, sanitize, publicBrand, loadPlatform, hasTheme, resolveSlug, loadBrand, cleanLogo, DEFAULT, PLANS, SLUG_RE };
