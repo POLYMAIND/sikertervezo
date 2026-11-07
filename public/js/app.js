@@ -307,6 +307,8 @@ function openMore(){
 }
 
 /* ---------- views ---------- */
+// szolid fejlesztői jelölés a lap alján (minden márkában)
+const CREDIT='<p class="credit">A fejlesztést a <a href="https://polymaind.hu" target="_blank" rel="noopener">Polymaind Kft.</a> végezte.</p>';
 function head(title,sub,right,hand){return `<div class="head"><div class="stack"><div class="eyebrow">${esc(sub)}</div><h1>${esc(title)}${hand?` <span class="hand">${esc(hand)}</span>`:""}${PRO_VIEWS.includes(route)?proTag("hpro"):""}</h1></div><div class="row">${right||""}${DEMO&&!ctx.cloud?'<span class="proto">Bemutató mód, mintaadatokkal</span>':""}${syncBadge()}</div></div>`}
 
 function stepsHTML(k){
@@ -1819,7 +1821,7 @@ function consentRow(){
 const RENDER={ma:vMa,markam:vMarkam,admin:vAdmin,ertekelesek:vErtekelesek,bovitesek:vBovitesek,olvasas:vOlvasas,szokasok:vSzokasok,terkep:vTerkep,matricak:vMatricak,naptar:vNaptar,kapcsolatok:vKapcsolatok,ugyfelek:vUgyfelek,tartalom:vTartalom,csapat:vCsapat,szamok:vSzamok,beallitasok:vBeall};
 function render(){
   const y=window.scrollY;
-  $("#view").innerHTML=demoCta()+(!PRO&&PRO_VIEWS.includes(route)?vPro(route):RENDER[route]()+upStrip(route));
+  $("#view").innerHTML=demoCta()+(!PRO&&PRO_VIEWS.includes(route)?vPro(route):RENDER[route]()+upStrip(route))+CREDIT;
   nav();drawer();bindBoards();bindMap();bindDash();
   window.scrollTo(0,y);
   checkAch(false);

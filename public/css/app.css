@@ -759,3 +759,8 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:4px 0;width:100%}
 .dslogo{width:72px;height:56px;border-radius:10px;border:1.5px solid var(--line);background:repeating-conic-gradient(#eee 0 25%,#fff 0 50%) 50%/12px 12px;padding:6px;cursor:pointer}
 .dslogo img{width:100%;height:100%;object-fit:contain}
 .dslogo[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint)}
+
+/* szolid fejlesztői jelölés a lap alján */
+.credit{margin:28px 0 6px;text-align:center;font-size:11.5px;color:var(--muted);opacity:.8}
+.credit a{color:inherit;text-decoration:underline;text-underline-offset:2px}
+.sheet .credit{margin:4px 0 0}
