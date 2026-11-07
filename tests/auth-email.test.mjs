@@ -82,3 +82,29 @@ test("végpont: aláírt kérésre Brevo-hívás és 200; aláírás nélkül 40
     assert.equal(res.statusCode, 502);
   } finally { globalThis.fetch = orig; delete process.env.SEND_EMAIL_HOOK_SECRET; }
 });
+
+test("márkás levél: saját domain (BRAND_HOSTS) vagy ?brand= → a márka neve, logója, színe; alap márkánál Sikermaker marad", async () => {
+  setEnv();
+  for (const k of ["SUPABASE_SERVICE_ROLE_KEY", "SUPABASE_URL"]) delete process.env[k]; // a márka a brands/*.json mintából jön
+  process.env.BRAND_HOSTS = JSON.stringify({ "tervezo.pelda.hu": "minta-marka" });
+  process.env.APP_URL = "https://sikermaker.hu";
+  const { brandFor, brandify, render } = fresh("../api/auth-email.js")._test;
+  const TPL = require("../api/_authmail_tpl.json");
+  const b1 = await brandFor("https://tervezo.pelda.hu/app");
+  const b2 = await brandFor("https://sikermaker.hu/app?brand=minta-marka");
+  assert.equal(b1.name, "Minta Sikerműhely"); assert.equal(b2.slug, "minta-marka");
+  assert.equal(b1.accent, "#0F766E");
+  assert.equal(await brandFor("https://sikermaker.hu/app"), null);
+  assert.equal(await brandFor("nem url"), null);
+  const t = TPL["1-regisztracio-megerositese"];
+  const out = brandify(render(t.html, { url: "https://x", email: "a@pelda.hu", name: "" }), t.subject, Object.assign({}, b1, { upsell: false }));
+  assert.equal(out.subject, "Még egy kattintás, és indulhatsz – Minta Sikerműhely");
+  assert.match(out.html, />Minta Sikerműhely<\/td>/);
+  assert.match(out.html, /#0F766E/);
+  assert.doesNotMatch(out.html, /Sikermaker|#997433|PolyOS/);
+  const keep = brandify(render(t.html, { url: "https://x", email: "a@pelda.hu" }), t.subject, Object.assign({}, b1, { upsell: true }));
+  assert.match(keep.html, /A tervező a PolyOS része/);
+  const plain = brandify("<td>Sikermaker</td>", t.subject, null);
+  assert.equal(plain.subject, t.subject);
+  delete process.env.BRAND_HOSTS;
+});

@@ -38,7 +38,8 @@
     return { cloud: true, user: session ? session.user : null };
   }
 
-  const back = () => location.origin + location.pathname;
+  // a ?brand= megmarad, hogy a levélből visszatérve is a márka (és a márkás levél) jöjjön
+  const back = () => { const b = new URLSearchParams(location.search).get("brand"); return location.origin + location.pathname + (b && /^[a-z0-9-]{1,40}$/.test(b) ? "?brand=" + b : ""); };
   const need = () => { if (!sb) throw new Error("not_configured"); };
   // belépő link e-mailben (jelszó nélkül; új e-mail-címnél ez egyben regisztráció is)
   async function signIn(email) {
