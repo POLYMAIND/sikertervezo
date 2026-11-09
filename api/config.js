@@ -17,5 +17,7 @@ module.exports = async function handler(req, res) {
     signup: await W.signupState(),
     email: { enabled: !!((L.env("BREVO_API_KEY") || L.env("RESEND_API_KEY")) && L.env("EMAIL_FROM")) },
     legal: { terms: L.env("TERMS_URL"), privacy: L.env("PRIVACY_URL") },
+    // mérőkódok: csak hozzájárulás után töltődnek be (public/js/consent.js)
+    analytics: { ga4Id: /^G-[A-Z0-9]{4,16}$/.test(L.env("GA4_ID")) ? L.env("GA4_ID") : "", metaPixelId: /^\d{6,20}$/.test(L.env("META_PIXEL_ID")) ? L.env("META_PIXEL_ID") : "" },
   });
 };

@@ -67,9 +67,10 @@
         .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, j: j }; }); })
         .then(function (x) {
           if (!x.ok || !x.j.ok) throw new Error((x.j && x.j.error) || "fail");
+          if (!x.j.already && window.smTrack) window.smTrack("generate_lead", { method: "varolista", source: f.getAttribute("data-src") || "" });
           var box = d.createElement("div"); box.className = "wlok";
           box.innerHTML = "<b>" + (x.j.already ? "Már a listán vagy, köszönjük!" : "Kész, feliratkoztál!") + "</b><p>" + (launchTxt ? "Nyitás: " + escH(launchTxt) + ". " : "Hamarosan nyitunk. ") + "Elsőként szólunk, addig itt az ajándékod" + (x.j.already ? "" : " (e-mailben is elküldtük)") + ".</p>" +
-            (x.j.download ? '<a class="btn" href="' + escH(x.j.download) + '">Letöltöm a Káoszmanagert</a>' : "");
+            (x.j.download ? '<a class="btn" data-dl href="' + escH(x.j.download) + '">Letöltöm a Káoszmanagert</a>' : "");
           f.parentNode.replaceChild(box, f);
         })
         .catch(function (err) {

@@ -31,6 +31,7 @@ def page(slug, title, lead, body):
 <meta property="og:image" content="https://sikermaker.hu/img/og.jpg">
 <meta property="og:locale" content="hu_HU">
 <script defer src="/_vercel/insights/script.js"></script>
+<script defer src="/js/consent.js"></script>
 </head>
 <body class="legalpage">
 <header class="top scrolled"><div class="in">
@@ -43,7 +44,7 @@ def page(slug, title, lead, body):
   <p class="lead sm">{lead}</p>
 {body}
 </main>
-<footer class="foot"><div class="in copy-r" style="margin-top:0;border-top:0">© Polymaind · Sikermaker · <a href="/impresszum">Impresszum</a> · <a href="/adatkezeles">Adatkezelési tájékoztató</a> · <a href="/aszf">ÁSZF</a></div></footer>
+<footer class="foot"><div class="in copy-r" style="margin-top:0;border-top:0">© Polymaind · Sikermaker · <a href="/impresszum">Impresszum</a> · <a href="/adatkezeles">Adatkezelési tájékoztató</a> · <a href="/aszf">ÁSZF</a> · <a href="#" data-consent-open>Süti-beállítások</a></div></footer>
 </body>
 </html>
 """
@@ -86,6 +87,8 @@ feldolgozok = [
     ("Vercel", "Az alkalmazás kiszolgálása; sütimentes, összesített látogatottsági statisztika", "EU (Frankfurt) / USA"),
     ("Brevo (Sendinblue SAS)", "E-mailek kézbesítése (regisztráció, belépő link, jelszó, várólista, az appból küldött levelek); a kézbesítés technikai adatai (kézbesítve, megnyitva)", "EU (Franciaország)"),
     ("Google", "Betűtípusok kiszolgálása (Google Fonts): a betöltéskor az IP-címed a Google-hoz kerül", "USA"),
+    ("Google Ireland (Google Analytics 4)", "Látogatási statisztika – csak hozzájárulással", "EU / USA"),
+    ("Meta Platforms Ireland (Meta Pixel)", "Hirdetésmérés – csak hozzájárulással", "EU / USA"),
     ("PolyOS (polymAInd Kft.)", "Csak ha összekapcsolod: az általad egyenként átküldött tételek (pl. egy kapcsolat vagy egy teendő) a PolyOS-fiókodba", "EU"),
 ]
 
@@ -122,9 +125,10 @@ adatkezeles = f"""
   <h2>6. A várólista és az ajándék</h2>
   <p>A várólistára az e-mail-címed megadásával és a hozzájárulásod bejelölésével iratkozol fel. Ekkor egy levelet küldünk a Káoszmanager letöltő linkjével (7 napig érvényes), és a Sikermaker nyitásakor egy értesítést. Más levelet a hozzájárulásod alapján nem küldünk. A hozzájárulást bármikor visszavonhatod egy, a {EMAIL} címre küldött levéllel; ekkor a címedet töröljük.</p>
 
-  <h2>7. Sütik és helyi tárolás</h2>
-  <p>Nem használunk sütiket, marketing- vagy nyomkövető eszközöket. A böngésződ helyi tárolójában kizárólag a működéshez szükséges adatok vannak: a belépési munkamenet, a beállításaid (pl. a választott háttér), és bemutató módban a mintaadatok.</p>
-  <p><b>Látogatottsági statisztika.</b> Az oldalak látogatottságát összesítve, sütik nélkül mérjük (Vercel Web Analytics): hány megtekintés volt, melyik oldalon, milyen eszköztípusról és országból érkeztek. Nem tárolunk IP-címet, nem rakunk le sütit, és nem azonosítunk senkit; a látogatókat a rendszer csak egy naponta megújuló, visszafejthetetlen lenyomattal különbözteti meg. Jogalap: jogos érdek (a szolgáltatás fejlesztése, GDPR 6. cikk (1) f).</p>
+  <h2 id="sutik">7. Sütik, helyi tárolás és mérés</h2>
+  <p><b>A működéshez szükséges tárolás.</b> A böngésződ helyi tárolójában a működéshez szükséges adatok vannak: a belépési munkamenet, a beállításaid (pl. a választott háttér), a süti-döntésed, és bemutató módban a mintaadatok. Ezekhez nem kell hozzájárulás.</p>
+  <p><b>Sütimentes látogatottsági statisztika.</b> Az oldalak látogatottságát összesítve, sütik nélkül is mérjük (Vercel Web Analytics): hány megtekintés volt, melyik oldalon, milyen eszköztípusról és országból. Nem tárolunk IP-címet, nem rakunk le sütit, és nem azonosítunk senkit. Jogalap: jogos érdek (GDPR 6. cikk (1) f).</p>
+  <p><b>Mérés és hirdetés – csak a hozzájárulásoddal.</b> Ha a sütisávon az „Elfogadom” gombot választod, bekapcsoljuk a <b>Google Analytics 4</b>-et (látogatási statisztika, hogy lássuk, honnan érkeznek a látogatók és mi működik) és a <b>Meta Pixel</b>-t (a Facebook- és Instagram-hirdetéseink mérése, közös a Polymaind és a PolyOS oldalaival). Ezek sütiket helyeznek el, és a böngésződ adatait (pl. a meglátogatott oldalakat, az eszköz típusát, a hirdetési azonosítókat) a Google, illetve a Meta szervereire küldik. Mérünk néhány eseményt is: feliratkozás a várólistára, az ajándék letöltése, regisztráció. A „Csak a szükségeset” választásakor ezek közül semmi nem töltődik be. Jogalap: hozzájárulás (GDPR 6. cikk (1) a). A döntésedet bármikor módosíthatod a <a href="#" data-consent-open>Süti-beállítások</a> hivatkozással (a láblécben is megtalálod). A sütik élettartama: Google Analytics legfeljebb 2 év, Meta Pixel legfeljebb 90 nap.</p>
 
   <h2>8. Jogaid</h2>
   <ul>

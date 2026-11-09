@@ -87,7 +87,7 @@
     let body;
     if (tab === "regisztracio" && !open) body = wlDone ? `<div class="stack" style="gap:12px"><p style="margin:0"><b>Feliratkoztál, köszönjük!</b> Amint megnyitjuk a ${esc(eb.productName)}-t, elsőként szólunk.</p>
         <p class="sub" style="margin:0">Addig itt az ajándékod, a Káoszmanager nyomtatható csomag. A linket e-mailben is elküldtük.</p>
-        <a class="btn" href="${esc(wlDone)}">Letöltöm a Káoszmanagert</a></div>`
+        <a class="btn" href="${esc(wlDone)}" data-dl>Letöltöm a Káoszmanagert</a></div>`
       : `<form class="stack" data-auth="waitlist" style="gap:12px"><p class="sub" style="margin:0"><b>${launchLine() || "Hamarosan nyitunk!"}</b> Iratkozz fel, és elsőként szólunk. Ajándékba most letöltheted a <b>Káoszmanagert</b>, a nyomtatható tervező- és matricacsomagunkat.</p>
         <label class="f">E-mail-cím<input type="email" name="email" autocomplete="email" required></label>
         <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
@@ -162,6 +162,7 @@
         const r = await fetch("/api/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: (v.email || "").trim(), consent: !!v.consent, website: v.website || "", source: "app" }) });
         const j = await r.json().catch(() => ({}));
         if (!r.ok || !j.ok) throw new Error(j.error === "bad_email" ? "wl_email" : j.error === "rate_limited" ? "rate" : "wl_fail");
+        if (!j.already && window.smTrack) window.smTrack("generate_lead", { method: "varolista", source: "app" });
         wlDone = j.download || "/"; authScreen("regisztracio"); return;
       }
       if (f.dataset.auth === "login") {
@@ -171,6 +172,7 @@
         const eb = TH.effectiveBrand(brandRaw);
         const extra = eb.plan === "whitelabel" && v.brandok ? { brand_consent: { [eb.slug]: { ok: true, at: new Date().toISOString() } } } : null;
         const r = await store.signUp(v.email.trim(), v.password, v.name.trim(), extra);
+        if (window.smTrack) window.smTrack("sign_up", { method: "email", brand: eb.slug });
         if (r.needsConfirm) authScreen("belepes", "Majdnem kész: küldtünk egy megerősítő e-mailt. A linkre kattintva be is léptetünk."); else await launch(store.userInfo());
       } else if (f.dataset.auth === "reset") {
         await store.resetPassword(v.email.trim()); authScreen("belepes", "Ha van fiók ezzel a címmel, elküldtük a linket az új jelszóhoz.");
