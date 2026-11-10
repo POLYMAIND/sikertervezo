@@ -75,9 +75,11 @@
   // Egy tervező-elem átküldése. Visszaad: { id, url? } — az elemre ráírjuk, hogy ne küldjük kétszer.
   async function push(kind, data) { return call({ action: "push", kind, data }); }
   async function status() { return call({ action: "status" }); }
+  // A PolyOS naptára + saját nyitott feladatok (csak olvasás). { events, tasks, reconnect }
+  async function feed(from, to) { return call({ action: "feed", from, to }); }
   // összekapcsolás: a szerver ad egy egyszer használatos, a felhasználóhoz kötött PolyOS-engedélykérő címet
   async function connect() { const j = await call({ action: "connect", return_to: location.pathname }); location.href = j.url; }
   async function disconnect() { return call({ action: "disconnect" }); }
 
-  ST.polyos = { MODULES, byKey, KIND_MODULE, init, has, openUrl, upsellUrl, canPush, push, status, connect, disconnect, cfg: () => cfg };
+  ST.polyos = { MODULES, byKey, KIND_MODULE, init, has, openUrl, upsellUrl, canPush, push, status, feed, connect, disconnect, cfg: () => cfg };
 })();
