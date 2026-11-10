@@ -317,7 +317,7 @@ function stepsHTML(k){
 }
 function tasksHTML(k){
   const dd=day(k);
-  return `<div class="list">${dd.tasks.map(t=>`<div class="li ${t.done?"done":""}"><button class="cbx" data-act="task" data-day="${k}" data-id="${t.id}" aria-pressed="${t.done}" aria-label="Kész">${t.done?"✓":""}</button><div class="grow t">${esc(t.t)}</div>${pxBtn("task",`data-day="${k}" data-id="${t.id}"`,t)}<button class="iconbtn" data-act="taskdel" data-day="${k}" data-id="${t.id}" aria-label="Törlés">×</button></div>`).join("")||'<div class="empty">Még nincs teendő erre a napra.</div>'}</div>
+  return `${pxTasksBlock(k)}<div class="list">${dd.tasks.map(t=>`<div class="li ${t.done?"done":""}"><button class="cbx" data-act="task" data-day="${k}" data-id="${t.id}" aria-pressed="${t.done}" aria-label="Kész">${t.done?"✓":""}</button><div class="grow t">${esc(t.t)}</div>${pxBtn("task",`data-day="${k}" data-id="${t.id}"`,t)}<button class="iconbtn" data-act="taskdel" data-day="${k}" data-id="${t.id}" aria-label="Törlés">×</button></div>`).join("")||'<div class="empty">Még nincs teendő erre a napra.</div>'}</div>
   <form class="row" data-form="task" data-day="${k}" style="margin-top:8px;flex-wrap:nowrap"><input type="text" id="newtask-${k}" placeholder="Új teendő…" aria-label="Új teendő"><button class="btn small">Hozzáadás</button></form>`;
 }
 function streak(){let n=0,d=new Date(TODAY);for(;;){const k=iso(d),dd=S.days[k];if(dd&&dd.steps.some(Boolean)){n++;d=addDays(d,-1)}else{if(k===T){d=addDays(d,-1);continue}break}if(n>400)break}return n}
@@ -353,7 +353,7 @@ function dashPrefs(){S.prefs=S.prefs||{};const d=S.prefs.dash||(S.prefs.dash={})
 function dashOrder(){const d=dashPrefs(),ids=DASH_DEF.map(x=>x[0]);return d.order.filter(k=>ids.includes(k)).concat(ids.filter(k=>!d.order.includes(k)))}
 function dashSize(k){const d=dashPrefs(),def=(DASH_DEF.find(x=>x[0]===k)||[])[2]||6,v=+d.size[k];return [2,3,4,6].includes(v)?v:def}
 function vMa(){
-  extLoad();
+  extLoad();pxLoad();
   activeBoard="ma-"+T;
   const dc=S.contacts.filter(c=>c.nextDate&&c.nextDate<=T).sort((a,b)=>a.nextDate.localeCompare(b.nextDate));
   const rc=S.clients.filter(c=>reorderDue(c)<=3).sort((a,b)=>reorderDue(a)-reorderDue(b));
@@ -435,7 +435,7 @@ function dayPanels(sel){
   </div>`;
 }
 function vNaptar(){
-  extLoad(false);
+  extLoad(false);pxLoad(false);
   const mode=ui.calMode;
   const ctrls=`<button class="btn small" data-act="qadd">+ Gyors hozzáadás</button><div class="tabs">${MODES.map(([k,l])=>`<button data-act="calmode" data-k="${k}" aria-pressed="${mode===k}">${l}</button>`).join("")}</div><span class="row" style="gap:6px"><button class="iconbtn" data-act="calnav" data-d="-1" aria-label="Előző">‹</button><button class="btn ghost small" data-act="caltoday">Ma</button><button class="iconbtn" data-act="calnav" data-d="1" aria-label="Következő">›</button></span>`;
   let title,body;
@@ -1581,11 +1581,44 @@ function extLoad(force){
 }
 setInterval(()=>{if(route==="naptar"||route==="ma")extLoad(true)},5*60*1000);
 function extStatus(){
-  const e=ui.ext;if(!PRO||DEMO||!e||!e.meta||!e.meta.length)return "";
+  const e=ui.ext,p=ui.pxf;
   const hhmm=iso=>{const d=new Date(iso);return pad(d.getHours())+":"+pad(d.getMinutes())};
-  return `<div class="extstatus">${e.meta.map(m=>`<span class="chip"><span class="dot" style="background:${esc(m.color)};width:8px;height:8px"></span>${esc(m.name)}: ${m.error?'<span style="color:var(--warn)">nem sikerült frissíteni</span>':`${m.count} esemény ebben az időszakban · frissítve ${hhmm(m.fetched_at)}`}</span>`).join("")}<button class="chip" data-act="extrefresh">↻ Frissítés</button></div>`;
+  const chips=[];
+  if(PRO&&!DEMO&&e&&e.meta)e.meta.forEach(m=>chips.push(`<span class="chip"><span class="dot" style="background:${esc(m.color)};width:8px;height:8px"></span>${esc(m.name)}: ${m.error?'<span style="color:var(--warn)">nem sikerült frissíteni</span>':`${m.count} esemény ebben az időszakban · frissítve ${hhmm(m.fetched_at)}`}</span>`));
+  if(pxOn()&&p&&p.at){
+    if(p.reconnect)chips.push(`<span class="chip"><span class="dot" style="background:${PX_COLOR};width:8px;height:8px"></span>PolyOS: a naptár és a feladatok megjelenítéséhez kapcsold össze újra</span><button class="chip" data-act="pxconnect">Újra-összekapcsolás</button>`);
+    else chips.push(`<span class="chip"><span class="dot" style="background:${PX_COLOR};width:8px;height:8px"></span>PolyOS: ${p.error?'<span style="color:var(--warn)">nem sikerült frissíteni</span>':`${(p.events||[]).length} esemény, ${(p.tasks||[]).length} nyitott feladat · frissítve ${hhmm(new Date(p.at).toISOString())}`}</span>`);
+  }
+  if(!chips.length)return "";
+  return `<div class="extstatus">${chips.join("")}<button class="chip" data-act="extrefresh">↻ Frissítés</button></div>`;
 }
-const extOf=k=>((ui.ext&&ui.ext.events)||[]).filter(e=>e.date===k);
+/* ---------- PolyOS: a naptár és a saját feladatok behúzása (csak olvasás) ---------- */
+const PX_COLOR="#6B5BD2";
+const pxOn=()=>(!DEMO||PX.cfg().mock)&&PX.cfg().linked&&(PX.has("calendar")||PX.has("projects"));
+function pxLoad(force){
+  if(!pxOn())return;const[from0,to0]=extRange();
+  // a mai nézetnél a lejárt feladatok miatt egy kicsit visszafelé is nézünk (a feladatlista nem időszak-függő)
+  const from=from0,to=to0,key=from+"|"+to;const p=ui.pxf||(ui.pxf={});
+  if(p.loading===key)return;
+  if(!force&&p.key===key&&Date.now()-(p.at||0)<60000)return;
+  p.loading=key;
+  PX.feed(from,to).then(r=>{ui.pxf={key,at:Date.now(),events:r.events||[],tasks:r.tasks||[],reconnect:!!r.reconnect};if(route==="naptar"||route==="ma")render()},e=>{ui.pxf={key,at:Date.now(),events:[],tasks:(ui.pxf&&ui.pxf.tasks)||[],error:true,reconnect:false};if(e&&e.status===409)PX.init({linked:false,modules:[]});if(route==="naptar"||route==="ma")render()});
+}
+setInterval(()=>{if(route==="naptar"||route==="ma")pxLoad(true)},5*60*1000);
+// a PolyOS-tételek a „más naptárak” rétegben jelennek meg: saját szín, „PolyOS · …” forrásnév
+function pxEvents(){
+  const p=ui.pxf;if(!p||!pxOn())return [];
+  const ev=(p.events||[]).map(e=>({date:e.date,allDay:e.allDay,start:e.start,end:e.end,title:e.title,location:e.location,color:PX_COLOR,calName:"PolyOS"+(e.calendar?" · "+e.calendar:""),px:true}));
+  const tk=(p.tasks||[]).filter(t=>t.due_date).map(t=>({date:t.due_date,allDay:true,start:"",end:"",title:"📋 "+t.title,location:"",color:PX_COLOR,calName:"PolyOS-feladat"+(t.project?" · "+t.project:""),px:true}));
+  return ev.concat(tk);
+}
+const extOf=k=>((ui.ext&&ui.ext.events)||[]).concat(pxEvents()).filter(e=>e.date===k);
+// A rám osztott, nyitott PolyOS-feladatok egy napra: a mai napnál a lejártak és a határidő nélküliek is.
+function pxTasksOf(k){const p=ui.pxf;if(!p||!pxOn())return [];return (p.tasks||[]).filter(t=>t.due_date===k||(k===T&&(!t.due_date||t.due_date<T)))}
+function pxTasksBlock(k){
+  const list=pxTasksOf(k);if(!list.length)return "";const max=8;
+  return `<div class="pxtasks"><div class="row between" style="margin:10px 0 4px"><span class="eyebrow">A PolyOS-ben rád vár</span><a class="alink" href="${esc(PX.openUrl("projects"))}" target="_blank" rel="noopener">Feladatkezelő</a></div><div class="list">${list.slice(0,max).map(t=>`<div class="li pxli"><span class="dot" style="background:${PX_COLOR}"></span><div class="grow"><div class="t">${esc(t.title)}</div><div class="s">${t.due_date?(t.due_date<T?'<span style="color:var(--warn)">lejárt: '+esc(fmtDate(t.due_date))+"</span>":"határidő: "+esc(fmtDate(t.due_date))):"nincs határidő"}${t.project?" · "+esc(t.project):""}</div></div></div>`).join("")}${list.length>max?`<div class="muted" style="font-size:12px">+${list.length-max} további a PolyOS-ben</div>`:""}</div></div>`;
+}
 function extLabel(e){return `${e.allDay?"Egész nap":e.start}${e.allDay?"":"–"+e.end}`}
 function importsBlock(){
   if(!PRO)return "";
@@ -2042,7 +2075,7 @@ document.addEventListener("click",e=>{
     case"revprev":ui.rev.step--;render();window.scrollTo(0,0);break;
     case"revsave":revSave();break;
     case"revpanel":revOpenPanel=!revOpenPanel;drawer();break;
-    case"extrefresh":ui.ext=Object.assign({},ui.ext,{at:0});extLoad(true);toast("Frissítem a behúzott naptárakat…");break;
+    case"extrefresh":ui.ext=Object.assign({},ui.ext,{at:0});extLoad(true);pxLoad(true);toast("Frissítem a behúzott naptárakat…");break;
     case"impdelask":ui.impDel=id;render();break;
     case"impdelno":ui.impDel=null;render();break;
     case"impdel":ui.impDel=null;ctx.calendar("import.remove",{id}).then(()=>{ui.imports=null;ui.ext=null;toast("Naptár leválasztva.");render()},()=>toast("Nem sikerült. Próbáld újra."));break;

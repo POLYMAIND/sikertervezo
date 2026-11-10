@@ -3,6 +3,8 @@
 //   { action:"connect", return_to }       -> { ok, url }   a PolyOS engedélykérő oldala (egyszer használatos state-tel)
 //   { action:"disconnect" }               -> { ok }
 //   { action:"push", kind, data }         -> { ok, id, url }   egy tervező-elem átküldése a megfelelő PolyOS-modulba
+//   { action:"feed", from, to }           -> { ok, events, tasks, reconnect }   a PolyOS naptára + saját nyitott feladatai (csak olvasás)
+//                                            reconnect:true = a régi kapcsolat még nem kapott olvasási jogot → újra össze kell kapcsolni
 // Hibák: 401 nincs belépve · 409 nincs összekapcsolva · 403 a modul nincs a PolyOS-csomagjában · 503 nincs beállítva
 const L = require("./_lib");
 const P = require("./_polyos");
@@ -28,6 +30,11 @@ module.exports = async function handler(req, res) {
       if (c.error) return L.send(res, 400, { error: c.error, field: c.field });
       if (!modules.includes(P.KIND_MODULE[b.kind])) return L.send(res, 403, { error: "module_forbidden" });
       return L.send(res, 200, { ok: true, mock: true, id: "mock-" + c.external_id });
+    }
+    if (action === "feed") {
+      const r = P.feedRange(b.from, b.to);
+      if (!r) return L.send(res, 400, { error: "bad_range" });
+      return L.send(res, 200, Object.assign({ ok: true, mock: true, reconnect: false }, P.mockFeed(r.from)));
     }
     if (action === "connect") return L.send(res, 200, { ok: true, url: "/#bovitesek" });
     if (action === "disconnect") return L.send(res, 200, { ok: true });
@@ -68,6 +75,22 @@ module.exports = async function handler(req, res) {
       if (r.status === 403) return L.send(res, 403, { error: "module_forbidden" });
       if (!r.ok) return L.send(res, 502, { error: "polyos_error" });
       return L.send(res, 200, { ok: true, id: String(r.json.id || ""), url: typeof r.json.url === "string" && r.json.url.startsWith(P.publicUrl()) ? r.json.url : "" });
+    }
+    if (action === "feed") {
+      const r = P.feedRange(b.from, b.to);
+      if (!r) return L.send(res, 400, { error: "bad_range" });
+      let link = await P.getLink(user.id);
+      if (link) link = await P.refreshModules(link);
+      if (!link) return L.send(res, 409, { error: "not_linked" });
+      const mods = link.modules || [];
+      if (!mods.includes("calendar") && !mods.includes("projects")) return L.send(res, 200, { ok: true, events: [], tasks: [], reconnect: false });
+      const q = new URLSearchParams({ from: r.from, to: r.to }).toString();
+      const x = await P.polyosFetch(link, "GET", "/api/v1/sikermaker/feed?" + q);
+      if (x.status === 401) { await L.sb(`sikertervezo_polyos_links?user_id=eq.${encodeURIComponent(user.id)}`, { method: "DELETE" }); return L.send(res, 409, { error: "not_linked" }); }
+      // Régi kapcsolat: csak írási jogot kapott → a felület újra-összekapcsolást kér (a PolyOS-ben újra jóvá kell hagyni).
+      if (x.status === 403 && x.json && x.json.error === "insufficient_scope") return L.send(res, 200, { ok: true, events: [], tasks: [], reconnect: true });
+      if (!x.ok) return L.send(res, 502, { error: "polyos_error" });
+      return L.send(res, 200, Object.assign({ ok: true, reconnect: false }, P.cleanFeed(x.json)));
     }
     return L.send(res, 400, { error: "bad_action" });
   } catch (e) {

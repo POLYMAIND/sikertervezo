@@ -4,7 +4,7 @@
  *   - navigáció offline: az app (/app) a tárolt példányból indul; a landing (/) csak hálózatról jön;
  *   - /api/* és minden idegen domain: NEM nyúlunk hozzá (adat sosem kerül a gyorsítótárba).
  * Új kiadásnál a VERSION emelése törli a régi gyorsítótárat. */
-const VERSION = "st-v4";
+const VERSION = "st-v5";
 const SHELL = ["/app", "/css/app.css", "/js/theme.js", "/js/polyos.js", "/js/store.js", "/js/dsimport.js", "/js/app.js", "/js/boot.js", "/favicon.svg", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {

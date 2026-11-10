@@ -9,7 +9,7 @@ const L = require("./_lib");
 
 const KIND_MODULE = { contact: "crm", client: "crm", event: "calendar", task: "projects", order: "cashflow", content: "campaign", idea: "campaign" };
 const MODULE_KEYS = ["crm", "calendar", "bookings", "projects", "cashflow", "campaign"];
-const SCOPES = "items:write profile:read";
+const SCOPES = "items:write items:read profile:read"; // items:read: a PolyOS naptára és a saját feladatok megjelenítése
 
 const apiBase = () => L.env("POLYOS_API_BASE").replace(/\/$/, "");
 const publicUrl = () => (L.env("POLYOS_PUBLIC_URL") || "https://www.polyos.hu").replace(/\/$/, "");
@@ -74,7 +74,31 @@ async function refreshModules(link) {
   return Object.assign({}, link, patch);
 }
 
+/* ---------- olvasó irány: a PolyOS naptára + saját feladatok (csak megjelenítésre) ---------- */
+const DAY = /^\d{4}-\d{2}-\d{2}$/, HM = /^\d{2}:\d{2}$/;
+const FEED_MAX_DAYS = 62;
+function feedRange(from, to) {
+  if (!DAY.test(from || "") || !DAY.test(to || "") || from > to) return null;
+  return (Date.parse(to) - Date.parse(from)) / 86400000 <= FEED_MAX_DAYS ? { from, to } : null;
+}
+const cut = (v, n) => (typeof v === "string" ? v.trim().slice(0, n) : "");
+// A PolyOS válaszát whitelistre szűrjük: a böngésző csak a megjelenítéshez szükséges mezőket kapja.
+function cleanFeed(j) {
+  const events = (Array.isArray(j && j.events) ? j.events : []).filter((e) => e && DAY.test(e.date)).slice(0, 600).map((e) => ({
+    id: cut(e.id, 200), date: e.date, allDay: !!e.allDay, start: HM.test(e.start) ? e.start : "", end: HM.test(e.end) ? e.end : "",
+    title: cut(e.title, 300) || "(névtelen)", location: cut(e.location, 300), calendar: cut(e.calendar, 120), source: e.source === "google" ? "google" : "polyos",
+  }));
+  const tasks = (Array.isArray(j && j.tasks) ? j.tasks : []).filter((t) => t && t.id).slice(0, 300).map((t) => ({
+    id: cut(String(t.id), 200), title: cut(t.title, 300) || "Feladat", due_date: DAY.test(t.due_date || "") ? t.due_date : "", project: cut(t.project, 120),
+  }));
+  return { events, tasks };
+}
+function mockFeed(from) {
+  return { events: [{ id: "mock-e1", date: from, allDay: false, start: "10:00", end: "11:00", title: "Minta megbeszélés (PolyOS)", location: "", calendar: "PolyOS", source: "polyos" }],
+    tasks: [{ id: "mock-t1", title: "Minta feladat a PolyOS-ből", due_date: from, project: "Minta projekt" }] };
+}
+
 const newNonce = () => crypto.randomBytes(24).toString("base64url");
 const safeReturn = (p) => (typeof p === "string" && /^\/(?!\/)[A-Za-z0-9/_.-]{0,200}$/.test(p) ? p : "/");
 
-module.exports = { KIND_MODULE, MODULE_KEYS, SCOPES, apiBase, publicUrl, mockOn, realReady, enabled, mockModules, cleanItem, getLink, polyosFetch, refreshModules, newNonce, safeReturn };
+module.exports = { feedRange, cleanFeed, mockFeed, FEED_MAX_DAYS, KIND_MODULE, MODULE_KEYS, SCOPES, apiBase, publicUrl, mockOn, realReady, enabled, mockModules, cleanItem, getLink, polyosFetch, refreshModules, newNonce, safeReturn };

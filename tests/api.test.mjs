@@ -251,3 +251,31 @@ test("Márkám névsor: nem márka-admin nem kérheti le, a hozzájárulás nél
     assert.equal(r.body.stats.total, 2); assert.equal(r.body.stats.named, 1);
   } finally { globalThis.fetch = realFetch; ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"].forEach((k) => delete process.env[k]); }
 });
+
+test("PolyOS feed: időszak-ellenőrzés (max. 62 nap, fordított sorrend tilos)", () => {
+  const p = P();
+  assert.deepEqual(p.feedRange("2026-03-01", "2026-03-31"), { from: "2026-03-01", to: "2026-03-31" });
+  assert.equal(p.feedRange("2026-03-31", "2026-03-01"), null);
+  assert.equal(p.feedRange("2026-01-01", "2026-06-01"), null);
+  assert.equal(p.feedRange("tegnap", "2026-03-01"), null);
+});
+
+test("PolyOS feed: a böngésző csak a whitelistelt megjelenítési mezőket kapja", () => {
+  const out = P().cleanFeed({
+    events: [{ id: "e1", date: "2026-03-10", allDay: false, start: "10:00", end: "11:00", title: "Megbeszélés", calendar: "Munka", source: "google", tenant_id: "TITOK", start_iso: "x" },
+      { id: "e2", date: "rossz", title: "kiesik" }, { id: "e3", date: "2026-03-11", start: "<script>", title: "" }],
+    tasks: [{ id: "t1", title: "Ajánlat", due_date: "2026-03-12", project: "Webshop", assignee_id: "TITOK" }, { title: "id nélkül" }],
+    secret: "TITOK",
+  });
+  assert.equal(out.events.length, 2);
+  assert.deepEqual(Object.keys(out.events[0]).sort(), ["allDay", "calendar", "date", "end", "id", "location", "source", "start", "title"]);
+  assert.equal(out.events[1].start, "");
+  assert.equal(out.events[1].title, "(névtelen)");
+  assert.equal(out.events[1].source, "polyos");
+  assert.equal(out.tasks.length, 1);
+  assert.ok(!JSON.stringify(out).includes("TITOK"));
+});
+
+test("PolyOS: az összekapcsolás olvasási jogot is kér", () => {
+  assert.equal(P().SCOPES, "items:write items:read profile:read");
+});
