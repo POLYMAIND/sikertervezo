@@ -173,7 +173,7 @@
         const extra = eb.plan === "whitelabel" && v.brandok ? { brand_consent: { [eb.slug]: { ok: true, at: new Date().toISOString() } } } : null;
         const r = await store.signUp(v.email.trim(), v.password, v.name.trim(), extra);
         if (window.smTrack) window.smTrack("sign_up", { method: "email", brand: eb.slug });
-        if (r.needsConfirm) authScreen("belepes", "Majdnem kész: küldtünk egy megerősítő e-mailt. A linkre kattintva be is léptetünk."); else await launch(store.userInfo());
+        if (r.needsConfirm) authScreen("belepes", ls.get(PRO_INTENT) ? "Majdnem kész: küldtünk egy megerősítő e-mailt. A linkre kattintva beléptetünk, és egyből a Pro előfizetés fizetési oldalára viszünk." : "Majdnem kész: küldtünk egy megerősítő e-mailt. A linkre kattintva be is léptetünk."); else await launch(store.userInfo());
       } else if (f.dataset.auth === "reset") {
         await store.resetPassword(v.email.trim()); authScreen("belepes", "Ha van fiók ezzel a címmel, elküldtük a linket az új jelszóhoz.");
       } else if (f.dataset.auth === "newpw") {
