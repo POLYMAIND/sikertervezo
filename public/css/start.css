@@ -498,18 +498,17 @@ html:not(.signup-open) .hero h1{font-size:clamp(36px,4.6vw,56px)}
 .cmp-t thead th{font-size:16px;font-weight:700;vertical-align:bottom;padding-top:20px;padding-bottom:16px}
 .cmp-t thead small{display:block;font-size:12.5px;font-weight:500;color:var(--muted);margin-top:3px}
 .cmp-t th+th,.cmp-t td+td{text-align:center;width:20%}
-.cmp-t .pro{background:var(--accent-tint)}
-.cmp-t thead .pro{background:var(--accent);color:#fff}
-.cmp-t thead .pro small{color:rgba(255,255,255,.82)}
+.cmp-t .pro{background:rgba(244,207,114,.16)}
+.cmp-t thead .pro{background:var(--ink);color:#fff}
+.cmp-t thead .pro small{color:var(--hl-bright)}
 .cmp-t tbody th{font-weight:600}
 .cmp-t tbody th .d{display:block;font-weight:400;font-size:13px;color:var(--muted);margin-top:2px}
 .cmp-t tr.grp th{background:var(--soft);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:10px 20px}
-.cmp-t tr.grp .pro{background:var(--accent-tint)}
 .cmp-t tbody tr:last-child th,.cmp-t tbody tr:last-child td{border-bottom:0}
-.cmp .ok{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-size:14px;font-weight:800;line-height:1}
-.cmp .ok.soft{background:var(--line);color:var(--ink)}
+.cmp .ok{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;font-size:14px;font-weight:800;line-height:1}
+.cmp-t .pro .ok{background:var(--hl-300);color:var(--ink)}
 .cmp .no{color:#B4B5BA;font-size:20px;line-height:1}
-.cmp .soon{display:inline-block;font-size:10.5px;font-weight:700;color:var(--accent-deep);background:#fff;border:1px solid var(--accent-tint);border-radius:999px;padding:2px 7px;margin-left:6px;vertical-align:2px}
+.cmp .soon{display:inline-block;font-size:10.5px;font-weight:700;color:var(--hl-500);background:var(--hl-200);border:0;border-radius:999px;padding:2px 7px;margin-left:6px;vertical-align:2px}
 .cmp .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .cmp-cta{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-top:24px;padding:26px 30px;background:var(--ink);color:#fff;border-radius:var(--r)}
 .cmp-cta h4{margin:0 0 6px;font-size:21px;letter-spacing:-.01em}
