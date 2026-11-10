@@ -32,9 +32,13 @@ function build(state, opts) {
   Object.entries(S.days || {}).forEach(([k, d]) => {
     if (!inRange(k) || !d || !d.hours) return;
     Object.entries(d.hours).forEach(([h, title]) => {
-      const hh = +h; if (!String(title || "").trim() || !(hh >= 0 && hh <= 23)) return;
-      const loc = (d.locs || {})[h] || "";
-      ev.push(["BEGIN:VEVENT", `UID:${k}T${pad(hh)}-ido@${o.domain}`, `DTSTAMP:${ds}`, `DTSTART;TZID=${TZ}:${ymd(k)}T${pad(hh)}0000`, `DTEND;TZID=${TZ}:${ymd(k)}T${pad(Math.min(hh + 1, 23))}${hh >= 23 ? "59" : "00"}00`,
+      // kulcs: régi = egész óra ("14"), új = "HH:MM"; befejezés: d.ends[kulcs] (ha nincs: +1 óra)
+      const m = /^(\d{1,2})(?::(\d{2}))?$/.exec(String(h)); if (!m || !String(title || "").trim()) return;
+      const hh = +m[1], mm = +(m[2] || 0); if (!(hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59)) return;
+      const st = hh * 60 + mm, em = /^(\d{2}):(\d{2})$/.exec((d.ends || {})[h] || "");
+      let en = em ? +em[1] * 60 + +em[2] : st + 60; if (!(en > st)) en = st + 60; en = Math.min(en, 23 * 60 + 59);
+      const loc = (d.locs || {})[h] || "", uid = m[2] === undefined ? pad(hh) : pad(hh) + pad(mm);
+      ev.push(["BEGIN:VEVENT", `UID:${k}T${uid}-ido@${o.domain}`, `DTSTAMP:${ds}`, `DTSTART;TZID=${TZ}:${ymd(k)}T${pad(hh)}${pad(mm)}00`, `DTEND;TZID=${TZ}:${ymd(k)}T${pad(Math.floor(en / 60))}${pad(en % 60)}00`,
         `SUMMARY:${esc(title)}`, loc ? `LOCATION:${esc(loc)}` : null, "CATEGORIES:Időpont", "END:VEVENT"].filter(Boolean));
     });
   });
