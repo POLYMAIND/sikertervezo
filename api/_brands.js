@@ -74,7 +74,9 @@ function cleanAccess(a) {
   return { members: x.members === true, shopUrl, productIds: ids };
 }
 // Márkánként bekapcsolható funkciók. Csak a superadmin állítja (Admin -> Márkák), a márka gazdája nem.
-const FEATURES = ["csapat", "sablonok", "szamok", "matricak"];
+// akademia: Akadémia-matricák + extra matricaszínek · konyvklub: a márka könyvlistája Könyvklubként, sorrendben ·
+// notesz: lapozható jegyzetfüzet (kockás / vonalas) · socialszamok: social számok a havi értékelőben · karusszel: Karusszel formátum
+const FEATURES = ["csapat", "sablonok", "szamok", "matricak", "akademia", "konyvklub", "notesz", "socialszamok", "karusszel"];
 function cleanFeatures(f) {
   const out = {};
   if (f && typeof f === "object") FEATURES.forEach((k) => { if (f[k] === true) out[k] = true; });

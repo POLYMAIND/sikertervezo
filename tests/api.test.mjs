@@ -251,3 +251,12 @@ test("Márkám névsor: nem márka-admin nem kérheti le, a hozzájárulás nél
     assert.equal(r.body.stats.total, 2); assert.equal(r.body.stats.named, 1);
   } finally { globalThis.fetch = realFetch; ["SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"].forEach((k) => delete process.env[k]); }
 });
+
+test("iCal: negyedórás időpont befejezéssel; a régi egész órás kulcs UID-ja változatlan", async () => {
+  const I = (await import("../api/_ical.js")).default || (await import("../api/_ical.js"));
+  const out = I.build({ days: { "2026-11-05": { hours: { 9: "Régi", "09:45": "Új", "13:15": "Vég nélkül" }, ends: { "09:45": "10:30" } } } }, { from: "2026-11-01", to: "2026-11-30" });
+  assert.match(out, /UID:2026-11-05T09-ido@/);
+  assert.match(out, /DTSTART;TZID=Europe\/Budapest:20261105T094500[\s\S]*?DTEND;TZID=Europe\/Budapest:20261105T103000/);
+  assert.match(out, /UID:2026-11-05T0945-ido@/);
+  assert.match(out, /DTSTART;TZID=Europe\/Budapest:20261105T131500\r\nDTEND;TZID=Europe\/Budapest:20261105T141500/);
+});
