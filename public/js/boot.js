@@ -173,7 +173,7 @@
         const extra = eb.plan === "whitelabel" && v.brandok ? { brand_consent: { [eb.slug]: { ok: true, at: new Date().toISOString() } } } : null;
         const r = await store.signUp(v.email.trim(), v.password, v.name.trim(), extra);
         if (window.smTrack) window.smTrack("sign_up", { method: "email", brand: eb.slug });
-        if (r.needsConfirm) authScreen("belepes", "Majdnem kész: küldtünk egy megerősítő e-mailt. A linkre kattintva be is léptetünk."); else await launch(store.userInfo());
+        if (r.needsConfirm) authScreen("belepes", ls.get(PRO_INTENT) ? "Majdnem kész: küldtünk egy megerősítő e-mailt. A linkre kattintva beléptetünk, és egyből a Pro előfizetés fizetési oldalára viszünk." : "Majdnem kész: küldtünk egy megerősítő e-mailt. A linkre kattintva be is léptetünk."); else await launch(store.userInfo());
       } else if (f.dataset.auth === "reset") {
         await store.resetPassword(v.email.trim()); authScreen("belepes", "Ha van fiók ezzel a címmel, elküldtük a linket az új jelszóhoz.");
       } else if (f.dataset.auth === "newpw") {
@@ -254,6 +254,14 @@
       polyosConnect: () => PX.connect().catch(() => alert("Nem sikerült elindítani az összekapcsolást. Próbáld újra később.")),
       polyosDisconnect: async () => { await PX.disconnect(); PX.init({ linked: false, modules: [] }); },
     };
+    // landingi „Pro-ra váltok” gomb (/app?pro): belépés vagy regisztráció után egyenesen a Stripe-fizetésre
+    const proIntent = +(ls.get(PRO_INTENT) || 0);
+    if (proIntent && !demo) {
+      ls.del(PRO_INTENT);
+      if (userPlan !== "pro" && ctx.billingReady && Date.now() - proIntent < 6 * 3600e3) {
+        try { const r = await ctx.billing("checkout"); if (r && r.url) { location.href = r.url; return; } } catch (e) { /* nem sikerült: marad az app, a Pro gomb ott is működik */ }
+      }
+    }
     $("#boot").hidden = true; $("#appshell").hidden = false;
     // kilépés a bemutatóból / kijelentkezés: mindig látható helyen (az app kattintás-kezelője fogja meg a data-act-et)
     setFoot(demo
@@ -266,6 +274,17 @@
     const el = $("#sync"); if (el) el.textContent = { dirty: "Mentés…", saving: "Mentés…", saved: "Mentve", error: "Nincs kapcsolat, újrapróbálom", conflict: "Frissítve egy másik eszközről" }[s] || "";
     if (s === "conflict" && app && extra) app.replace(extra);
   });
+
+  // a landing Pro gombja ?pro paraméterrel hoz ide: megjegyezzük (a regisztráció megerősítése új betöltés), és a címből eltüntetjük
+  const PRO_INTENT = "sikertervezo:pro-intent";
+  (function () {
+    const q = new URLSearchParams(location.search);
+    if (!q.has("pro")) return;
+    ls.set(PRO_INTENT, String(Date.now()));
+    try { sessionStorage.removeItem(DEMO_CHOSEN); } catch (e) {}
+    q.delete("pro");
+    history.replaceState(null, "", location.pathname + (q.toString() ? "?" + q : "") + location.hash);
+  })();
 
   (async function main() {
     config = await getConfig();
