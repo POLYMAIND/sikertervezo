@@ -1,9 +1,11 @@
 // POST /api/stripe-webhook — a Stripe ide jelzi az előfizetés változásait. Aláírás-ellenőrzés kötelező (STRIPE_WEBHOOK_SECRET).
 // Figyelt események: checkout.session.completed, customer.subscription.created/updated/deleted, invoice.paid
 // (ez utóbbira Számlázz.hu-számla készül minden sikeres fizetésről: api/_szamlazz.js).
+// Aktív előfizetésnél a regisztrálót azonnal Pro-ként jelentjük a Polymaind PolyOS CRM-nek (api/_crm.js).
 const L = require("./_lib");
 const ST = require("./_stripe");
 const SZ = require("./_szamlazz");
+const CRM = require("./_crm");
 
 async function rawBody(req) {
   if (typeof req.body === "string") return req.body;
@@ -18,6 +20,8 @@ async function upsertFromSubscription(sub, userIdHint) {
   const row = { user_id: userId, plan: "pro", status: ST.mapStatus(sub.status), current_period_end: end, stripe_customer_id: String(sub.customer || ""), stripe_subscription_id: sub.id, note: "Stripe", updated_at: new Date().toISOString() };
   await L.sb("sikertervezo_subscriptions?on_conflict=user_id", { method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" }, body: JSON.stringify(row) });
   await L.sb("sikertervezo_audit", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ actor_email: "stripe", action: "stripe.subscription", target: userId, detail: { status: sub.status, period_end: end } }) }).catch(() => {});
+  // → Polymaind PolyOS CRM: Pro szakasz azonnal (idempotens; a szakasz csak előre lép)
+  if (row.status === "aktiv" || row.status === "probaido") await CRM.reportProById(userId);
 }
 
 module.exports = async function handler(req, res) {

@@ -62,4 +62,15 @@ async function reportUser(user, plan) {
   } catch (e) { /* best-effort: legfeljebb újra elküldjük, a PolyOS oldal idempotens */ }
 }
 
-module.exports = { APP, STATUSES, ready, report, reportUser };
+// Fizetéskor (Stripe-webhook): azonnal Pro-ként jelentjük, nem várunk a következő belépésre vagy a napi szinkronra.
+// Sosem dob: a webhook válaszát nem akaszthatja meg.
+async function reportProById(userId) {
+  try {
+    if (!ready() || !L.serviceReady() || !/^[0-9a-f-]{36}$/i.test(String(userId || ""))) return;
+    const u = await L.authAdmin("users/" + encodeURIComponent(userId));
+    if (!u || !u.email) return;
+    await reportUser({ id: u.id, email: String(u.email).toLowerCase(), name: (u.user_metadata && u.user_metadata.full_name) || "", app: u.app_metadata || {} }, "pro");
+  } catch (e) { /* a napi szinkron pótolja */ }
+}
+
+module.exports = { APP, STATUSES, ready, report, reportUser, reportProById };

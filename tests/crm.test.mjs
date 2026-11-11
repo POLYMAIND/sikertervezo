@@ -62,3 +62,24 @@ test("crm-sync: CRON_SECRET nélkül / rossz kulccsal 401", async () => {
   await h({ method: "GET", headers: { authorization: "Bearer rossz" } }, res);
   assert.equal(res.statusCode, 401);
 });
+
+test("fizetéskor (Stripe): azonnal Pro-ként jelenti, és megjegyzi; ha már Pro, nem küld újra", async () => {
+  Object.assign(process.env, { POLYOS_CRM_WEBHOOK_SECRET: "titkos-kod-1234567890", SUPABASE_URL: "https://sb.example", SUPABASE_ANON_KEY: "a", SUPABASE_SERVICE_ROLE_KEY: "s" });
+  const UID = "44444444-4444-4444-4444-444444444444";
+  let meta = { polyos_crm: "account" };
+  const calls = withFetch((url, opt) => {
+    if (url.endsWith("/auth/v1/admin/users/" + UID) && (!opt || !opt.method || opt.method === "GET")) return ok({ id: UID, email: "Minta.Kata@Pelda.hu", user_metadata: { full_name: "Minta Kata" }, app_metadata: meta });
+    if (url.endsWith("/auth/v1/admin/users/" + UID) && opt.method === "PUT") { meta = JSON.parse(opt.body).app_metadata; return ok({}); }
+    return ok({ ok: true, result: "ok:app:stage" });
+  });
+  const CRM = fresh("../api/_crm.js");
+  await CRM.reportProById(UID);
+  const sent = calls.filter((c) => c.url.includes("polyos.hu"));
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].body.event, "app.signup"); assert.equal(sent[0].body.status, "pro"); assert.equal(sent[0].body.email, "minta.kata@pelda.hu");
+  assert.equal(meta.polyos_crm, "pro");
+  calls.length = 0;
+  await CRM.reportProById(UID);
+  assert.equal(calls.filter((c) => c.url.includes("polyos.hu")).length, 0);
+  await CRM.reportProById("nem-uuid"); // érvénytelen azonosító: néma
+});
