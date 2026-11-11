@@ -7,7 +7,9 @@ ott marad (Shopify, Stripe, Appstle). A Sikermaker csak azt tudja meg, **ki fize
 Vevő fizet a Shopify-boltban (Appstle előfizetés, havonta új rendelés)
   → Shopify webhook „Rendelés kifizetése” (aláírt) → /api/shopify?brand=<slug>
      → ha a rendelésben ott a márka terméke: a vevő e-mail-címe 35 napig előfizető (kifizetéstől számítva)
-     → új címre márkás meghívó levél (a vevő beállítja a jelszavát, és bent van)
+     → levelet a Sikermaker nem küld: a teendőket (regisztráció a vásárlási címmel, belépés, kezdőképernyő)
+       a bolt saját rendelés-visszaigazolója írja le; a regisztrációs link lehet előre kitöltött:
+       https://<domain>/app?regisztracio&email={{ order.email }}
   Lemondás: nincs új rendelés → a hozzáférés a 35 nap végén magától lejár
   „Rendelés törlése” webhook → azonnal lejár (csak Shopify-ból jött tagnál)
 ```
@@ -30,7 +32,9 @@ Vevő fizet a Shopify-boltban (Appstle előfizetés, havonta új rendelés)
    - A lista alatt: „A webhookjaid ezzel lesznek aláírva: …” → ezt a kulcsot másold ki.
 4. **Vercel:** `SHOPIFY_WEBHOOK_SECRETS` = `{"<slug>":"<a kimásolt kulcs>"}` (több márkánál vesszővel bővíthető),
    majd Redeploy.
-5. **Próba:** a Shopify webhook-listában „Teszt értesítés küldése” → a Sikermaker Admin → Napló-ban
+5. **Shopify rendelés-visszaigazoló:** a terméknél (vagy feltételesen a sablonban) a 3 lépés: regisztráció a
+   vásárláskor megadott címmel, belépés, kezdőképernyőre tétel.
+6. **Próba:** a Shopify webhook-listában „Teszt értesítés küldése” → a Sikermaker Admin → Napló-ban
    `shopify.…` sor jelenik meg (a teszt-rendelés terméke nem a márkáé, ezért „ignored” — ez jó jel: az aláírás
    működik). Utána egy valódi (vagy 100%-os kuponos) próbavásárlás.
 

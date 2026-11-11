@@ -9,7 +9,7 @@ const fresh = (m) => { delete require.cache[require.resolve(m)]; return require(
 const SECRET = "shpss_teszt";
 const BRAND = { slug: "minta", plan: "whitelabel", upsell: true, config: { productName: "Minta", access: { members: true, shopUrl: "https://bolt.pelda.hu/products/x", productIds: ["111"] } } };
 function env() {
-  Object.assign(process.env, { SUPABASE_URL: "https://sb.example", SUPABASE_ANON_KEY: "a", SUPABASE_SERVICE_ROLE_KEY: "s", SHOPIFY_WEBHOOK_SECRETS: JSON.stringify({ minta: SECRET }), APP_URL: "https://sikermaker.hu" });
+  Object.assign(process.env, { SUPABASE_URL: "https://sb.example", SUPABASE_ANON_KEY: "a", SUPABASE_SERVICE_ROLE_KEY: "s", SHOPIFY_WEBHOOK_SECRETS: JSON.stringify({ minta: SECRET }), APP_URL: "https://sikermaker.hu", BREVO_API_KEY: "k", EMAIL_FROM: "Sikermaker <hello@pelda.hu>" });
   delete process.env.SUPERADMIN_EMAILS; delete process.env.BRAND_HOSTS;
 }
 // memóriabeli Supabase: brands, brand_members, brand_admins, audit, auth invite
@@ -18,6 +18,7 @@ function backend(opts = {}) {
   globalThis.fetch = async (url, o = {}) => {
     const u = decodeURIComponent(String(url)); calls.push({ u, m: o.method || "GET", body: o.body });
     const j = (st, b) => ({ ok: st < 300, status: st, json: async () => b, text: async () => (b == null ? "" : JSON.stringify(b)) });
+    if (u.includes("api.brevo.com")) return j(201, { messageId: "m" });
     if (u.includes("/auth/v1/invite")) return j(opts.exists ? 422 : 200, opts.exists ? { msg: "A user with this email address has already been registered" } : { id: "x" });
     if (u.includes("/auth/v1/user")) return j(200, { id: "11111111-1111-1111-1111-111111111111", email: opts.userEmail || "vevo@pelda.hu", email_confirmed_at: "x" });
     if (u.includes("sikertervezo_brands")) return j(200, [opts.brand || BRAND]);
@@ -41,21 +42,27 @@ function req(body, topic, sig) {
 function res() { return { statusCode: 0, body: "", setHeader() {}, end(b) { this.body = b || ""; } }; }
 const ORDER = { id: 1, name: "#1001", email: "Vevo@Pelda.hu", processed_at: new Date().toISOString(), line_items: [{ product_id: 111 }] };
 
-test("kifizetett rendelés → 35 nap hozzáférés + meghívó; rossz aláírás 401; más termék nem számít", async () => {
+test("kifizetett rendelés → 35 nap hozzáférés + üdvözlő levél (megújításnál nem); rossz aláírás 401; más termék nem számít", async () => {
   env(); const orig = globalThis.fetch;
   try {
     const be = backend(); const h = fresh("../api/shopify.js");
     let r = res(); await h(req(ORDER, "orders/paid", "rossz"), r); assert.equal(r.statusCode, 401);
     r = res(); await h(req(Object.assign({}, ORDER, { line_items: [{ product_id: 999 }] }), "orders/paid"), r); assert.match(r.body, /ignored/); assert.equal(be.members.size, 0);
     r = res(); await h(req(ORDER, "orders/paid"), r);
-    assert.equal(r.statusCode, 200); assert.match(r.body, /invited/);
+    assert.equal(r.statusCode, 200);
     const m = be.members.get("vevo@pelda.hu");
     const days = (Date.parse(m.active_until) - Date.now()) / 864e5;
     assert.ok(days > 34.9 && days < 35.1, "35 nap"); assert.equal(m.source, "shopify");
-    assert.ok(be.calls.some((c) => c.u.includes("/auth/v1/invite?redirect_to=https://sikermaker.hu/app?brand=minta")));
+    assert.ok(!be.calls.some((c) => c.u.includes("/auth/v1/invite")), "meghívó helyett üdvözlő levél");
+    const mail = be.calls.find((c) => c.u.includes("api.brevo.com")); assert.ok(mail, "üdvözlő levél");
+    const mb = JSON.parse(mail.body);
+    assert.equal(mb.sender.name, "Minta"); assert.deepEqual(mb.to, [{ email: "vevo@pelda.hu" }]);
+    assert.match(mb.htmlContent, /Regisztrálok/); assert.match(mb.htmlContent, /regisztracio=&amp;email=vevo%40pelda\.hu/); assert.match(mb.htmlContent, /Főképernyőhöz adás/);
+    const sent = be.calls.filter((c) => c.u.includes("api.brevo.com")).length;
     // korábbi (késve érkező) rendelés nem rövidít
     r = res(); await h(req(Object.assign({}, ORDER, { processed_at: new Date(Date.now() - 20 * 864e5).toISOString() }), "orders/paid"), r);
     assert.equal(be.members.get("vevo@pelda.hu").active_until, m.active_until);
+    assert.equal(be.calls.filter((c) => c.u.includes("api.brevo.com")).length, sent, "megújításnál nincs újabb levél");
     // törlés → azonnal lejár
     r = res(); await h(req(ORDER, "orders/cancelled"), r);
     assert.ok(Date.parse(be.members.get("vevo@pelda.hu").active_until) <= Date.now());

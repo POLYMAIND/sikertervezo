@@ -121,7 +121,10 @@
       <p class="credit">A fejlesztést a <a href="https://polymaind.hu" target="_blank" rel="noopener">Polymaind Kft.</a> végezte.</p>
     </div>`;
     $("#boot").hidden = false; $("#appshell").hidden = true;
-    const f = $("#boot input"); if (f) f.focus();
+    // a vásárlási levélből: ?email= → az e-mail-mező előre kitöltve
+    const pre = new URLSearchParams(location.search).get("email");
+    if (pre && /^[^\s@<>]+@[^\s@<>]+\.[a-z]{2,}$/i.test(pre)) document.querySelectorAll('#boot input[name="email"]').forEach((i) => { if (!i.value) i.value = pre; });
+    const f = pre ? $('#boot input[name="name"]') || $('#boot input[name="password"]') || $("#boot input") : $("#boot input"); if (f) f.focus();
   }
   function lockScreen(me, user) {
     const eb = TH.effectiveBrand(brandRaw), shop = (eb.access && eb.access.shopUrl) || me.shopUrl || "";
