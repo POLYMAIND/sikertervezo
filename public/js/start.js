@@ -19,10 +19,14 @@
 
   /* ---- regisztráció nyitva? (különben várólista) — a szerver mondja meg; hiba esetén marad a várólista ---- */
   var launchTxt = "";
+  function remember(v) { try { localStorage.setItem("sikermaker:signup", v); } catch (e) {} }
   function openUp() {
     root.classList.add("signup-open");
     $$("[data-open-href]").forEach(function (a) { a.setAttribute("href", a.getAttribute("data-open-href")); if (a.hasAttribute("data-open-text")) a.textContent = a.getAttribute("data-open-text"); });
+    root.classList.add("links-ready"); root.classList.remove("cfg-pending"); remember("open");
   }
+  // a gombok szövege már az első kirajzolásnál a helyes legyen, ha a mentett állapot „nyitva”
+  if (root.classList.contains("signup-open")) openUp();
   function loadConfig() {
     return fetch("/api/config", { credentials: "same-origin", cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
   }
@@ -47,8 +51,11 @@
     var iv = setInterval(draw, 1000); draw();
   }
   loadConfig().then(function (c) {
-    if (!c || !c.signup) return;
+    if (!c || !c.signup) { root.classList.remove("cfg-pending"); return; }
     if (c.signup.open) return openUp();
+    // zárva (várólista): ha a mentett állapot „nyitva” volt, visszaváltunk
+    if (root.classList.contains("signup-open")) { remember("closed"); location.reload(); return; }
+    root.classList.remove("cfg-pending"); remember("closed");
     if (c.signup.launchAt) countdown(c.signup.launchAt);
   });
 

@@ -11,4 +11,12 @@
     var appHash = h.length > 1 && !/^#(funkciok|hogyan|arak|gyik|top|varolista)$/.test(h);
     if (standalone || appQuery || appHash) l.replace("/app" + q + h);
   } catch (e) { /* ha bármi hiba van, marad a landing */ }
+  // Villanás ellen: a regisztráció állapotát (nyitva / várólista) még a kirajzolás ELŐTT beállítjuk az utoljára
+  // látott érték alapján; első látogatáskor a két változat rejtve marad, amíg a szerver nem válaszol (start.js).
+  try {
+    var r = document.documentElement, st = localStorage.getItem("sikermaker:signup");
+    if (st === "open") r.classList.add("signup-open");
+    else if (st !== "closed") r.classList.add("cfg-pending");
+    setTimeout(function () { r.classList.remove("cfg-pending"); }, 3000);
+  } catch (e) { /* tároló nélkül: a régi viselkedés */ }
 })();
