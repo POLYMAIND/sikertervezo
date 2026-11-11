@@ -1,8 +1,8 @@
 // POST /api/shopify?brand=<slug> — Shopify webhook (Bea boltja → a márka előfizetői).
 //   orders/paid       a márka beállított termékének kifizetése → a vevő e-mail-címe 35 napig előfizető
 //                     (az Appstle minden havi megújításkor új rendelést hoz létre → újabb 35 nap a fizetéstől)
-//                     (levelet NEM küldünk: a teendőket — regisztráció a vásárlási címmel, belépés — a bolt saját
-//                     rendelés-visszaigazolója írja le; a meghívó ütközne a „regisztrálj” lépéssel)
+//                     + az ELSŐ vásárlásnál márkás üdvözlő levél a 3 lépéssel (regisztráció a vásárlási címmel, belépés,
+//                     kezdőképernyő); megújításnál nincs levél. Meghívót nem küldünk (ütközne a „regisztrálj” lépéssel).
 //   orders/cancelled  a rendelés törlése → a hozzáférés azonnal lejár (csak a Shopify-ból jött tagnál)
 // Hitelesítés: X-Shopify-Hmac-Sha256 = base64(HMAC-SHA256(titok, nyers törzs)); titok márkánként:
 // SHOPIFY_WEBHOOK_SECRETS = {"<slug>":"<a Shopify Értesítések oldalán látható kulcs>"}. Fail-closed.
@@ -10,6 +10,8 @@ const crypto = require("crypto");
 const L = require("./_lib");
 const B = require("./_brands");
 const M = require("./_members");
+const WM = require("./_welcomemail");
+const AE = require("./auth-email");
 
 const PERIOD_DAYS = 35; // 1 hónap + türelmi idő a megújításhoz
 
@@ -56,8 +58,15 @@ async function handler(req, res) {
     if (topic === "orders/paid" || (topic === "orders/create" && o.financial_status === "paid")) {
       const paidAt = Date.parse(o.processed_at || o.updated_at || o.created_at) || Date.now();
       const { prev } = await M.set(slug, email, paidAt + PERIOD_DAYS * M.DAY, "shopify", `Shopify ${o.name || o.id}`, true);
-      await audit("shopify.paid", slug, { email, order: o.name || o.id, first: !prev });
-      return L.send(res, 200, { ok: true });
+      let welcome = "renewal";
+      if (!prev) {
+        const appUrl = M.brandAppUrl(slug);
+        const b = await AE._test.brandFor(appUrl).catch(() => null);
+        const first = String((o.customer && o.customer.first_name) || (o.billing_address && o.billing_address.first_name) || "").trim().slice(0, 40);
+        welcome = b && (await WM.send(b, appUrl, email, first)) ? "sent" : "failed";
+      }
+      await audit("shopify.paid", slug, { email, order: o.name || o.id, welcome });
+      return L.send(res, 200, { ok: true, welcome });
     }
     if (topic === "orders/cancelled") {
       const cur = await M.get(slug, email);

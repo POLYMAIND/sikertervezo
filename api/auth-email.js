@@ -37,7 +37,7 @@ async function brandFor(redirectTo) {
   if (pb.plan !== "whitelabel" || !pb.productName) return null;
   const accent = /^#[0-9A-F]{6}$/i.test((pb.colors && pb.colors.accent) || "") ? pb.colors.accent : null;
   const app = (L.env("APP_URL") || "https://sikermaker.hu").replace(/\/$/, "");
-  return { slug, name: String(pb.productName).slice(0, 60), accent, upsell: pb.upsell !== false, logo: pb.logo ? `${app}/api/icon?size=192&brand=${encodeURIComponent(slug)}` : null };
+  return { slug, name: String(pb.productName).slice(0, 60), owner: String(pb.ownerName || "").slice(0, 60), accent, upsell: pb.upsell !== false, logo: pb.logo ? `${app}/api/icon?size=192&brand=${encodeURIComponent(slug)}` : null };
 }
 
 // A Sikermaker-sablon átírása a márkára (név, logó, kiemelőszín; a PolyOS-sáv csak bekapcsolt ajánlónál marad).
