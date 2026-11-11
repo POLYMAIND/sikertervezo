@@ -655,7 +655,23 @@ function vSzamok(){
       ${manual?`<label class="f" style="flex:1">Tény<input type="number" id="act-${k}" data-act-in="${k}" value="${v}"></label>`:`<div class="f" style="flex:1;font-size:12px;color:var(--muted)">Tény<div class="num" style="font-size:15px;color:var(--ink);padding:7px 0">${isMoney?money(v):v}</div></div>`}</div>
       <div class="prog ${p>=100?"ok":""}"><i style="width:${p}%"></i></div><div class="muted num" style="font-size:12px">${Math.round(p)}% · ${isMoney?money(Math.max(0,cel-v)):Math.max(0,cel-v)} hiányzik</div></div>`}).join("")}</div></div>
     <div class="card"><h3>Bevétel az elmúlt 6 hónapban</h3>${svg}<p class="muted" style="font-size:12px;margin:6px 0 0">A rendelésekből számolva, ${S.settings.cur}-ban.</p></div>
-  </div>${bpSection()}`;
+  </div>${followersCard()}${bpSection()}`;
+}
+// Követőszámok platformonként, havonta (S.followers["ÉÉÉÉ-HH"] = {ig,fb,tt,yt}); változás az előző beírt hónaphoz képest
+function followersGrid(m){
+  const F=S.followers||{},cur=F[m]||{};
+  const prevKey=Object.keys(F).filter(k=>k<m&&Object.keys(F[k]||{}).length).sort().pop(),prev=prevKey?F[prevKey]:{};
+  const nf=n=>new Intl.NumberFormat("hu-HU").format(n);
+  const cells=SOC_PLAT.map(([p,l])=>{const v=cur[p],pv=prev[p],d=v!=null&&v!==""&&pv!=null&&pv!==""?(+v)-(+pv):null;
+    return `<label class="f">${l}<input type="number" min="0" inputmode="numeric" data-fol="${p}" data-folm="${m}" value="${v!=null?esc(String(v)):""}" placeholder="${pv!=null?esc(String(pv)):"0"}" aria-label="${l} követők"><span class="muted num" style="font-size:12px;min-height:16px">${d==null?(pv!=null?`előző: ${nf(+pv)}`:""):d===0?"nincs változás":`<b style="color:${d>0?"var(--good,#2E7D4F)":"var(--warn)"}">${d>0?"▲ +":"▼ "}${nf(d)}</b> ${esc(MONTHS[+prevKey.slice(5,7)-1])} óta`}</span></label>`}).join("");
+  const total=SOC_PLAT.reduce((a,[p])=>a+(+cur[p]||0),0),ptotal=SOC_PLAT.reduce((a,[p])=>a+(+prev[p]||0),0),dt=total&&ptotal?total-ptotal:null;
+  return {cells,total,dt,nf};
+}
+function followersCard(){
+  const m=ym(TODAY),{cells,total,dt,nf}=followersGrid(m);
+  return `<div class="card stack" style="gap:10px"><div class="row between"><h3 style="margin:0">Követők</h3>${total?`<span class="chip">Összesen: ${nf(total)}${dt?` · ${dt>0?"▲ +":"▼ "}${nf(dt)}`:""}</span>`:""}</div>
+    <p class="muted" style="margin:0;font-size:12.5px">Írd be a mostani követőszámaidat. Havonta elég egyszer (a havi értékelőben is kéri); a nyíl azt mutatja, mennyit nőtt vagy csökkent az előző hónaphoz képest.</p>
+    <div class="grid g4">${cells}</div></div>`;
 }
 
 function vBeall(){
@@ -1522,11 +1538,13 @@ const MONTH_STEPS_ALL=[
 const SOC_PLAT=[["ig","Instagram"],["fb","Facebook"],["tt","TikTok"],["yt","YouTube"]];
 const SOC_COLS=[["posts","Bejegyzés"],["fol","Követő"],["fing","Követés"],["views","Megtekintés"],["newf","Új követő"]];
 if(FEAT("socialszamok"))MONTH_STEPS_ALL.splice(MONTH_STEPS_ALL.findIndex(x=>x[0]==="siker"),0,["social","Social média számok","Írd be a hónap számait platformonként. Bármit beírhatsz, nem csak számot; ami nem érvényes nálad, maradjon üresen."]);
+if(FEAT("szamok")&&!FEAT("socialszamok"))MONTH_STEPS_ALL.splice(MONTH_STEPS_ALL.findIndex(x=>x[0]==="siker"),0,["kovetok","Követők","Írd be a hónap végi követőszámaidat platformonként. Az előző hónaphoz mérjük, és a Számok oldalon is látod, mennyit nőttél."]);
 const MONTH_STEPS=MONTH_STEPS_ALL.filter(x=>x[0]!=="szamok"||FEAT("szamok"));
 function socialStep(d,st){
   const prevKey="m:"+ym(new Date(+d.key.slice(2,6),+d.key.slice(7,9)-2,1)),pa=((S.reviews||{})[prevKey]||{}).a||{};
   const num=v=>{const x=parseFloat(String(v||"").replace(/\s/g,"").replace(",","."));return isFinite(x)?x:null};
-  const hint=(p,c)=>{if(c==="posts")return st.published?String(st.published):"";if(c==="newf"){const a=num(d.a["soc_"+p+"_fol"]),b=num(pa["soc_"+p+"_fol"]);return a!=null&&b!=null?String(a-b):""}return ""};
+  const fmk=d.key.slice(2,9),fl=(S.followers||{})[fmk]||{};
+  const hint=(p,c)=>{if(c==="posts")return st.published?String(st.published):"";if(c==="fol")return fl[p]!=null?String(fl[p]):"";if(c==="newf"){const a=num(d.a["soc_"+p+"_fol"]),b=num(pa["soc_"+p+"_fol"]);return a!=null&&b!=null?String(a-b):""}return ""};
   return `<p class="muted" style="margin:0;font-size:12.5px">A Tartalomban ebben a hónapban ${st.published} megjelent tartalom van, ezt javasoljuk bejegyzésnek. Az új követőt az előző havi követőszámból számoljuk, ha megvan.</p>
   <div class="tablewrap"><table class="soctab"><thead><tr><th></th>${SOC_COLS.map(([,l])=>`<th>${l}</th>`).join("")}</tr></thead><tbody>${SOC_PLAT.map(([p,l])=>`<tr><th scope="row">${l}</th>${SOC_COLS.map(([c,cl])=>{const k="soc_"+p+"_"+c,h=hint(p,c);return `<td><input type="text" data-rev="${k}" value="${esc(d.a[k]||"")}" placeholder="${esc(h)}" aria-label="${l}: ${cl}" maxlength="40"></td>`}).join("")}</tr>`).join("")}</tbody></table></div>
   <label class="f">Megjegyzés (például: mi ment jól, melyik tartalom pörgött)<textarea data-rev="soc_note" rows="2">${esc(d.a.soc_note||"")}</textarea></label>`;
@@ -1590,6 +1608,7 @@ function revForm(){
   let inner="";
   if(stp[0]==="szamok"){const g=S.goals[d.key.slice(2)];inner=statsHTML(st)+(g?`<div class="list" style="margin-top:6px">${[["szem","Személyes forgalom",g.szem&&g.szem.teny],["csop","Csoportforgalom",g.csop&&g.csop.teny]].filter(x=>g[x[0]]&&+g[x[0]].cel).map(([k,l,v])=>`<div class="li"><div class="grow t">${l}</div><span class="chip ${+v>=+g[k].cel?"good":""}">${nfmt(v||0)} / ${nfmt(g[k].cel)}</span></div>`).join("")}</div>`:"")}
   else if(stp[0]==="social")inner=socialStep(d,st);
+  else if(stp[0]==="kovetok"){const fg=followersGrid(d.key.slice(2));inner=`<div class="grid g2">${fg.cells}</div>`+(fg.total?`<p class="muted" style="margin:0;font-size:12.5px">Összesen: <b>${fg.nf(fg.total)}</b>${fg.dt?` · ${fg.dt>0?"▲ +":"▼ "}${fg.nf(fg.dt)} az előző hónaphoz képest`:""}</p>`:"");}
   else if(stp[3])inner=stp[3].map(([k,l])=>q(k,l)).join("");
   else if(stp[0]==="jovo")inner=`<label class="f">A következő hónap fő fókusza<input type="text" data-revfocus="1" maxlength="120" value="${esc(d.focus)}" placeholder="Például: 10 új kapcsolat és heti 3 Reel"></label>`+goals;
   else inner=moodRow+`<label class="f">Egy mondat magadnak a hónap végén (nem kötelező)<textarea data-rev="note" rows="2">${esc(d.a.note||"")}</textarea></label>`;
@@ -1599,6 +1618,7 @@ function revForm(){
 function revSave(){
   if(FEAT("socialszamok")&&ui.rev&&!ui.rev.key.startsWith("w:"))document.querySelectorAll('.soctab input[data-rev]').forEach(x=>{if(!x.value.trim()&&x.placeholder)ui.rev.a[x.dataset.rev]=x.placeholder});
   const d=ui.rev,isW=d.key.startsWith("w:"),[from,to]=revRange(d.key),R=S.reviews=S.reviews||{},first=!(R[d.key]&&R[d.key].done);
+  if(!isW&&FEAT("socialszamok")){const fm=d.key.slice(2);SOC_PLAT.forEach(([p])=>{const x=parseFloat(String(d.a["soc_"+p+"_fol"]||"").replace(/\s/g,"").replace(",","."));if(isFinite(x)){S.followers=S.followers||{};(S.followers[fm]=S.followers[fm]||{})[p]=Math.max(0,Math.round(x))}})}
   R[d.key]={done:(R[d.key]&&R[d.key].done)||T,updated:T,a:d.a,goals:d.goals,focus:d.focus,mood:d.mood,stats:rangeStats(from,to)};
   if(first&&d.toTodos){const goals=d.goals.map(g=>g.trim()).filter(Boolean);if(goals.length){
     const nk=isW?"w:"+iso(addDays(parse(d.key.slice(2)),7)):"m:"+ym(new Date(+d.key.slice(2,6),+d.key.slice(7,9),1));
@@ -2254,6 +2274,7 @@ document.addEventListener("change",e=>{
     ST.dsimport.read(f).then(r=>{ui.dsImport=Object.assign(r,{logo:r.logos.length?0:null});render()},e=>{ui.dsImport={err:e.message==="too_large"?"A fájl túl nagy (legfeljebb 15 MB).":e.message==="not_zip"?"Ez nem ZIP-fájl. Töltsd fel a design system ZIP-jét vagy a tokens.json fájlt.":"Nem sikerült beolvasni a fájlt."};render()});return}
   if(t.id==="brand-logo"&&t.files&&t.files[0]){const f=t.files[0];if(f.size>300*1024){toast("A logó legfeljebb 300 KB lehet.");return}const r=new FileReader();r.onload=()=>{ui.brand.logo=String(r.result);repaint();render()};r.readAsDataURL(f);return}
   if(t.id==="mk-file"&&t.files&&t.files[0]){const f=t.files[0];const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const mx=360,sc=Math.min(1,mx/Math.max(img.width,img.height));const cv=document.createElement("canvas");cv.width=Math.round(img.width*sc);cv.height=Math.round(img.height*sc);cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);const src=cv.toDataURL(f.type==="image/jpeg"?"image/jpeg":"image/png",.9);S.custom.push({id:uid(),type:"img",src});if(save()){toast("Kép hozzáadva a saját matricáidhoz.")}else{S.custom.pop();toast("Ez a kép túl nagy a prototípusnak. Próbálj kisebbet.")}render()};img.onerror=()=>toast("Ezt a képet nem tudtam megnyitni.");img.src=r.result};r.readAsDataURL(f);return}
+  if(t.dataset.fol){const fm=t.dataset.folm||ym(TODAY),v=t.value.trim();S.followers=S.followers||{};S.followers[fm]=S.followers[fm]||{};if(v==="")delete S.followers[fm][t.dataset.fol];else S.followers[fm][t.dataset.fol]=Math.max(0,Math.round(+v)||0);save();render();return}
   if(t.dataset.goal){S.goals[m][t.dataset.goal].cel=+t.value||0;save();render()}
   else if(t.dataset.actIn){S.goals[m][t.dataset.actIn].teny=+t.value||0;save();render()}
 });
