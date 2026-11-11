@@ -41,18 +41,18 @@ function req(body, topic, sig) {
 function res() { return { statusCode: 0, body: "", setHeader() {}, end(b) { this.body = b || ""; } }; }
 const ORDER = { id: 1, name: "#1001", email: "Vevo@Pelda.hu", processed_at: new Date().toISOString(), line_items: [{ product_id: 111 }] };
 
-test("kifizetett rendelés → 35 nap hozzáférés + meghívó; rossz aláírás 401; más termék nem számít", async () => {
+test("kifizetett rendelés → 35 nap hozzáférés (levél nélkül); rossz aláírás 401; más termék nem számít", async () => {
   env(); const orig = globalThis.fetch;
   try {
     const be = backend(); const h = fresh("../api/shopify.js");
     let r = res(); await h(req(ORDER, "orders/paid", "rossz"), r); assert.equal(r.statusCode, 401);
     r = res(); await h(req(Object.assign({}, ORDER, { line_items: [{ product_id: 999 }] }), "orders/paid"), r); assert.match(r.body, /ignored/); assert.equal(be.members.size, 0);
     r = res(); await h(req(ORDER, "orders/paid"), r);
-    assert.equal(r.statusCode, 200); assert.match(r.body, /invited/);
+    assert.equal(r.statusCode, 200);
     const m = be.members.get("vevo@pelda.hu");
     const days = (Date.parse(m.active_until) - Date.now()) / 864e5;
     assert.ok(days > 34.9 && days < 35.1, "35 nap"); assert.equal(m.source, "shopify");
-    assert.ok(be.calls.some((c) => c.u.includes("/auth/v1/invite?redirect_to=https://sikermaker.hu/app?brand=minta")));
+    assert.ok(!be.calls.some((c) => c.u.includes("/auth/v1/invite")), "nincs meghívó: a teendőket a bolt levele írja le");
     // korábbi (késve érkező) rendelés nem rövidít
     r = res(); await h(req(Object.assign({}, ORDER, { processed_at: new Date(Date.now() - 20 * 864e5).toISOString() }), "orders/paid"), r);
     assert.equal(be.members.get("vevo@pelda.hu").active_until, m.active_until);
