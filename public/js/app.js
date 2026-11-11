@@ -1456,7 +1456,7 @@ function admUserSheet(id){
   <div class="status" style="flex-wrap:wrap"><div class="grow" style="min-width:200px"><b>White label</b><div class="muted" style="font-size:12.5px">Saját márkát kap: saját név, logó, színek, és a saját felhasználói. Ő lesz a márka gazdája, de te is be tudod állítani helyette (a Márkák fülön: „Megnyitom és beállítom”).</div></div>
     <div class="row" style="gap:6px;flex-wrap:nowrap"><input type="text" id="as-wl" placeholder="pl. minta-marka" aria-label="Márka azonosítója" maxlength="40" style="width:150px"><button type="button" class="btn small" data-act="admwl" data-email="${esc(u.email)}">Márkát kap</button></div></div>
   <p class="muted" style="margin:0;font-size:12px">A Pro azonnal bekapcsolja a Pro funkciókat (aktív, ajándék, vagy próbaidő a megadott dátumig). Az online fizetés bekötéséig itt kezeled.</p>
-  <div class="row between">${u.superadmin?"<span></span>":`<button type="button" class="btn ghost small" data-act="${u.banned?"admunban":"admban"}" data-id="${u.id}">${u.banned?"Letiltás feloldása":"Fiók letiltása"}</button>`}<button class="btn">Mentés</button></div></form></div>`;
+  <div class="row between" style="gap:8px;flex-wrap:wrap">${u.superadmin||u.me?"<span></span>":ui.admDel===u.id?`<span class="admdelc"><b>Végleg törlöd ${esc(u.name||u.email)} fiókját?</b> A terve, előfizetése, kapcsolatai és várólista-adatai is törlődnek. Nem visszavonható.<span class="row" style="gap:6px;margin-top:8px"><button type="button" class="btn small danger" data-act="admdelyes" data-id="${u.id}">Igen, véglegesen törlöm</button><button type="button" class="btn small ghost" data-act="admdelno">Mégse</button></span></span>`:`<span class="row" style="gap:6px">${u.banned?`<button type="button" class="btn ghost small" data-act="admunban" data-id="${u.id}">Letiltás feloldása</button>`:""}<button type="button" class="btn ghost small dangerline" data-act="admdelask" data-id="${u.id}">Fiók törlése</button></span>`}<button class="btn">Mentés</button></div></form></div>`;
 }
 async function admDo(action,payload,okMsg,reload){
   try{await ctx.admin(action,payload);toast(okMsg);closeForm();if(reload)admLoad(reload)}
@@ -2082,6 +2082,9 @@ document.addEventListener("click",e=>{
     case"admgrant":ui.admConfirm=null;admDo("user.admin.grant",{id},"Adminná tetted.","felhasznalok");break;
     case"admrevoke":ui.admConfirm=null;admDo("user.admin.revoke",{id},"Admin jog elvéve.","felhasznalok");break;
 
+    case"admdelask":ui.admDel=id;admUserSheet(id);break;
+    case"admdelno":{const f=b.closest("form[data-id]");ui.admDel=null;if(f)admUserSheet(f.dataset.id);break}
+    case"admdelyes":ui.admDel=null;admDo("user.delete",{id},"A fiók és minden adata törölve.","felhasznalok");break;
     case"admban":admDo("user.ban",{id},"Fiók letiltva.","felhasznalok");break;
     case"admunban":admDo("user.unban",{id},"Letiltás feloldva.","felhasznalok");break;
     case"admwl":{const slug=($("#as-wl").value||"").trim().toLowerCase(),email=b.dataset.email;

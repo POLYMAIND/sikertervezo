@@ -6,6 +6,7 @@
 //   { action:"overview" }                                 -> számok
 //   { action:"users", page }                              -> felhasználók + előfizetés + utolsó aktivitás
 //   { action:"user.ban" | "user.unban", id }
+//   { action:"user.delete", id }                         -> a fiók és MINDEN hozzá tartozó adat végleges törlése (nem visszavonható)
 //   { action:"user.admin.grant" | "user.admin.revoke", id }   superadmin jog kiosztása / visszavonása
 //   { action:"sub.set", id, plan, status, current_period_end, note }
 //   { action:"brands" }                                   -> márkák + adminjaik
@@ -96,6 +97,34 @@ module.exports = async function handler(req, res) {
       const list = users.map(userView).map((u) => Object.assign(u, { brand: st[u.id] ? st[u.id].brand_slug : "", last_active: st[u.id] ? st[u.id].updated_at : null, sub: sb[u.id] || null, superadmin: admins().includes((u.email || "").toLowerCase()), admin: dbAdmins.has(u.id), me: u.id === user.id }))
         .sort((a, c) => String(c.created_at).localeCompare(String(a.created_at)));
       return L.send(res, 200, { ok: true, users: list });
+    }
+    if (action === "user.delete") {
+      // Végleges törlés: a fiók, a terv, az előfizetés, a márka-admin és superadmin jog, a naptár- és PolyOS-kapcsolatok,
+      // az e-mail-napló (ezek az auth.users törlésével kaszkádban törlődnek), plusz a várólista-sor és a márka-tagság
+      // (e-mail alapján). A kiállított számlák (sikertervezo_invoices) a számviteli törvény miatt 8 évig megmaradnak.
+      if (!UUID.test(b.id || "")) return L.send(res, 400, { error: "bad_id" });
+      if (b.id === user.id) return L.send(res, 400, { error: "self" });
+      const target = await L.authAdmin("users/" + b.id).catch(() => null);
+      if (!target || !target.id) return L.send(res, 404, { error: "user_not_found" });
+      const email = String(target.email || "").toLowerCase();
+      if (isRoot({ email })) return L.send(res, 400, { error: "root" });
+      const enc = encodeURIComponent, now = new Date().toISOString();
+      // a „ki módosította” hivatkozások nem akaszthatják meg a törlést
+      await Promise.all([
+        safe(L.sb(`sikertervezo_brands?updated_by=eq.${b.id}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ updated_by: null }) }), null),
+        safe(L.sb(`sikertervezo_subscriptions?updated_by=eq.${b.id}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ updated_by: null }) }), null),
+        safe(L.sb(`sikertervezo_superadmins?granted_by=eq.${b.id}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ granted_by: null }) }), null),
+        safe(L.sb(`sikertervezo_platform?updated_by=eq.${b.id}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ updated_by: null }) }), null),
+        safe(L.sb(`sikertervezo_flags?updated_by=eq.${b.id}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ updated_by: null }) }), null),
+      ]);
+      if (email) {
+        await safe(L.sb(`sikertervezo_waitlist?email=eq.${enc(email)}`, { method: "DELETE" }), null);
+        await safe(L.sb(`sikertervezo_brand_members?email=eq.${enc(email)}`, { method: "DELETE" }), null);
+      }
+      await L.authAdmin("users/" + b.id, { method: "DELETE" });
+      const masked = email ? email.replace(/^(.).*(@.*)$/, "$1***$2") : "";
+      await audit(user, "user.delete", b.id, { email: masked, at: now });
+      return L.send(res, 200, { ok: true });
     }
     if (action === "user.ban" || action === "user.unban") {
       if (!UUID.test(b.id || "")) return L.send(res, 400, { error: "bad_id" });
