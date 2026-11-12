@@ -1299,8 +1299,10 @@ function installCard(where){
   if(where==="ma"&&((S.prefs&&S.prefs.installHide)||!matchMedia("(max-width:860px)").matches))return "";
   const body=mode==="prompt"
     ?`<span class="s">Egy koppintás, és a ${esc(BR.productName)} saját ikonnal, teljes képernyőn indul, mint egy app.</span>`
+    :mode==="samsung"
+    ?`<span class="s">Samsung Internetből a telepítést a Google Play Protect tévesen letilthatja. Nyisd meg <b>Chrome-ban</b>, és ott a jobb felső <b>⋮</b> menüben válaszd a <b>Hozzáadás a kezdőképernyőhöz</b> pontot.</span>`
     :`<span class="s">Safariban koppints a <b>Megosztás</b> ikonra <span aria-hidden="true">(négyzet felfelé nyíllal)</span>, majd a <b>Főképernyőhöz adás</b> pontra.</span>`;
-  return `<div class="card installcard"><span class="ic" aria-hidden="true">${BR.logo?`<img src="${esc(BR.logo)}" width="40" height="40" alt="">`:TH.svg(TH.MARK).replace('width="48" height="48"','width="40" height="40"')}</span><div class="grow"><span class="t">Tedd ki a kezdőképernyőre</span>${body}</div><div class="row" style="gap:8px">${mode==="prompt"?'<button class="btn small" data-act="install">Telepítés</button>':""}${where==="ma"?'<button class="nc-skip" style="color:var(--muted)" data-act="installhide">Most nem</button>':""}</div></div>`;
+  return `<div class="card installcard"><span class="ic" aria-hidden="true">${BR.logo?`<img src="${esc(BR.logo)}" width="40" height="40" alt="">`:TH.svg(TH.MARK).replace('width="48" height="48"','width="40" height="40"')}</span><div class="grow"><span class="t">Tedd ki a kezdőképernyőre</span>${body}</div><div class="row" style="gap:8px">${mode==="prompt"?'<button class="btn small" data-act="install">Telepítés</button>':mode==="samsung"?`<a class="btn small" href="${esc(I.chromeUrl())}">Megnyitás Chrome-ban</a>`:""}${where==="ma"?'<button class="nc-skip" style="color:var(--muted)" data-act="installhide">Most nem</button>':""}</div></div>`;
 }
 /* ---------- bevezető (első belépés) és „Első lépések" lista ---------- */
 const PROFILES=[

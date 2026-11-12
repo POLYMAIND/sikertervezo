@@ -20,13 +20,17 @@
   /* ---------- telepítés (PWA) ---------- */
   let installEvt = null;
   const isStandalone = () => window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  const isSamsung = () => /SamsungBrowser/i.test(navigator.userAgent);
   const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); installEvt = e; if (app) app.render(); });
   window.addEventListener("appinstalled", () => { installEvt = null; if (app) app.render(); });
   const install = {
     standalone: isStandalone,
     // Androidon / asztali Chrome-ban a böngésző saját telepítő ablaka; iPhone-on csak útmutatót tudunk adni
-    mode: () => (isStandalone() ? "" : installEvt ? "prompt" : isIOS() ? "ios" : ""),
+    // Samsung Internet: a böngésző saját (régi Android-célú) telepítőcsomagot gyárt, amit a Play Protect „nem biztonságos”
+    // címkével letilt → ott nem kínáljuk a telepítést, hanem Chrome-ba irányítunk (ott a Google által aláírt csomag készül)
+    mode: () => (isStandalone() ? "" : isSamsung() ? "samsung" : installEvt ? "prompt" : isIOS() ? "ios" : ""),
+    chromeUrl: () => "intent://" + location.host + location.pathname + location.search + "#Intent;scheme=https;package=com.android.chrome;end",
     prompt: async () => { if (!installEvt) return false; installEvt.prompt(); const r = await installEvt.userChoice.catch(() => null); installEvt = null; return !!(r && r.outcome === "accepted"); },
   };
   if ("serviceWorker" in navigator && location.protocol === "https:") {
