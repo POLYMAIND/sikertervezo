@@ -34,8 +34,13 @@ module.exports = async function handler(req, res) {
       { name: "Kapcsolatok", url: "/" + q + "#kapcsolatok" },
     ],
   };
+  // Samsung Internet: telepíthető (standalone) leíróból saját, régi Android-célú telepítőcsomagot gyárt, amit a Google
+  // Play Protect „nem biztonságos” címkével letilt. Neki böngészős leírót adunk → a kezdőképernyőre egyszerű parancsikon
+  // kerül (ugyanaz az ikon és név, a Samsung böngészőben nyílik), figyelmeztetés nélkül.
+  if (/SamsungBrowser/i.test(String(req.headers["user-agent"] || ""))) { manifest.display = "browser"; delete manifest.display_override; }
   res.statusCode = 200;
   res.setHeader("Content-Type", "application/manifest+json; charset=utf-8");
-  res.setHeader("Cache-Control", "public, max-age=300");
+  res.setHeader("Cache-Control", "private, max-age=300");
+  res.setHeader("Vary", "User-Agent");
   res.end(JSON.stringify(manifest));
 };

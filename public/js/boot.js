@@ -27,8 +27,8 @@
   const install = {
     standalone: isStandalone,
     // Androidon / asztali Chrome-ban a böngésző saját telepítő ablaka; iPhone-on csak útmutatót tudunk adni
-    // Samsung Internet: a böngésző saját (régi Android-célú) telepítőcsomagot gyárt, amit a Play Protect „nem biztonságos”
-    // címkével letilt → ott nem kínáljuk a telepítést, hanem Chrome-ba irányítunk (ott a Google által aláírt csomag készül)
+    // Samsung Internet: telepíthető leíróból a böngésző saját (régi Android-célú) csomagot gyárt, amit a Play Protect letilt.
+    // Ott a leíró böngészős (api/manifest.js) → parancsikon kerül a kezdőképernyőre; útmutatót adunk, Chrome opcionális
     mode: () => (isStandalone() ? "" : isSamsung() ? "samsung" : installEvt ? "prompt" : isIOS() ? "ios" : ""),
     chromeUrl: () => "intent://" + location.host + location.pathname + location.search + "#Intent;scheme=https;package=com.android.chrome;end",
     prompt: async () => { if (!installEvt) return false; installEvt.prompt(); const r = await installEvt.userChoice.catch(() => null); installEvt = null; return !!(r && r.outcome === "accepted"); },
