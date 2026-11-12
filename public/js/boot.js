@@ -27,8 +27,8 @@
   const install = {
     standalone: isStandalone,
     // Androidon / asztali Chrome-ban a böngésző saját telepítő ablaka; iPhone-on csak útmutatót tudunk adni
-    // Samsung Internet: a böngésző saját (régi Android-célú) telepítőcsomagot gyárt, amit a Play Protect „nem biztonságos”
-    // címkével letilt → ott nem kínáljuk a telepítést, hanem Chrome-ba irányítunk (ott a Google által aláírt csomag készül)
+    // Samsung Internet: telepíthető leíróból a böngésző saját (régi Android-célú) csomagot gyárt, amit a Play Protect letilt.
+    // Ott a leíró böngészős (api/manifest.js) → parancsikon kerül a kezdőképernyőre; útmutatót adunk, Chrome opcionális
     mode: () => (isStandalone() ? "" : isSamsung() ? "samsung" : installEvt ? "prompt" : isIOS() ? "ios" : ""),
     chromeUrl: () => "intent://" + location.host + location.pathname + location.search + "#Intent;scheme=https;package=com.android.chrome;end",
     prompt: async () => { if (!installEvt) return false; installEvt.prompt(); const r = await installEvt.userChoice.catch(() => null); installEvt = null; return !!(r && r.outcome === "accepted"); },
@@ -177,7 +177,8 @@
         await store.signInPassword(v.email.trim(), v.password); await launch(store.userInfo());
       } else if (f.dataset.auth === "signup") {
         const eb = TH.effectiveBrand(brandRaw);
-        const extra = eb.plan === "whitelabel" && v.brandok ? { brand_consent: { [eb.slug]: { ok: true, at: new Date().toISOString() } } } : null;
+        // signup_brand: melyik márkánál regisztrált — ha a megerősítő link mégis az alap oldalra vinné, innen tudjuk visszaterelni
+        const extra = eb.plan === "whitelabel" ? Object.assign({ signup_brand: eb.slug }, v.brandok ? { brand_consent: { [eb.slug]: { ok: true, at: new Date().toISOString() } } } : {}) : null;
         const r = await store.signUp(v.email.trim(), v.password, v.name.trim(), extra);
         if (window.smTrack) window.smTrack("sign_up", { method: "email", brand: eb.slug });
         if (r.needsConfirm) authScreen("belepes", ls.get(PRO_INTENT) ? "Majdnem kész: küldtünk egy megerősítő e-mailt. A linkre kattintva beléptetünk, és egyből a Pro előfizetés fizetési oldalára viszünk." : "Majdnem kész: küldtünk egy megerősítő e-mailt. A linkre kattintva be is léptetünk."); else await launch(store.userInfo());
@@ -202,6 +203,9 @@
   async function launch(user) {
     $("#boot").innerHTML = '<div class="spinner" role="status" aria-label="Betöltés"></div>'; $("#boot").hidden = false;
     const demo = !user;
+    // white label márkánál regisztrált, de az alap (Sikermaker) felületre érkezett → vissza a saját márkájába
+    const sb0 = user && user.signupBrand;
+    if (sb0 && /^[a-z0-9-]{1,40}$/.test(sb0) && sb0 !== "alap" && (brandRaw.slug || "alap") === "alap" && !new URLSearchParams(location.search).has("brand")) { location.replace("/app?brand=" + encodeURIComponent(sb0)); return; }
     // bemutató módban a csomag kézzel váltható (csak a kinézet; a szerver semmit nem enged ezzel)
     if (demo && ls.get(DEMO_PLAN_KEY) === "whitelabel" && brandRaw.plan !== "whitelabel") {
       let saved = null; try { saved = JSON.parse(ls.get(DEMO_BRAND_KEY) || "null"); } catch (e) {}
