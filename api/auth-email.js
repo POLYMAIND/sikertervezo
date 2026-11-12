@@ -145,7 +145,15 @@ async function handler(req, res) {
   let p; try { p = JSON.parse(raw); } catch (e) { return fail(res, 400, "bad_json"); }
   const list = messages(p).filter((m) => m.to);
   if (!list.length) return fail(res, 400, "unsupported_action");
-  const brand = await brandFor((p.email_data || {}).redirect_to).catch(() => null);
+  let brand = await brandFor((p.email_data || {}).redirect_to).catch(() => null);
+  // Ha a Supabase a visszatérési címet az alap oldalra cserélte (pl. a márka domainje nincs az engedélyezett címek közt),
+  // a regisztrációkor eltárolt márka dönt: márkás levél, és a link a márka saját címére visz.
+  const sb = String(((p.user || {}).user_metadata || {}).signup_brand || "");
+  if (!brand && B.SLUG_RE.test(sb) && sb !== "alap") {
+    const url = require("./_members").brandAppUrl(sb);
+    brand = await brandFor(url).catch(() => null);
+    if (brand) p.email_data = Object.assign({}, p.email_data, { redirect_to: url });
+  }
   for (const m of list) {
     if (!(await send(m, brand))) { console.warn("[auth-email] brevo failed", m.kind); return fail(res, 502, "Az e-mailt most nem sikerült elküldeni. Próbáld újra pár perc múlva."); }
   }

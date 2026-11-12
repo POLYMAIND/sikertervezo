@@ -135,6 +135,6 @@
 
   function onStatus(fn) { listeners.push(fn); }
 
-  const userInfo = () => (session ? { id: session.user.id, email: session.user.email, name: (session.user.user_metadata || {}).full_name || "" } : null);
+  const userInfo = () => (session ? { id: session.user.id, email: session.user.email, name: (session.user.user_metadata || {}).full_name || "", signupBrand: (session.user.user_metadata || {}).signup_brand || "" } : null);
   ST.store = { init, signIn, signInPassword, signUp, setBrandConsent, brandConsent, resetPassword, updatePassword, isRecovery: () => recovery || /uj-jelszo/.test(location.hash), userInfo, signOut, token, user, load, save, flush, onStatus, mode: () => mode, cloudAvailable: () => !!sb, readLocal };
 })();
