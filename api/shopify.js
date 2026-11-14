@@ -3,6 +3,7 @@
 //                     (az Appstle minden havi megújításkor új rendelést hoz létre → újabb 35 nap a fizetéstől)
 //                     + az ELSŐ vásárlásnál márkás üdvözlő levél a 3 lépéssel (regisztráció a vásárlási címmel, belépés,
 //                     kezdőképernyő); megújításnál nincs levél. Meghívót nem küldünk (ütközne a „regisztrálj” lépéssel).
+//   orders/create     csak 0 Ft-os (kuponos) rendelésnél ugyanaz, mint az orders/paid (ott a Shopify nem mindig küld paid-et)
 //   orders/cancelled  a rendelés törlése → a hozzáférés azonnal lejár (csak a Shopify-ból jött tagnál)
 // Hitelesítés: X-Shopify-Hmac-Sha256 = base64(HMAC-SHA256(titok, nyers törzs)); titok márkánként:
 // SHOPIFY_WEBHOOK_SECRETS = {"<slug>":"<a Shopify Értesítések oldalán látható kulcs>"}. Fail-closed.
@@ -55,7 +56,11 @@ async function handler(req, res) {
     const email = orderEmail(o);
     if (!M.okEmail(email)) { await audit("shopify.no_email", slug, { order: o.name || o.id }); return L.send(res, 200, { ok: true, ignored: "email" }); }
 
-    if (topic === "orders/paid" || (topic === "orders/create" && o.financial_status === "paid")) {
+    // 0 Ft-os (100%-os kuponos) rendelésnél nincs fizetés, ezért a Shopify a „Rendelés kifizetése” webhookot nem mindig
+    // küldi el → ezeket a „Rendelés létrehozása” webhookból kezeljük. Fizetős rendelés csak az orders/paid-ből jön,
+    // így nincs dupla üdvözlő levél.
+    const free = o.financial_status === "paid" && Number(o.total_price) === 0;
+    if (topic === "orders/paid" || (topic === "orders/create" && free)) {
       const paidAt = Date.parse(o.processed_at || o.updated_at || o.created_at) || Date.now();
       const { prev } = await M.set(slug, email, paidAt + PERIOD_DAYS * M.DAY, "shopify", `Shopify ${o.name || o.id}`, true);
       let welcome = "renewal";
