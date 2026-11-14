@@ -28,6 +28,8 @@ Vevő fizet a Shopify-boltban (Appstle előfizetés, havonta új rendelés)
    Ezután a kártyán megjelenik a webhook címe.
 3. **Shopify (a márka gazdája):** Beállítások → Értesítések → (lent) Webhookok → **Webhook létrehozása**:
    - Esemény: **Rendelés kifizetése**, formátum **JSON**, URL: `https://sikermaker.hu/api/shopify?brand=<slug>`
+   - Még egy: **Rendelés létrehozása**, ugyanez az URL (a 0 Ft-os, 100%-os kuponos rendeléseknél a Shopify
+     nem mindig küld „kifizetve” értesítést; fizetős rendelésnél ez a webhook nem csinál semmit).
    - Még egy: **Rendelés törlése**, ugyanez az URL.
    - A lista alatt: „A webhookjaid ezzel lesznek aláírva: …” → ezt a kulcsot másold ki.
 4. **Vercel:** `SHOPIFY_WEBHOOK_SECRETS` = `{"<slug>":"<a kimásolt kulcs>"}` (több márkánál vesszővel bővíthető),
