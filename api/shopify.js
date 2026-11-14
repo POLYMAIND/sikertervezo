@@ -13,6 +13,7 @@ const B = require("./_brands");
 const M = require("./_members");
 const WM = require("./_welcomemail");
 const AE = require("./auth-email");
+const ET = require("./_emailtypo");
 
 const PERIOD_DAYS = 35; // 1 hónap + türelmi idő a megújításhoz
 
@@ -35,6 +36,38 @@ const orderEmail = (o) => String(o.email || o.contact_email || (o.customer && o.
 const hasProduct = (o, ids) => (o.line_items || []).some((li) => li && ids.includes(String(li.product_id)));
 async function audit(action, slug, detail) {
   await L.sb("sikertervezo_audit", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ actor_email: "shopify", action, target: slug, detail }) }).catch(() => {});
+}
+
+// Elírt vásárlói cím (pl. gmai.com): a levél nem érkezik meg, a vevő nem tud belépni. Ilyenkor szólunk a márka
+// adminjainak (és a platform-adminoknak), hogy javítsák a Shopify-ban, és vegyék fel a jó címet az Előfizetők közé.
+// A hozzáférést NEM adjuk oda automatikusan a javított címnek: azt egy ember erősítse meg.
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+async function typoAlert(slug, brand, o, email, fix) {
+  if (!L.env("BREVO_API_KEY") || !L.env("EMAIL_FROM")) return false;
+  const to = new Set(L.env("SUPERADMIN_EMAILS").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean));
+  const admins = await L.sb(`sikertervezo_brand_admins?slug=eq.${encodeURIComponent(slug)}&select=user_id`).catch(() => []);
+  for (const a of admins || []) {
+    const u = await L.authAdmin("users/" + encodeURIComponent(a.user_id)).catch(() => null);
+    if (u && M.okEmail(u.email)) to.add(String(u.email).toLowerCase());
+  }
+  if (!to.size) return false;
+  const pname = (brand && brand.config && brand.config.productName) || slug;
+  const who = [o.customer && o.customer.first_name, o.customer && o.customer.last_name].filter(Boolean).join(" ") || (o.billing_address && o.billing_address.name) || "";
+  const order = String(o.name || o.id || "");
+  const html = `<div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;font-size:15px;line-height:1.6;color:#1F2024;max-width:540px">
+<p><b>Valószínűleg elírt e-mail-cím egy új rendelésben (${esc(pname)}).</b></p>
+<p>Rendelés: <b>${esc(order)}</b>${who ? `, megrendelő: <b>${esc(who)}</b>` : ""}<br>Megadott cím: <b>${esc(email)}</b><br>Valószínűleg helyesen: <b>${esc(fix)}</b></p>
+<p>Az elírt címre a levelek nem érkeznek meg, ezért a vevő nem tud regisztrálni és belépni. Teendő:</p>
+<ol><li>Kérdezd meg a vevőt, jó-e a javított cím.</li><li>Shopify: Ügyfelek → a vevő → e-mail-cím javítása (így a havi megújítás is a jó címre megy).</li>
+<li>A tervező Márkám → Előfizetők részében vedd fel a jó címet. Erre a vevő meghívó levelet kap.</li><li>Az elírt címet töröld az Előfizetők listájából.</li></ol>
+<p style="color:#62646B;font-size:13px">Ezt a levelet a Sikermaker küldte automatikusan, mert a cím egy ismert levelezőszolgáltató elírásának tűnik.</p></div>`;
+  const text = `Valószínűleg elírt e-mail-cím egy új rendelésben (${pname}).\nRendelés: ${order}${who ? ", megrendelő: " + who : ""}\nMegadott cím: ${email}\nValószínűleg helyesen: ${fix}\n\n1. Kérdezd meg a vevőt, jó-e a javított cím.\n2. Shopify: Ügyfelek → a vevő → e-mail-cím javítása.\n3. Márkám → Előfizetők: vedd fel a jó címet (meghívót kap).\n4. Az elírt címet töröld az Előfizetők közül.`;
+  const from = L.env("EMAIL_FROM").replace(/^.*<([^>]+)>.*$/, "$1");
+  const r = await fetch("https://api.brevo.com/v3/smtp/email", {
+    method: "POST", headers: { "api-key": L.env("BREVO_API_KEY"), "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ sender: { name: "Sikermaker", email: from }, to: [...to].map((email) => ({ email })), subject: `Elírt e-mail-cím? ${order} – ${pname}`, htmlContent: html, textContent: text, tags: ["sikermaker-elirt-cim", "marka-" + slug] }),
+  }).catch(() => null);
+  return !!(r && r.ok);
 }
 
 async function handler(req, res) {
@@ -70,8 +103,15 @@ async function handler(req, res) {
         const first = String((o.customer && o.customer.first_name) || (o.billing_address && o.billing_address.first_name) || "").trim().slice(0, 40);
         welcome = b && (await WM.send(b, appUrl, email, first)) ? "sent" : "failed";
       }
-      await audit("shopify.paid", slug, { email, order: o.name || o.id, welcome });
-      return L.send(res, 200, { ok: true, welcome });
+      // elírt cím gyanúja: csak az első vásárlásnál (megújításkor már nem szólunk újra)
+      let typo;
+      const fix = !prev ? ET.suggest(email) : null;
+      if (fix) {
+        typo = (await typoAlert(slug, brand, o, email, fix).catch(() => false)) ? "alerted" : "alert_failed";
+        await audit("shopify.email_typo", slug, { email, suggest: fix, order: o.name || o.id, alert: typo });
+      }
+      await audit("shopify.paid", slug, Object.assign({ email, order: o.name || o.id, welcome }, fix ? { suggest: fix } : {}));
+      return L.send(res, 200, Object.assign({ ok: true, welcome }, fix ? { typo: fix } : {}));
     }
     if (topic === "orders/cancelled") {
       const cur = await M.get(slug, email);
