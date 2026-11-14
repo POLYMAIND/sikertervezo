@@ -90,3 +90,31 @@ test("cleanAccess: https bolt link, számszerű termék-azonosítók", () => {
   assert.deepEqual(B.cleanAccess({ members: true, shopUrl: "javascript:alert(1)", productIds: "111, abc ;222" }), { members: true, shopUrl: "", productIds: ["111", "222"] });
   assert.deepEqual(B.cleanAccess(null), { members: false, shopUrl: "", productIds: [] });
 });
+
+test("elírt vásárlói cím (gmai.com) → a vevő tag marad, a márka adminja és a platform-admin figyelmeztetést kap", async () => {
+  env(); process.env.SUPERADMIN_EMAILS = "admin@pelda.hu"; const orig = globalThis.fetch;
+  try {
+    const be = backend({ admin: true });
+    const base = globalThis.fetch;
+    globalThis.fetch = async (url, o) => String(url).includes("/auth/v1/admin/users/") ? { ok: true, status: 200, json: async () => ({ id: "1", email: "gazda@pelda.hu" }), text: async () => "" } : base(url, o);
+    const h = fresh("../api/shopify.js");
+    const r = res(); await h(req(Object.assign({}, ORDER, { email: "marika@gmai.com", customer: { first_name: "Marika" } }), "orders/paid"), r);
+    assert.equal(r.statusCode, 200); assert.match(r.body, /"typo":"marika@gmail.com"/);
+    assert.ok(be.members.has("marika@gmai.com"), "a megadott cím tag marad");
+    assert.ok(!be.members.has("marika@gmail.com"), "a javított cím nem kap automatikusan hozzáférést");
+    const mails = be.calls.filter((c) => c.u.includes("api.brevo.com")).map((c) => JSON.parse(c.body));
+    const alert = mails.find((m) => /Elírt/.test(m.subject)); assert.ok(alert, "figyelmeztető levél");
+    assert.deepEqual(alert.to.map((t) => t.email).sort(), ["admin@pelda.hu", "gazda@pelda.hu"]);
+    assert.match(alert.htmlContent, /marika@gmail\.com/); assert.match(alert.htmlContent, /#1001/);
+    assert.ok(be.calls.some((c) => c.u.includes("sikertervezo_audit") && /shopify\.email_typo/.test(c.body || "")));
+    // jó cím → nincs figyelmeztetés
+    const n = be.calls.length; const r2 = res(); await h(req(Object.assign({}, ORDER, { email: "masik@gmail.com" }), "orders/paid"), r2);
+    assert.ok(!be.calls.slice(n).some((c) => c.u.includes("api.brevo.com") && /Elírt/.test(c.body || "")));
+  } finally { globalThis.fetch = orig; delete process.env.SUPERADMIN_EMAILS; }
+});
+
+test("e-mail elírás-felismerés: gyakori elírások javítva, valódi címek békén hagyva", () => {
+  const T = require("../api/_emailtypo.js");
+  for (const [a, b] of [["x@gmai.com", "x@gmail.com"], ["x@gmial.com", "x@gmail.com"], ["x@gmail.co", "x@gmail.com"], ["x@gmail.hu", "x@gmail.com"], ["x@freemial.hu", "x@freemail.hu"], ["x@citromai.hu", "x@citromail.hu"], ["x@hotmial.com", "x@hotmail.com"]]) assert.equal(T.suggest(a), b, a);
+  for (const a of ["x@gmail.com", "x@pelda.hu", "x@mail.com", "x@hotmail.hu", "x@me.com", "x@minta.hu", "rossz"]) assert.equal(T.suggest(a), null, a);
+});
