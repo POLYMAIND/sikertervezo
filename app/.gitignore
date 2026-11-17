@@ -1,0 +1,10 @@
+node_modules/
+android/app/build/
+android/.gradle/
+ios/App/build/
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+GoogleService-Info.plist
+google-services.json

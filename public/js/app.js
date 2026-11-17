@@ -15,6 +15,10 @@ const FEAT=k=>!!(BR.features&&BR.features[k]);
 const SHOWPRO=DEMO&&PRO;
 const proTag=(cls)=>SHOWPRO?`<span class="protag${cls?" "+cls:""}" title="A Pro csomag része">PRO</span>`:"";
 const PRO_PRICE="1 990 Ft / hó";
+// Natív (App Store / Google Play) appban nincs vásárlás és nincs rá utaló ár vagy gomb: digitális előfizetést csak az
+// áruház saját fizetésével lehetne eladni (App Store 3.1.1, Play Billing). A Pro-t a weben veszik meg, az appban is él.
+const NATIVE=!!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform());
+const priceTag=()=>NATIVE?"":` (${PRO_PRICE})`;
 /* ---------- utils ---------- */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -1285,7 +1289,7 @@ function accountCard(){
   if(DEMO)return `<div class="card stack"><h3>Bemutató mód</h3><p class="muted" style="margin:0">Most belépés nélkül, mintaadatokkal próbálod a tervezőt: amit beírsz, csak ebben a böngészőben marad meg. Fiókkal minden eszközödön ugyanazt látod.</p>
   <div class="row">${ctx.cloud?`<button class="btn" data-act="signup">${SIGNUP_CTA}</button>`:""}<span id="resetrow" class="row"><button class="btn ghost" data-act="resetask">Mintaadatok visszaállítása</button></span></div>
 </div>`;
-  return `<div class="card stack"><h3>Fiók</h3><div class="row between"><div><b>${esc((ctx.user&&ctx.user.email)||"")}</b><div class="muted" style="font-size:12.5px">A terved a fiókodhoz van mentve, minden eszközödön ugyanaz.</div>${consentRow()}</div><span class="row"><button class="btn ghost small" data-act="export">Adataim letöltése</button><button class="btn ghost small" data-act="logout">Kijelentkezés</button></span></div></div>`;
+  return `<div class="card stack"><h3>Fiók</h3><div class="row between"><div><b>${esc((ctx.user&&ctx.user.email)||"")}</b><div class="muted" style="font-size:12.5px">A terved a fiókodhoz van mentve, minden eszközödön ugyanaz.</div>${consentRow()}</div><span class="row"><button class="btn ghost small" data-act="export">Adataim letöltése</button><button class="btn ghost small" data-act="logout">Kijelentkezés</button><button class="btn ghost small dangerline" data-act="selfdelask">Fiók törlése</button></span></div>${ui.selfDel?`<div class="admdelc"><b>Biztosan véglegesen törlöd a fiókodat?</b> A terved, a beállításaid és a kapcsolataid is törlődnek, az esetleges Pro-előfizetésedet lemondjuk. A kiállított számlákat a számviteli törvény miatt megőrizzük. Nem visszavonható.<label class="stack" style="gap:4px;margin-top:8px"><span class="muted" style="font-size:12.5px">A megerősítéshez írd be: TÖRLÉS</span><input id="selfdelconf" autocomplete="off" autocapitalize="characters"></label><span class="row" style="gap:6px;margin-top:8px"><button type="button" class="btn small danger" data-act="selfdelyes">Fiókom végleges törlése</button><button type="button" class="btn small ghost" data-act="selfdelno">Mégse</button></span></div>`:""}</div>`;
 }
 
 /* ---------- bemutató mód: regisztrációs felhívás minden oldal tetején ---------- */
@@ -1334,7 +1338,7 @@ function obBody(step,d){
   if(step==="kapcsolat")return `<h2>Vedd fel az első kapcsolatod</h2><p class="lead">Gondolj valakire, akivel mostanában beszéltél, vagy akit szeretnél megkeresni. Később a <b>Kapcsolatok</b> oldalon az <b>Új kapcsolat</b> gombbal veszel fel újat.</p>${obField("c.name","Név",d.contact.name,"text",'maxlength="60" placeholder="Például: Minta Kata"')}${obField("c.src","Honnan ismered?",d.contact.src,"text",'maxlength="60" placeholder="Például: Instagram, ajánlás"')}<div class="grid g2">${obField("c.next","Mi a következő lépés?",d.contact.next,"text",'maxlength="60" placeholder="Például: Első üzenet"')}${obField("c.nextDate","Mikor?",d.contact.nextDate,"date")}</div>`;
   if(step==="ugyfel")return `<h2>És az első ügyfeled</h2><p class="lead">Ha már van, aki vásárolt tőled, vedd fel. Ha még nincs, nyugodtan hagyd ki. Később az <b>Ügyfelek</b> oldalon az <b>Új ügyfél</b> gombbal veszel fel újat.</p>${obField("u.name","Név",d.client.name,"text",'maxlength="60" placeholder="Például: Minta Éva"')}${obField("u.fav","Mit szokott venni?",d.client.fav,"text",'maxlength="80" placeholder="Például: arckrém, vitamin"')}${obField("u.last","Mikor vásárolt utoljára?",d.client.last,"date")}`;
   const inst=ctx.install&&ctx.install.mode();
-  return `<div class="ob-hero">🎉</div><h2>Kész is vagy${greetName()||d.nick||firstName(d.name)?", "+esc(d.nick||firstName(d.name)):""}!</h2><p class="lead">Így találsz meg mindent:</p><ul class="ob-list"><li><b>Ma:</b> a napi lépéseid, kit keress meg, mai teendők</li><li><b>Naptár:</b> havi, heti és napi nézet az időpontjaiddal</li><li><b>Kapcsolatok és Ügyfelek:</b> az embereid, emlékeztetőkkel</li><li><b>Tartalom:</b> mit posztolsz és mikor</li></ul><p class="lead">A Vezérlőpulton egy <b>Első lépések</b> lista vár, amivel végigjárhatod az alapokat.</p>${PRO?"":`<p class="ob-note">A kapcsolatok, ügyfelek, a tartalomtervező és a számok a <b>Pro</b> csomagban érhetők el (${PRO_PRICE}).</p>`}${inst==="prompt"?'<button type="button" class="btn ghost" data-act="install">Telepítem a kezdőképernyőre</button>':inst==="ios"?'<p class="ob-note">Tipp: Safariban a Megosztás ikon, majd a „Főképernyőhöz adás” után appként indul a tervező.</p>':""}`;
+  return `<div class="ob-hero">🎉</div><h2>Kész is vagy${greetName()||d.nick||firstName(d.name)?", "+esc(d.nick||firstName(d.name)):""}!</h2><p class="lead">Így találsz meg mindent:</p><ul class="ob-list"><li><b>Ma:</b> a napi lépéseid, kit keress meg, mai teendők</li><li><b>Naptár:</b> havi, heti és napi nézet az időpontjaiddal</li><li><b>Kapcsolatok és Ügyfelek:</b> az embereid, emlékeztetőkkel</li><li><b>Tartalom:</b> mit posztolsz és mikor</li></ul><p class="lead">A Vezérlőpulton egy <b>Első lépések</b> lista vár, amivel végigjárhatod az alapokat.</p>${PRO?"":`<p class="ob-note">A kapcsolatok, ügyfelek, a tartalomtervező és a számok a <b>Pro</b> csomagban érhetők el${priceTag()}.</p>`}${inst==="prompt"?'<button type="button" class="btn ghost" data-act="install">Telepítem a kezdőképernyőre</button>':inst==="ios"?'<p class="ob-note">Tipp: Safariban a Megosztás ikon, majd a „Főképernyőhöz adás” után appként indul a tervező.</p>':""}`;
 }
 function obRender(){
   const o=ui.ob;if(!o)return;const steps=obSteps(o.d),step=steps[o.i],last=o.i===steps.length-1;
@@ -1511,7 +1515,7 @@ function saveQuickAdd(){
 function calSyncCard(){
   const c=ui.cal||{};
   let body;
-  if(!PRO)body=`<p style="margin:0">A naptár-szinkron a Pro csomag része (${PRO_PRICE}).</p><div class="row">${proCta()}</div>`;
+  if(!PRO)body=`<p style="margin:0">A naptár-szinkron a Pro csomag része${priceTag()}.</p><div class="row">${proCta()}</div>`;
   else if(DEMO)body=`<p style="margin:0">A naptár-szinkronhoz fiók kell: ${ctx.cloud?`<button class="chip" data-act="signup">${ctx.signupOpen?"Regisztrálok":"Feliratkozom a várólistára"}</button>`:"a bemutató módban nem érhető el."}</p>`;
   else if(!c.loaded){if(!c.loading){c.loading=true;ui.cal=c;ctx.calendar("status").then(r=>{ui.cal=Object.assign({loaded:true},r);render()},()=>{ui.cal={loaded:true,err:true};render()})}body='<div class="spinner" role="status" aria-label="Betöltés"></div>'}
   else if(c.err)body='<p style="margin:0">Most nem sikerült betölteni. Próbáld újra később.</p>';
@@ -1633,9 +1637,10 @@ const PRO_LIST_ALL=[["tartalom","Tartalomtervező","Havi tartalomnaptár, pillé
 const PRO_LIST=PRO_LIST_ALL.filter(x=>VIEWS.some(v=>v[0]===x[0]));
 function proUrl(){
   if(DEMO)return null;
-  const u=ctx.user||{};return "mailto:hello@polymaind.hu?subject="+encodeURIComponent(BR.productName+" Pro előfizetés")+"&body="+encodeURIComponent(`Szia!\n\nSzeretnék Pro-ra váltani (${PRO_PRICE}).\nA fiókom e-mail-címe: ${u.email||""}\n\nKöszönöm!`);
+  const u=ctx.user||{};return "mailto:hello@polymaind.hu?subject="+encodeURIComponent(BR.productName+" Pro előfizetés")+"&body="+encodeURIComponent(`Szia!\n\nSzeretnék Pro-ra váltani${priceTag()}.\nA fiókom e-mail-címe: ${u.email||""}\n\nKöszönöm!`);
 }
 function proCta(label){
+  if(NATIVE)return "";
   if(DEMO)return `<button class="btn" data-act="demoplan" data-k="pro">${label||"Kipróbálom a Pro-t a bemutatóban"}</button>`;
   if(ctx.billingReady)return `<button class="btn" data-act="buypro">${label||"Pro-ra váltok"}</button>`;
   return `<a class="btn" href="${esc(proUrl())}">${label||"Pro-ra váltok"}</a>`;
@@ -1645,17 +1650,18 @@ function vPro(view){
   const it=PRO_LIST.find(x=>x[0]===view)||PRO_LIST[0];
   return head(it[1],"Pro funkció")+`<div class="card stack procard" style="gap:14px"><div class="row" style="gap:12px;flex-wrap:nowrap"><span class="ic" aria-hidden="true">${nicon(view)}</span><div><h2 style="margin:0">${esc(it[1])} a Pro csomagban</h2><p class="muted" style="margin:4px 0 0">${esc(it[2])}</p></div></div>
   <div class="prolist">${PRO_LIST.map(([k,l,d])=>`<div class="li"><span class="cbx" aria-hidden="true" aria-pressed="true">✓</span><div class="grow"><div class="t">${esc(l)}</div><div class="s">${esc(d)}</div></div></div>`).join("")}</div>
-  <div class="row between"><div><div class="bpv" style="margin:0">${PRO_PRICE.replace(" / hó","")}<small> / hó</small></div><div class="muted" style="font-size:12px">Bármikor lemondható. Minden ingyenes funkció is benne van.</div></div>${proCta()}</div>
-  ${DEMO?"":ctx.billingReady?'<p class="muted" style="margin:0;font-size:12px">Biztonságos bankkártyás fizetés a Stripe-on. A Pro a fizetés után azonnal bekapcsol.</p>':'<p class="muted" style="margin:0;font-size:12px">Az online fizetés hamarosan indul. Addig a gombra kattintva írj nekünk, és még aznap bekapcsoljuk a Pro-t a fiókodon.</p>'}</div>`;
+  ${NATIVE?"":`<div class="row between"><div><div class="bpv" style="margin:0">${PRO_PRICE.replace(" / hó","")}<small> / hó</small></div><div class="muted" style="font-size:12px">Bármikor lemondható. Minden ingyenes funkció is benne van.</div></div>${proCta()}</div>`}
+  ${DEMO||NATIVE?"":ctx.billingReady?'<p class="muted" style="margin:0;font-size:12px">Biztonságos bankkártyás fizetés a Stripe-on. A Pro a fizetés után azonnal bekapcsol.</p>':'<p class="muted" style="margin:0;font-size:12px">Az online fizetés hamarosan indul. Addig a gombra kattintva írj nekünk, és még aznap bekapcsoljuk a Pro-t a fiókodon.</p>'}</div>`;
 }
 function proTeaser(){
+  if(NATIVE)return "";
   return `<div class="card upstrip"><span class="ic" aria-hidden="true">⭐</span><div class="grow"><span class="t">Kapcsolatok, ügyfelek, tartalom és számok a Pro csomagban</span><span class="s">Utánkövetési emlékeztetők, újrarendelés, tartalomnaptár, havi célok, naptár-szinkron. ${PRO_PRICE}.</span></div><a class="btn small" href="#kapcsolatok">Megnézem</a></div>`;
 }
 function planCard(){
   const pro=PRO,wl=BR.plan==="whitelabel";
   return `<div class="card stack"><div class="row between"><h3 style="margin:0">Csomagod</h3><span class="chip ${pro?"on":""}">${wl?"White label":pro?"Pro":"Ingyenes"}</span></div>
-  <p style="margin:0;font-size:13.5px">${wl?`A ${esc(BR.productName)} csomagjában minden funkció elérhető.`:pro?"Minden funkció elérhető: tartalom, kapcsolatok, ügyfelek, számok, naptár-szinkron.":`A Pro csomagban (${PRO_PRICE}) a Tartalomtervező, a Kapcsolatok, az Ügyfelek, a Számok, a naptár-szinkron és az e-mail is elérhető.`}</p>
-  ${pro||wl?"":`<div class="row">${proCta()}</div>`}${pro&&!wl&&!DEMO&&ctx.billingReady&&ctx.planSource==="subscription"?'<div class="row"><button class="btn ghost small" data-act="billportal">Előfizetés kezelése (kártya, számlák, lemondás)</button></div>':""}
+  <p style="margin:0;font-size:13.5px">${wl?`A ${esc(BR.productName)} csomagjában minden funkció elérhető.`:pro?"Minden funkció elérhető: tartalom, kapcsolatok, ügyfelek, számok, naptár-szinkron.":`A Pro csomagban${priceTag()} a Tartalomtervező, a Kapcsolatok, az Ügyfelek, a Számok, a naptár-szinkron és az e-mail is elérhető.`}</p>
+  ${pro||wl?"":`<div class="row">${proCta()}</div>`}${pro&&!wl&&!DEMO&&!NATIVE&&ctx.billingReady&&ctx.planSource==="subscription"?'<div class="row"><button class="btn ghost small" data-act="billportal">Előfizetés kezelése (kártya, számlák, lemondás)</button></div>':""}
   ${DEMO?`<div class="row" style="gap:6px"><span class="lab2" style="margin:0">Csomag a bemutatóban:</span>${[["ingyenes","Ingyenes"],["pro","Pro"],["whitelabel","White label"]].map(([k,l])=>`<button class="mood" data-act="demoplan" data-k="${k}" aria-pressed="${(wl?"whitelabel":pro?"pro":"ingyenes")===k}">${l}</button>`).join("")}</div>`:""}</div>`;
 }
 /* ---------- bekötött külső naptárak (csak olvasható réteg) ---------- */
@@ -2057,6 +2063,9 @@ document.addEventListener("click",e=>{
     case"authshow":ctx.showAuth("belepes");break;
     case"signup":ctx.showAuth("regisztracio");break;
     case"logout":ctx.logout();break;
+    case"selfdelask":ui.selfDel=true;render();break;
+    case"selfdelno":ui.selfDel=false;render();break;
+    case"selfdelyes":{const v=(($("#selfdelconf")||{}).value||"").trim().toUpperCase();if(v!=="TÖRLÉS"){toast("Írd be: TÖRLÉS");break}b.disabled=true;ctx.deleteAccount(v).catch(()=>{b.disabled=false;toast("Most nem sikerült törölni a fiókot. Próbáld újra, vagy írj nekünk.")});break}
     case"export":{const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"}),u=URL.createObjectURL(blob),a2=document.createElement("a");a2.href=u;a2.download="sikermaker-adataim-"+T+".json";document.body.appendChild(a2);a2.click();a2.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);break}
     case"demoplan":ctx.setDemoPlan(b.dataset.k);break;
     case"bgpat":S.prefs=S.prefs||{};S.prefs.bg=Object.assign({},bgPrefs(),{bgPattern:b.dataset.k});save();repaint();render();break;
