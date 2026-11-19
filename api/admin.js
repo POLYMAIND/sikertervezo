@@ -86,16 +86,33 @@ module.exports = async function handler(req, res) {
       } });
     }
     if (action === "users") {
-      const [users, states, subs, dbAdmins] = await Promise.all([
+      const [users, states, subs, dbAdmins, brands, members, badmins] = await Promise.all([
         allUsers(),
         safe(L.sb("sikertervezo_state?select=user_id,brand_slug,updated_at"), []),
         safe(L.sb("sikertervezo_subscriptions?select=*"), []),
         dbAdminIds(),
+        safe(L.sb("sikertervezo_brands?select=slug,plan,access:config->access"), []),
+        safe(L.sb("sikertervezo_brand_members?select=slug,email,active_until,source"), []),
+        safe(L.sb("sikertervezo_brand_admins?select=slug,user_id"), []),
       ]);
+      // White label márka felhasználói: a hozzáférésüket a márka adja (nyitott márka), vagy a márka tagsága
+      // („csak előfizetők”: Shopify / kézi), nem a Sikermaker-előfizetés. Ezt külön jelöljük.
+      const wl = {}; brands.forEach((x) => { if (x.plan === "whitelabel") wl[x.slug] = B.cleanAccess(x.access); });
+      const mem = {}; members.forEach((m) => { mem[m.slug + "|" + m.email] = m; });
+      const own = new Set(badmins.map((x) => x.slug + "|" + x.user_id));
+      const brandAccess = (u) => {
+        const slug = u.brand; if (!slug || slug === "alap" || !wl[slug]) return null;
+        if (own.has(slug + "|" + u.id)) return { slug, kind: "owner" };
+        if (!wl[slug].members) return { slug, kind: "open" };
+        const m = mem[slug + "|" + String(u.email || "").toLowerCase()];
+        if (m && Date.parse(m.active_until) >= Date.now()) return { slug, kind: "member", until: m.active_until, source: m.source };
+        return { slug, kind: "locked", until: m ? m.active_until : null, source: m ? m.source : null };
+      };
       const st = {}; states.forEach((s) => { if (!st[s.user_id] || s.updated_at > st[s.user_id].updated_at) st[s.user_id] = s; });
       const sb = {}; subs.forEach((s) => { sb[s.user_id] = s; });
-      const list = users.map(userView).map((u) => Object.assign(u, { brand: st[u.id] ? st[u.id].brand_slug : "", last_active: st[u.id] ? st[u.id].updated_at : null, sub: sb[u.id] || null, superadmin: admins().includes((u.email || "").toLowerCase()), admin: dbAdmins.has(u.id), me: u.id === user.id }))
+      const list = users.map(userView).map((u) => Object.assign(u, { brand: st[u.id] ? st[u.id].brand_slug : "", last_active: st[u.id] ? st[u.id].updated_at : null, sub: sb[u.id] || null, brandAccess: null, superadmin: admins().includes((u.email || "").toLowerCase()), admin: dbAdmins.has(u.id), me: u.id === user.id }))
         .sort((a, c) => String(c.created_at).localeCompare(String(a.created_at)));
+      list.forEach((u) => { u.brandAccess = brandAccess(u); });
       return L.send(res, 200, { ok: true, users: list });
     }
     if (action === "user.delete") {
