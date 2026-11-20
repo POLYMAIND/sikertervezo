@@ -1,0 +1,27 @@
+{
+  "appId": "hu.sikermaker.app",
+  "appName": "Sikermaker",
+  "webDir": "www",
+  "backgroundColor": "#F4F4F1",
+  "server": {
+    "url": "https://sikermaker.hu/app?forras=app",
+    "errorPath": "offline.html",
+    "allowNavigation": [
+      "sikermaker.hu",
+      "www.sikermaker.hu",
+      "*.supabase.co"
+    ]
+  },
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": [
+        "badge",
+        "sound",
+        "alert"
+      ]
+    },
+    "SystemBars": {
+      "style": "LIGHT"
+    }
+  }
+}

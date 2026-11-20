@@ -254,6 +254,8 @@
       // zárt regisztrációnál a bemutató gombjai a landing várólistájára visznek (nem a belépőképernyőre)
       showAuth: (tab) => { if (!signupOpenNow() && !loginAllowed()) { location.href = "/#varolista"; return; } sessionStorage.removeItem(DEMO_CHOSEN); authScreen(tab === "belepes" ? "belepes" : "regisztracio"); },
       logout: async () => { await store.signOut(); sessionStorage.removeItem(DEMO_CHOSEN); location.hash = ""; location.reload(); },
+      // saját fiók végleges törlése (App Store 5.1.1(v)); a szerver mondja le a Stripe-előfizetést is
+      deleteAccount: async (confirm) => { await api("/api/me", { method: "DELETE", body: JSON.stringify({ confirm }) }); await store.signOut().catch(() => {}); sessionStorage.removeItem(DEMO_CHOSEN); location.href = "/?fiok_torolve"; },
       // bemutató módban a csomag kézzel váltható: ingyenes / pro / white label (csak a kinézet és a zárolások; a szerver semmit nem enged ezzel)
       setDemoPlan: (p) => { ls.set(DEMO_PLAN_KEY, ["ingyenes", "pro", "whitelabel"].includes(p) ? p : "pro"); location.reload(); },
       plan: userPlan, planSource, payResult, signupOpen: !!(config.signup && config.signup.open),
@@ -269,7 +271,8 @@
     const proIntent = +(ls.get(PRO_INTENT) || 0);
     if (proIntent && !demo) {
       ls.del(PRO_INTENT);
-      if (userPlan !== "pro" && ctx.billingReady && Date.now() - proIntent < 6 * 3600e3) {
+      const native = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); // az áruházi appban nincs webes fizetés
+      if (userPlan !== "pro" && ctx.billingReady && !native && Date.now() - proIntent < 6 * 3600e3) {
         try { const r = await ctx.billing("checkout"); if (r && r.url) { location.href = r.url; return; } } catch (e) { /* nem sikerült: marad az app, a Pro gomb ott is működik */ }
       }
     }
