@@ -47,7 +47,7 @@ platform :ios do
       configuration: "Release",
       export_method: "app-store",
       xcargs: "#{auth} DEVELOPMENT_TEAM=#{ENV.fetch('APPLE_TEAM_ID')} CODE_SIGN_STYLE=Automatic",
-      export_xcargs: auth,
+      # az exportnál a fastlane maga adja át az API-kulcsot (-allowProvisioningUpdates -authenticationKey…), ezért itt nem kell
       output_directory: File.expand_path("../build", __dir__),
       output_name: "Sikermaker.ipa"
     )
