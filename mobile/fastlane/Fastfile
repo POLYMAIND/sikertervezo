@@ -1,0 +1,46 @@
+# Sikermaker iOS — build és feltöltés a TestFlightra Mac nélkül (GitHub Actions, macOS-gép).
+# Aláírás: Xcode automatikus aláírása az App Store Connect API-kulccsal (-allowProvisioningUpdates), így tanúsítványt
+# és provisioning profile-t nem kell kézzel kezelni: az Xcode a felhőben létrehozza / megújítja őket.
+#
+# Környezeti változók (GitHub → Settings → Secrets and variables → Actions):
+#   APPLE_TEAM_ID       10 karakteres Team ID (developer.apple.com → Membership)
+#   ASC_KEY_ID          App Store Connect API-kulcs azonosítója
+#   ASC_ISSUER_ID       a kulcs kibocsátójának azonosítója (Users and Access → Integrations → App Store Connect API)
+#   ASC_KEY_P8_BASE64   a letöltött .p8 kulcsfájl base64-ben (base64 -i AuthKey_XXXX.p8 | pbcopy)
+default_platform(:ios)
+
+platform :ios do
+  desc "Build + feltöltés a TestFlightra"
+  lane :beta do
+    key_path = File.expand_path("asc_key.p8", __dir__)
+    File.write(key_path, Base64.decode64(ENV.fetch("ASC_KEY_P8_BASE64")))
+    api_key = app_store_connect_api_key(key_id: ENV.fetch("ASC_KEY_ID"), issuer_id: ENV.fetch("ASC_ISSUER_ID"), key_filepath: key_path)
+
+    project = File.expand_path("../ios/App/App.xcodeproj", __dir__)
+    # build-szám: a TestFlighton lévő legmagasabb + 1 (első feltöltéskor 1)
+    latest = begin
+      latest_testflight_build_number(api_key: api_key, app_identifier: "hu.sikermaker.app", initial_build_number: 0)
+    rescue StandardError
+      0
+    end
+    increment_build_number(xcodeproj: project, build_number: latest.to_i + 1)
+    if ENV["APP_VERSION"].to_s.strip != ""
+      increment_version_number(xcodeproj: project, version_number: ENV["APP_VERSION"].strip)
+    end
+
+    auth = "-allowProvisioningUpdates -authenticationKeyPath #{key_path} -authenticationKeyID #{ENV['ASC_KEY_ID']} -authenticationKeyIssuerID #{ENV['ASC_ISSUER_ID']}"
+    build_app(
+      project: project,
+      scheme: "App",
+      configuration: "Release",
+      export_method: "app-store",
+      xcargs: "#{auth} DEVELOPMENT_TEAM=#{ENV.fetch('APPLE_TEAM_ID')} CODE_SIGN_STYLE=Automatic",
+      export_xcargs: auth,
+      output_directory: File.expand_path("../build", __dir__),
+      output_name: "Sikermaker.ipa"
+    )
+    upload_to_testflight(api_key: api_key, skip_waiting_for_build_processing: true)
+  ensure
+    File.delete(key_path) if key_path && File.exist?(key_path)
+  end
+end

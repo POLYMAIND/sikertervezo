@@ -1,0 +1,17 @@
+node_modules/
+www/
+ios/App/App/public/
+ios/App/App/capacitor.config.json
+ios/App/App/config.xml
+ios/App/build/
+ios/DerivedData/
+fastlane/report.xml
+fastlane/README.md
+*.ipa
+*.dSYM.zip
+*.p8
+.env
+build/
+fastlane/asc_key.p8
+vendor/
+.bundle/

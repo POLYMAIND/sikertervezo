@@ -4,8 +4,8 @@
 import os, html
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-HATALYOS = "2026. november 7."
-HATALYOS_TOL = "2026. november 7-étől"
+HATALYOS = "2026. november 24."
+HATALYOS_TOL = "2026. november 24-étől"
 CEG = "polymAInd Kft. (székhely: 2013 Pomáz, Nyár utca 46/A 1. ajtó; cégjegyzékszám: 13 09 239925; adószám: 32793363-2-13)"
 EMAIL = '<a href="mailto:hello@polymaind.hu">hello@polymaind.hu</a>'
 
@@ -130,9 +130,14 @@ adatkezeles = f"""
   <p><b>Sütimentes látogatottsági statisztika.</b> Az oldalak látogatottságát összesítve, sütik nélkül is mérjük (Vercel Web Analytics): hány megtekintés volt, melyik oldalon, milyen eszköztípusról és országból. Nem tárolunk IP-címet, nem rakunk le sütit, és nem azonosítunk senkit. Jogalap: jogos érdek (GDPR 6. cikk (1) f).</p>
   <p><b>Mérés és hirdetés – csak a hozzájárulásoddal.</b> Ha a sütisávon az „Elfogadom” gombot választod, bekapcsoljuk a <b>Google Analytics 4</b>-et (látogatási statisztika, hogy lássuk, honnan érkeznek a látogatók és mi működik) és a <b>Meta Pixel</b>-t (a Facebook- és Instagram-hirdetéseink mérése, közös a Polymaind és a PolyOS oldalaival). Ezek sütiket helyeznek el, és a böngésződ adatait (pl. a meglátogatott oldalakat, az eszköz típusát, a hirdetési azonosítókat) a Google, illetve a Meta szervereire küldik. Mérünk néhány eseményt is: feliratkozás a várólistára, az ajándék letöltése, regisztráció. A „Csak a szükségeset” választásakor ezek közül semmi nem töltődik be. Jogalap: hozzájárulás (GDPR 6. cikk (1) a). A döntésedet bármikor módosíthatod a <a href="#" data-consent-open>Süti-beállítások</a> hivatkozással (a láblécben is megtalálod). A sütik élettartama: Google Analytics legfeljebb 2 év, Meta Pixel legfeljebb 90 nap.</p>
 
-  <h2>8. Jogaid</h2>
+  <h2 id="ios">8. Az iPhone-alkalmazás</h2>
+  <p>Az iPhone-ra készült Sikermaker-alkalmazás ugyanazzal a fiókkal és ugyanazokkal az adatokkal működik, mint a webes tervező; az adatkezelés a fentiek szerint történik. Az alkalmazásban <b>nincs mérés és hirdetési követés</b>: sem Google Analytics, sem Meta Pixel, sem más követő kód nem fut, és nem kérjük a hirdetési azonosítódat. A belépési munkamenet és a beállításaid az eszközön, az alkalmazás saját tárolójában vannak.</p>
+  <p><b>Emlékeztetők.</b> Ha engedélyezed az értesítéseket, az emlékeztetőket (reggeli összefoglaló, esti zárás, utánkövetés, születésnap) maga a telefon ütemezi és jeleníti meg a tervedből (helyi értesítés); ehhez a terv tartalma nem megy harmadik félhez, és nem használunk értesítési szervert. Az értesítéseket az alkalmazás Beállítások → Emlékeztetők részében vagy az iPhone beállításaiban bármikor kikapcsolhatod.</p>
+  <p><b>A fiók törlése.</b> A fiókodat az alkalmazásban (és a weben is) a Beállítások → Fiók → „Fiókom törlése” gombbal bármikor véglegesen törölheted. Ekkor a fiók, a terv és minden hozzá tartozó adat azonnal törlődik, a bankkártyás előfizetést pedig lemondjuk; a kiállított számlákat a számviteli törvény szerint 8 évig megőrizzük.</p>
+
+  <h2>9. Jogaid</h2>
   <ul>
-    <li>Hozzáférés a rólad kezelt adatokhoz, helyesbítés, törlés („elfeledtetés”)</li>
+    <li>Hozzáférés a rólad kezelt adatokhoz, helyesbítés, törlés („elfeledtetés”): a fiókodat a Beállításokban magad is törölheted</li>
     <li>Az adatkezelés korlátozása és az ellene való tiltakozás</li>
     <li>Adathordozhatóság: a tervedet a Beállításokban bármikor letöltheted géppel olvasható (JSON) formában</li>
     <li>A hozzájárulás bármikori visszavonása (várólista, white label márka gazdája felé)</li>
@@ -140,7 +145,7 @@ adatkezeles = f"""
   </ul>
   <p>Jogaid gyakorlásához írj a {EMAIL} címre; legkésőbb 30 napon belül válaszolunk.</p>
 
-  <h2>9. Változtatás</h2>
+  <h2>10. Változtatás</h2>
   <p>A tájékoztatót időről időre frissíthetjük; a lényeges változásokról a szolgáltatáson belül vagy e-mailben értesítünk.</p>
 """
 
@@ -154,7 +159,7 @@ aszf = f"""
   <p>A bemutató mód regisztráció nélkül, mintaadatokkal kipróbálható; az ott beírt adatok csak a böngésződben maradnak. A nyitás előtt a várólistára iratkozhatsz fel; ajándékként ilyenkor letöltheted a Káoszmanager nyomtatható csomagot. A Káoszmanager személyes használatra szól; kinyomtathatod és sokszorosíthatod a saját használatodra, de értékesíteni vagy saját termékként terjeszteni nem szabad.</p>
 
   <h2>3. Regisztráció és fiók</h2>
-  <p>A regisztrációhoz valós adatok szükségesek. Te felelsz a belépési adataid biztonságáért és a fiókodban végzett tevékenységért. A fiókodat és a tervedet bármikor törölheted, illetve kérheted a törlését a {EMAIL} címen.</p>
+  <p>A regisztrációhoz valós adatok szükségesek. Te felelsz a belépési adataid biztonságáért és a fiókodban végzett tevékenységért. A fiókodat és a tervedet bármikor törölheted (Beállítások → Fiók → „Fiókom törlése”), illetve kérheted a törlését a {EMAIL} címen.</p>
 
   <h2>4. Csomagok és díjak</h2>
   <ul>

@@ -29,7 +29,7 @@
     brandSlug = (config && config.brand && config.brand.slug) || "alap";
     const c = config && config.supabase;
     if (!c || !c.url || !c.anonKey) { mode = "demo"; return { cloud: false, user: null }; }
-    if (!window.supabase) await loadScript(SB_CDN);
+    if (!window.supabase) await loadScript(ST.native && ST.native.on ? "/vendor/supabase.min.js" : SB_CDN); // appban a csomagolt példány (mobile/scripts/build-www.mjs)
     sb = window.supabase.createClient(c.url, c.anonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "pkce" } });
     // levélből érkező link (?token_hash=…&type=…): itt hitelesítjük, így bármelyik böngészőben működik
     let linkError = null;
@@ -48,7 +48,7 @@
   }
 
   // a ?brand= megmarad, hogy a levélből visszatérve is a márka (és a márkás levél) jöjjön
-  const back = () => { const b = new URLSearchParams(location.search).get("brand"); return location.origin + location.pathname + (b && /^[a-z0-9-]{1,40}$/.test(b) ? "?brand=" + b : ""); };
+  const back = () => { const b = new URLSearchParams(location.search).get("brand"); const base = ST.native && ST.native.on ? ST.native.authReturn() : location.origin + location.pathname; return base + (b && /^[a-z0-9-]{1,40}$/.test(b) ? "?brand=" + b : ""); };
   const need = () => { if (!sb) throw new Error("not_configured"); };
   // belépő link e-mailben (jelszó nélkül; új e-mail-címnél ez egyben regisztráció is)
   async function signIn(email) {
