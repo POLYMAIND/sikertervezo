@@ -6,14 +6,26 @@
 #   APPLE_TEAM_ID       10 karakteres Team ID (developer.apple.com → Membership)
 #   ASC_KEY_ID          App Store Connect API-kulcs azonosítója
 #   ASC_ISSUER_ID       a kulcs kibocsátójának azonosítója (Users and Access → Integrations → App Store Connect API)
-#   ASC_KEY_P8_BASE64   a letöltött .p8 kulcsfájl base64-ben (base64 -i AuthKey_XXXX.p8 | pbcopy)
+#   ASC_KEY_P8_BASE64   a letöltött .p8 kulcsfájl base64-ben (base64 -i AuthKey_XXXX.p8 | pbcopy), vagy a fájl nyers tartalma
 default_platform(:ios)
+
+# Az ASC_KEY_P8_BASE64 titok lehet a .p8 base64-es változata VAGY a .p8 nyers tartalma (-----BEGIN PRIVATE KEY-----…).
+def asc_key_pem
+  raw = ENV.fetch("ASC_KEY_P8_BASE64").to_s.strip.delete("\r")
+  pem = raw.include?("BEGIN PRIVATE KEY") ? raw : Base64.decode64(raw.gsub(/\s+/, ""))
+  pem = pem.strip.delete("\r")
+  unless pem.start_with?("-----BEGIN PRIVATE KEY-----") && pem.include?("-----END PRIVATE KEY-----")
+    UI.user_error!("Az ASC_KEY_P8_BASE64 titok nem érvényes .p8 kulcs. Tedd bele a letöltött AuthKey_XXXX.p8 fájl teljes tartalmát " \
+                   "(-----BEGIN PRIVATE KEY----- … -----END PRIVATE KEY-----), vagy annak base64-es változatát (base64 -i AuthKey_XXXX.p8).")
+  end
+  pem + "\n"
+end
 
 platform :ios do
   desc "Build + feltöltés a TestFlightra"
   lane :beta do
     key_path = File.expand_path("asc_key.p8", __dir__)
-    File.write(key_path, Base64.decode64(ENV.fetch("ASC_KEY_P8_BASE64")))
+    File.write(key_path, asc_key_pem)
     api_key = app_store_connect_api_key(key_id: ENV.fetch("ASC_KEY_ID"), issuer_id: ENV.fetch("ASC_ISSUER_ID"), key_filepath: key_path)
 
     project = File.expand_path("../ios/App/App.xcodeproj", __dir__)
