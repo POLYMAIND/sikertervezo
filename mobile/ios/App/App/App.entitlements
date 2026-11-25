@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- universal link (belépő / megerősítő / új jelszó levelek) és jelszó-automatikus kitöltés a sikermaker.hu-ról;
+	     a szerveroldal: /.well-known/apple-app-site-association (api/aasa.js, APPLE_TEAM_ID) -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:sikermaker.hu</string>
+		<string>webcredentials:sikermaker.hu</string>
+	</array>
+</dict>
+</plist>

@@ -44,6 +44,7 @@ supabase/migrations/    adatbázis-séma (RLS)
 brands/                 kitalált minta-márkák (valós ügyfél-arculat NEM kerül a repóba)
 docs/polyos-integracio.md   a PolyOS-oldali szerződés
 tests/                  egységtesztek, böngészős füstteszt, helyi fejlesztői szerver
+mobile/                 iOS-app (Capacitor): a public/ appba csomagolva; docs/ios-app-store.md
 ```
 
 ## Helyi futtatás
@@ -71,6 +72,7 @@ node tests/smoke.mjs http://localhost:3000
    `sikertervezo_brand_admins`-ba; saját domainhez `BRAND_HOSTS`. Az arculatot ezután az admin maga állítja be a felületen.
 4. **PolyOS-híd:** a `docs/polyos-integracio.md` szerinti végpontok a PolyOS-ben, majd a `POLYOS_*` és `LINK_ENC_KEY` változók.
 5. **Fizetés (Stripe) + számla (Számlázz.hu):** lásd `docs/fizetes-szamlazas.md`.
+6. **iPhone-app (App Store):** `mobile/` (Capacitor), build és TestFlight Mac nélkül GitHub Actionsszel — lásd `docs/ios-app-store.md`.
 
 ## Biztonság röviden
 

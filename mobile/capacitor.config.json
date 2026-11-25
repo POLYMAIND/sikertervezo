@@ -1,0 +1,15 @@
+{
+  "appId": "hu.sikermaker.app",
+  "appName": "Sikermaker",
+  "webDir": "www",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#1F2024",
+    "limitsNavigationsToAppBoundDomains": false
+  },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 600, "backgroundColor": "#1F2024", "showSpinner": false },
+    "LocalNotifications": { "presentationOptions": ["banner", "sound", "list"] },
+    "CapacitorHttp": { "enabled": false }
+  }
+}

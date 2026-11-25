@@ -27,6 +27,7 @@ const L = require("./_lib");
 const B = require("./_brands");
 const W = require("./_waitlist");
 const LM = require("./_launchmail");
+const DU = require("./_deleteuser");
 
 const PLANS = ["ingyenes", "pro"];
 const STATUSES = ["probaido", "aktiv", "lejart", "lemondva", "ajandek"];
@@ -125,22 +126,10 @@ module.exports = async function handler(req, res) {
       if (!target || !target.id) return L.send(res, 404, { error: "user_not_found" });
       const email = String(target.email || "").toLowerCase();
       if (isRoot({ email })) return L.send(res, 400, { error: "root" });
-      const enc = encodeURIComponent, now = new Date().toISOString();
-      // a „ki módosította” hivatkozások nem akaszthatják meg a törlést
-      await Promise.all([
-        safe(L.sb(`sikertervezo_brands?updated_by=eq.${b.id}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ updated_by: null }) }), null),
-        safe(L.sb(`sikertervezo_subscriptions?updated_by=eq.${b.id}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ updated_by: null }) }), null),
-        safe(L.sb(`sikertervezo_superadmins?granted_by=eq.${b.id}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ granted_by: null }) }), null),
-        safe(L.sb(`sikertervezo_platform?updated_by=eq.${b.id}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ updated_by: null }) }), null),
-        safe(L.sb(`sikertervezo_flags?updated_by=eq.${b.id}`, { method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ updated_by: null }) }), null),
-      ]);
-      if (email) {
-        await safe(L.sb(`sikertervezo_waitlist?email=eq.${enc(email)}`, { method: "DELETE" }), null);
-        await safe(L.sb(`sikertervezo_brand_members?email=eq.${enc(email)}`, { method: "DELETE" }), null);
-      }
-      await L.authAdmin("users/" + b.id, { method: "DELETE" });
-      const masked = email ? email.replace(/^(.).*(@.*)$/, "$1***$2") : "";
-      await audit(user, "user.delete", b.id, { email: masked, at: now });
+      const now = new Date().toISOString();
+      const r = await DU.purgeUser(b.id, email);
+      const masked = DU.maskEmail(email);
+      await audit(user, "user.delete", b.id, { email: masked, at: now, stripeCancelled: r.stripeCancelled });
       return L.send(res, 200, { ok: true });
     }
     if (action === "user.ban" || action === "user.unban") {

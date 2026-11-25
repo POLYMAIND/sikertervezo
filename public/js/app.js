@@ -12,9 +12,11 @@ const PRO_VIEWS=["tartalom","kapcsolatok","ugyfelek","szamok"];
 // márkánként bekapcsolható funkciók (a superadmin kapcsolja be egy white label márkának); alapból kikapcsolva
 const FEAT=k=>!!(BR.features&&BR.features[k]);
 // bemutatóban a Pro funkciókat egy kis „PRO” címke jelöli, hogy egyértelmű legyen, mi tartozik a Pro csomaghoz
-const SHOWPRO=DEMO&&PRO;
+const SHOWPRO=DEMO&&PRO&&!ctx.nobuy;
 const proTag=(cls)=>SHOWPRO?`<span class="protag${cls?" "+cls:""}" title="A Pro csomag része">PRO</span>`:"";
 const PRO_PRICE="1 990 Ft / hó";
+// iOS-app (App Store-mód, js/native.js): nincs vásárlás és vásárlásra utalás (ár, fizetés, portál); a weben vett Pro működik
+const NATIVE=!!ctx.native,NOBUY=!!ctx.nobuy;
 /* ---------- utils ---------- */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -101,7 +103,7 @@ let S=ctx.state&&ctx.state.v?ctx.state:(DEMO?sample():blank());
 // bemutató: ha a böngészőben egy régebbi mintaadat-készlet van elmentve, az újra cseréljük (a mintaadatok változtak)
 const DEMO_SEED=2;
 if(DEMO&&(S.seed||0)<DEMO_SEED){S=sample();S.unlocked={};S.maps=[sampleMap()];setTimeout(save,0)}
-function save(){return ST.store.save(S)}
+function save(){if(NATIVE&&ST.native)ST.native.reschedule(S);return ST.store.save(S)}
 function migrate(){
   if(!S.custom)S.custom=[];
   if(!S.prefs)S.prefs={};
@@ -265,6 +267,8 @@ if(FEAT("notesz"))VIEWS.splice(VIEWS.findIndex(x=>x[0]==="olvasas")+1,0,["notesz
 [["csapat","csapat"],["szamok","szamok"]].forEach(([v,f])=>{if(!FEAT(f)){const i=VIEWS.findIndex(x=>x[0]===v);if(i>=0)VIEWS.splice(i,1)}});
 // kikapcsolt PolyOS-ajánlónál (Admin → Márkák) a Bővítések menüpont sem látszik, hacsak nincs már összekapcsolt PolyOS-modul
 if(!BR.upsell&&!PX.MODULES.some(m=>PX.has(m.key))){const i=VIEWS.findIndex(x=>x[0]==="bovitesek");if(i>=0)VIEWS.splice(i,1)}
+// iOS-app (App Store 3.1.1 / 3.1.3): az ingyenes felhasználó nem lát zárolt Pro funkciót (a weben vett Pro itt is működik)
+if(NOBUY&&!PRO&&!DEMO)PRO_VIEWS.forEach(v=>{const i=VIEWS.findIndex(x=>x[0]===v);if(i>=0)VIEWS.splice(i,1)});
 if(BR.plan==="whitelabel"&&(ctx.brandAdmin||ctx.mode!=="cloud"))VIEWS.push(["markam","Márkám"]);
 // a központi (Sikermaker) admin csak a Sikermakerben látszik, white label márkán belül nem (ott a Márkám a márkáé)
 if(ctx.superadmin&&BR.plan!=="whitelabel")VIEWS.push(["admin","Admin"]);
@@ -298,7 +302,7 @@ const NICON={
   beallitasok:'<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>'
 };
 const nicon=k=>`<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${NICON[k]||""}</svg>`;
-const TABS=["ma","naptar","kapcsolatok","tartalom"];
+const TABS=["ma","naptar","kapcsolatok","tartalom","szokasok","terkep"].filter(k=>VIEWS.some(v=>v[0]===k)).slice(0,4);
 function navBadge(k,dc){if(!PRO&&PRO_VIEWS.includes(k))return 0;if(k==="kapcsolatok"&&dc.f)return dc.f;if(k==="ugyfelek"&&dc.r)return dc.r;return 0}
 function nav(){
   const dc=dueCounts();
@@ -950,9 +954,15 @@ function downloadCert(id){
 }
 
 /* ---------- emlékeztetők (beállítás) ---------- */
+// iOS-app: a reggeli, esti, utánkövetési és szülinapi emlékeztető valódi értesítésként érkezik erre a telefonra
+function remindNativeNote(){
+  const st=ui.notif;
+  if(st===undefined&&ST.native&&ST.native.remindAvailable()){ui.notif=null;ST.native.permission().then(ok=>{ui.notif=ok;render()})}
+  return `<p class="muted" style="margin:0;font-size:12.5px">A reggeli összefoglaló, az esti zárás, az utánkövetés és a születésnap értesítésként érkezik erre a telefonra (a periódus zárása és az e-mail később indul).</p>${st===false&&S.reminders&&S.reminders.push?`<div class="row"><button class="btn small" data-act="notifon">Értesítések engedélyezése</button><span class="muted" style="font-size:12px">Ha korábban letiltottad: iPhone Beállítások → Sikermaker → Értesítések.</span></div>`:""}`;
+}
 const REMINDERS=[["reggel","Reggeli összefoglaló","Minden reggel: mai időpontok, kit keress meg, mai lépések."],["esti","Esti zárás","Este emlékeztet, hogy zárd le a napot."],["utan","Utánkövetés","Amikor valakit esedékes megkeresni."],["zaras","Periódus zárása","3 nappal és 1 nappal a zárás előtt, a hiányzó pontokkal."],["szulinap","Születésnap","Reggel, ha egy ügyfeled ünnepel."]];
 function remindersCard(){const r=S.reminders||(S.reminders={reggel:true,esti:true,utan:true,zaras:true,szulinap:true,reggelIdo:"07:30",estiIdo:"20:30",push:true,email:false});
-  return `<div class="card stack"><h3>Emlékeztetők</h3><p class="muted" style="margin:0;font-size:12.5px">A beállításaidat elmentjük. Az értesítések kiküldése (telefonos értesítés és e-mail) a következő fejlesztési lépésben indul.</p>
+  return `<div class="card stack"><h3>Emlékeztetők</h3>${NATIVE?remindNativeNote():`<p class="muted" style="margin:0;font-size:12.5px">A beállításaidat elmentjük. Az értesítések kiküldése (telefonos értesítés és e-mail) a következő fejlesztési lépésben indul.</p>`}
   <div class="list">${REMINDERS.map(([k,l,d])=>`<div class="li"><button class="cbx" data-act="rem" data-k="${k}" aria-pressed="${!!r[k]}" aria-label="${esc(l)}">${r[k]?"✓":""}</button><div class="grow"><div class="t">${esc(l)}</div><div class="s">${esc(d)}</div></div>${k==="reggel"||k==="esti"?`<input type="time" class="remtime" id="rem-${k}" data-remt="${k}Ido" value="${r[k+"Ido"]}" aria-label="${esc(l)} időpontja">`:""}</div>`).join("")}</div>
   <div class="row" style="gap:6px"><span class="lab2" style="margin:0">Hogyan?</span><button class="mood" data-act="rem" data-k="push" aria-pressed="${!!r.push}">Értesítés a telefonra</button><button class="mood" data-act="rem" data-k="email" aria-pressed="${!!r.email}">E-mail</button></div></div>`}
 
@@ -1285,9 +1295,17 @@ function accountCard(){
   if(DEMO)return `<div class="card stack"><h3>Bemutató mód</h3><p class="muted" style="margin:0">Most belépés nélkül, mintaadatokkal próbálod a tervezőt: amit beírsz, csak ebben a böngészőben marad meg. Fiókkal minden eszközödön ugyanazt látod.</p>
   <div class="row">${ctx.cloud?`<button class="btn" data-act="signup">${SIGNUP_CTA}</button>`:""}<span id="resetrow" class="row"><button class="btn ghost" data-act="resetask">Mintaadatok visszaállítása</button></span></div>
 </div>`;
-  return `<div class="card stack"><h3>Fiók</h3><div class="row between"><div><b>${esc((ctx.user&&ctx.user.email)||"")}</b><div class="muted" style="font-size:12.5px">A terved a fiókodhoz van mentve, minden eszközödön ugyanaz.</div>${consentRow()}</div><span class="row"><button class="btn ghost small" data-act="export">Adataim letöltése</button><button class="btn ghost small" data-act="logout">Kijelentkezés</button></span></div></div>`;
+  return `<div class="card stack"><h3>Fiók</h3><div class="row between"><div><b>${esc((ctx.user&&ctx.user.email)||"")}</b><div class="muted" style="font-size:12.5px">A terved a fiókodhoz van mentve, minden eszközödön ugyanaz.</div>${consentRow()}</div><span class="row"><button class="btn ghost small" data-act="export">Adataim letöltése</button><button class="btn ghost small" data-act="logout">Kijelentkezés</button></span></div>${delAccountBlock()}</div>`;
 }
 
+// Fiókom törlése (App Store 5.1.1(v), GDPR): a saját e-mail-cím beírásával erősíti meg; minden adat törlődik
+function delAccountBlock(){
+  if(!ui.meDel)return `<div class="row" style="margin-top:4px"><button class="btn ghost small dangerline" data-act="medelask">Fiókom törlése</button></div>`;
+  return `<form class="stack admdelc" data-form="medel" style="gap:10px;margin-top:4px"><b>Biztosan véglegesen törlöd a fiókodat?</b>
+    <span style="font-size:13px">A terved, a beállításaid, a kapcsolataid és az összes adatod törlődik, és ez nem vonható vissza.${PRO&&BR.plan!=="whitelabel"?" Ha bankkártyás Pro előfizetésed van, azt is azonnal lemondjuk.":""} Előtte érdemes letölteni az adataidat.</span>
+    <label class="f">A megerősítéshez írd be az e-mail-címedet<input type="email" id="medel-email" autocomplete="off" required placeholder="${esc((ctx.user&&ctx.user.email)||"")}"></label>
+    <span class="row" style="gap:6px"><button class="btn small danger">Igen, véglegesen törlöm</button><button type="button" class="btn small ghost" data-act="medelno">Mégse</button></span></form>`;
+}
 /* ---------- bemutató mód: regisztrációs felhívás minden oldal tetején ---------- */
 function demoCta(){
   if(!DEMO||!ctx.cloud)return "";
@@ -1368,6 +1386,7 @@ function obFinish(skipped){
     if(d.client.name.trim()){S.clients.push({id:uid(),name:d.client.name.trim(),phone:"",bday:"",fav:d.client.fav.trim(),last:d.client.last||"",cycle:30,created:T})}
   }
   S.onboarded=T;save();obClose();if(route!=="ma")location.hash="ma";else render();
+  if(NATIVE&&!DEMO&&ST.native){remindersCard();setTimeout(()=>ST.native.remindEnable(S).then(ok=>{ui.notif=ok}),1200)}
   if(!skipped)toast("Minden be van állítva. Jó tervezést!");
 }
 /* Első lépések lista a Vezérlőpulton, amíg be nem járja az alapokat */
@@ -1528,7 +1547,8 @@ function saveQuickAdd(){
 function calSyncCard(){
   const c=ui.cal||{};
   let body;
-  if(!PRO)body=`<p style="margin:0">A naptár-szinkron a Pro csomag része (${PRO_PRICE}).</p><div class="row">${proCta()}</div>`;
+  if(!PRO&&NOBUY&&!DEMO)return "";
+  if(!PRO)body=NOBUY?`<p style="margin:0">A naptár-szinkron a Pro csomag része.</p>${DEMO?`<div class="row">${proCta()}</div>`:""}`:`<p style="margin:0">A naptár-szinkron a Pro csomag része (${PRO_PRICE}).</p><div class="row">${proCta()}</div>`;
   else if(DEMO)body=`<p style="margin:0">A naptár-szinkronhoz fiók kell: ${ctx.cloud?`<button class="chip" data-act="signup">${ctx.signupOpen?"Regisztrálok":"Feliratkozom a várólistára"}</button>`:"a bemutató módban nem érhető el."}</p>`;
   else if(!c.loaded){if(!c.loading){c.loading=true;ui.cal=c;ctx.calendar("status").then(r=>{ui.cal=Object.assign({loaded:true},r);render()},()=>{ui.cal={loaded:true,err:true};render()})}body='<div class="spinner" role="status" aria-label="Betöltés"></div>'}
   else if(c.err)body='<p style="margin:0">Most nem sikerült betölteni. Próbáld újra később.</p>';
@@ -1654,6 +1674,7 @@ function proUrl(){
 }
 function proCta(label){
   if(DEMO)return `<button class="btn" data-act="demoplan" data-k="pro">${label||"Kipróbálom a Pro-t a bemutatóban"}</button>`;
+  if(NOBUY)return "";
   if(ctx.billingReady)return `<button class="btn" data-act="buypro">${label||"Pro-ra váltok"}</button>`;
   return `<a class="btn" href="${esc(proUrl())}">${label||"Pro-ra váltok"}</a>`;
 }
@@ -1662,18 +1683,20 @@ function vPro(view){
   const it=PRO_LIST.find(x=>x[0]===view)||PRO_LIST[0];
   return head(it[1],"Pro funkció")+`<div class="card stack procard" style="gap:14px"><div class="row" style="gap:12px;flex-wrap:nowrap"><span class="ic" aria-hidden="true">${nicon(view)}</span><div><h2 style="margin:0">${esc(it[1])} a Pro csomagban</h2><p class="muted" style="margin:4px 0 0">${esc(it[2])}</p></div></div>
   <div class="prolist">${PRO_LIST.map(([k,l,d])=>`<div class="li"><span class="cbx" aria-hidden="true" aria-pressed="true">✓</span><div class="grow"><div class="t">${esc(l)}</div><div class="s">${esc(d)}</div></div></div>`).join("")}</div>
-  <div class="row between"><div><div class="bpv" style="margin:0">${PRO_PRICE.replace(" / hó","")}<small> / hó</small></div><div class="muted" style="font-size:12px">Bármikor lemondható. Minden ingyenes funkció is benne van.</div></div>${proCta()}</div>
-  ${DEMO?"":ctx.billingReady?'<p class="muted" style="margin:0;font-size:12px">Biztonságos bankkártyás fizetés a Stripe-on. A Pro a fizetés után azonnal bekapcsol.</p>':'<p class="muted" style="margin:0;font-size:12px">Az online fizetés hamarosan indul. Addig a gombra kattintva írj nekünk, és még aznap bekapcsoljuk a Pro-t a fiókodon.</p>'}</div>`;
+  ${NOBUY?`<p class="muted" style="margin:0;font-size:12.5px">Ez a funkció a Pro csomagban érhető el.${DEMO?"":" Ha a fiókodon már be van kapcsolva a Pro, itt is automatikusan megjelenik."}</p>${DEMO?`<div class="row">${proCta()}</div>`:""}`:`<div class="row between"><div><div class="bpv" style="margin:0">${PRO_PRICE.replace(" / hó","")}<small> / hó</small></div><div class="muted" style="font-size:12px">Bármikor lemondható. Minden ingyenes funkció is benne van.</div></div>${proCta()}</div>`}
+  ${DEMO||NOBUY?"":ctx.billingReady?'<p class="muted" style="margin:0;font-size:12px">Biztonságos bankkártyás fizetés a Stripe-on. A Pro a fizetés után azonnal bekapcsol.</p>':'<p class="muted" style="margin:0;font-size:12px">Az online fizetés hamarosan indul. Addig a gombra kattintva írj nekünk, és még aznap bekapcsoljuk a Pro-t a fiókodon.</p>'}</div>`;
 }
 function proTeaser(){
-  return `<div class="card upstrip"><span class="ic" aria-hidden="true">⭐</span><div class="grow"><span class="t">Kapcsolatok, ügyfelek, tartalom és számok a Pro csomagban</span><span class="s">Utánkövetési emlékeztetők, újrarendelés, tartalomnaptár, havi célok, naptár-szinkron. ${PRO_PRICE}.</span></div><a class="btn small" href="#kapcsolatok">Megnézem</a></div>`;
+  if(NOBUY&&!DEMO)return "";
+  return `<div class="card upstrip"><span class="ic" aria-hidden="true">⭐</span><div class="grow"><span class="t">Kapcsolatok, ügyfelek, tartalom és számok a Pro csomagban</span><span class="s">Utánkövetési emlékeztetők, újrarendelés, tartalomnaptár, havi célok, naptár-szinkron.${NOBUY?"":" "+PRO_PRICE+"."}</span></div><a class="btn small" href="#kapcsolatok">Megnézem</a></div>`;
 }
 function planCard(){
+  if(NOBUY&&!DEMO&&!PRO)return ""; // iOS-app, ingyenes: nincs csomag-ajánló
   const pro=PRO,wl=BR.plan==="whitelabel";
   return `<div class="card stack"><div class="row between"><h3 style="margin:0">Csomagod</h3><span class="chip ${pro?"on":""}">${wl?"White label":pro?"Pro":"Ingyenes"}</span></div>
-  <p style="margin:0;font-size:13.5px">${wl?`A ${esc(BR.productName)} csomagjában minden funkció elérhető.`:pro?"Minden funkció elérhető: tartalom, kapcsolatok, ügyfelek, számok, naptár-szinkron.":`A Pro csomagban (${PRO_PRICE}) a Tartalomtervező, a Kapcsolatok, az Ügyfelek, a Számok, a naptár-szinkron és az e-mail is elérhető.`}</p>
-  ${pro||wl?"":`<div class="row">${proCta()}</div>`}${pro&&!wl&&!DEMO&&ctx.billingReady&&ctx.planSource==="subscription"?'<div class="row"><button class="btn ghost small" data-act="billportal">Előfizetés kezelése (kártya, számlák, lemondás)</button></div>':""}
-  ${DEMO?`<div class="row" style="gap:6px"><span class="lab2" style="margin:0">Csomag a bemutatóban:</span>${[["ingyenes","Ingyenes"],["pro","Pro"],["whitelabel","White label"]].map(([k,l])=>`<button class="mood" data-act="demoplan" data-k="${k}" aria-pressed="${(wl?"whitelabel":pro?"pro":"ingyenes")===k}">${l}</button>`).join("")}</div>`:""}</div>`;
+  <p style="margin:0;font-size:13.5px">${wl?`A ${esc(BR.productName)} csomagjában minden funkció elérhető.`:pro?"Minden funkció elérhető: tartalom, kapcsolatok, ügyfelek, számok, naptár-szinkron.":`A Pro csomagban${NOBUY?"":" ("+PRO_PRICE+")"} a Tartalomtervező, a Kapcsolatok, az Ügyfelek, a Számok, a naptár-szinkron és az e-mail is elérhető.`}</p>
+  ${pro||wl||(NOBUY&&!DEMO)?"":`<div class="row">${proCta()}</div>`}${pro&&!wl&&!DEMO&&!NOBUY&&ctx.billingReady&&ctx.planSource==="subscription"?'<div class="row"><button class="btn ghost small" data-act="billportal">Előfizetés kezelése (kártya, számlák, lemondás)</button></div>':""}
+  ${DEMO&&!NOBUY?`<div class="row" style="gap:6px"><span class="lab2" style="margin:0">Csomag a bemutatóban:</span>${[["ingyenes","Ingyenes"],["pro","Pro"],["whitelabel","White label"]].map(([k,l])=>`<button class="mood" data-act="demoplan" data-k="${k}" aria-pressed="${(wl?"whitelabel":pro?"pro":"ingyenes")===k}">${l}</button>`).join("")}</div>`:""}</div>`;
 }
 /* ---------- bekötött külső naptárak (csak olvasható réteg) ---------- */
 function extRange(){
@@ -1879,7 +1902,7 @@ function mzApply(){
 }
 /* ---------- Márkám (white label partner: a saját márkája, a saját felhasználói) ---------- */
 const MARKAM=BR.plan==="whitelabel"&&(ctx.brandAdmin||DEMO);
-function inviteUrl(){return location.origin+"/app?"+(BR.slug&&BR.slug!=="alap"?"brand="+encodeURIComponent(BR.slug)+"&":"")+"regisztracio"}
+function inviteUrl(){return (NATIVE?"https://sikermaker.hu":location.origin)+"/app?"+(BR.slug&&BR.slug!=="alap"?"brand="+encodeURIComponent(BR.slug)+"&":"")+"regisztracio"}
 const DEMO_MEMBERS=[["Minta Kata","kata@pelda.hu",-40,0],["Minta Éva","eva@pelda.hu",-21,-1],["Minta Zsófi","zsofi@pelda.hu",-9,-6],["Minta Réka","reka@pelda.hu",-3,-3]];
 function vMarkam(){
   activeBoard=null;
@@ -1948,7 +1971,7 @@ document.addEventListener("click",e=>{
   const a=b.dataset.act,id=b.dataset.id;
   const find=(coll)=>S[coll].find(x=>x.id===id);
   switch(a){
-    case"step":{const dd=day(b.dataset.day);const was=dd.steps.filter(Boolean).length;dd.steps[+b.dataset.i]=!dd.steps[+b.dataset.i];save();render();if(was<5&&dd.steps.filter(Boolean).length===5)crownPop();break}
+    case"step":{const dd=day(b.dataset.day);const was=dd.steps.filter(Boolean).length;dd.steps[+b.dataset.i]=!dd.steps[+b.dataset.i];if(NATIVE&&dd.steps[+b.dataset.i])ST.native.tap();save();render();if(was<5&&dd.steps.filter(Boolean).length===5)crownPop();break}
     case"msg":{const ty=b.dataset.type;let v={},done=null;ui.msgRef={type:ty,id};
       if(ty==="contact"){const c=find("contacts");v={nev:firstName(c.name),full:c.name,email:c.email||""};done={act:"cdone",id:c.id,label:"Megvolt"}}
       else if(ty==="client"){const c=find("clients");v={nev:firstName(c.name),full:c.name,termek:c.fav,email:c.email||(/@/.test(c.phone||"")?(c.phone.match(/[^\s,;]+@[^\s,;]+/)||[""])[0]:"")}}
@@ -1976,7 +1999,8 @@ document.addEventListener("click",e=>{
     case"cert":openCert(id);break;
     case"certdl":downloadCert(id);break;
     case"foundertoggle":S.settings.founder=!S.settings.founder;if(S.settings.founder&&!S.settings.founderSince)S.settings.founderSince=T;save();render();break;
-    case"rem":{const r=S.reminders;r[b.dataset.k]=!r[b.dataset.k];save();render();break}
+    case"rem":{const r=S.reminders;r[b.dataset.k]=!r[b.dataset.k];save();render();if(NATIVE&&r[b.dataset.k]&&ST.native)ST.native.remindEnable(S).then(ok=>{ui.notif=ok;render()});break}
+    case"notifon":ST.native&&ST.native.remindEnable(S).then(ok=>{ui.notif=ok;render();if(!ok)toast("Az értesítéseket az iPhone Beállítások → Sikermaker → Értesítések alatt kapcsolhatod be.")});break
     case"toallas":{if(route==="szamok"){e.preventDefault();const el=$("#allas");el&&el.scrollIntoView({behavior:"smooth"})}else{e.preventDefault();location.hash="szamok";setTimeout(()=>{const el=$("#allas");el&&el.scrollIntoView({behavior:"smooth"});const i=$("#bp-gp");i&&i.focus()},350)}break}
     case"bprog":{const bk=(S.books||[]).find(x=>x.id===id);if(!bk)break;bk.progress=Math.max(0,Math.min(100,(bk.progress||0)+ +b.dataset.d));if(bk.progress===100){bk.status="kesz";bk.finished=T;toast("Elolvastad! Gratulálok.")}save();render();break}
     case"bdone":{const b=S.books.find(x=>x.id===id);b.status="kesz";b.progress=100;b.finished=T;save();toast("Elolvastad! Gratulálok.");render();break}
@@ -2074,6 +2098,8 @@ document.addEventListener("click",e=>{
     case"authshow":ctx.showAuth("belepes");break;
     case"signup":ctx.showAuth("regisztracio");break;
     case"logout":ctx.logout();break;
+    case"medelask":ui.meDel=true;render();setTimeout(()=>{const i=$("#medel-email");if(i)i.focus()},0);break;
+    case"medelno":ui.meDel=false;render();break;
     case"export":{const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"}),u=URL.createObjectURL(blob),a2=document.createElement("a");a2.href=u;a2.download="sikermaker-adataim-"+T+".json";document.body.appendChild(a2);a2.click();a2.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);break}
     case"demoplan":ctx.setDemoPlan(b.dataset.k);break;
     case"bgpat":S.prefs=S.prefs||{};S.prefs.bg=Object.assign({},bgPrefs(),{bgPattern:b.dataset.k});save();repaint();render();break;
@@ -2216,6 +2242,10 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeForm();if(tray
 document.addEventListener("submit",e=>{
   e.preventDefault();const f=e.target;
   if(f.dataset.form==="ob"){obNext();return}
+  if(f.dataset.form==="medel"){const v=($("#medel-email").value||"").trim().toLowerCase(),me=String((ctx.user&&ctx.user.email)||"").toLowerCase();
+    if(v!==me){toast("A beírt cím nem egyezik a fiókod e-mail-címével.");return}
+    const btn=f.querySelector("button.danger");if(btn)btn.disabled=true;
+    ctx.deleteAccount(v).catch(err=>{if(btn)btn.disabled=false;toast(err&&err.message==="root"?"A fő admin fiókja innen nem törölhető.":"Most nem sikerült törölni. Próbáld újra, vagy írj nekünk: hello@polymaind.hu")});return}
   if(f.dataset.form==="mz"){return}
   if(f.dataset.form==="qadd"){saveQuickAdd();return}
   if(f.dataset.form==="impadd"){const btn=f.querySelector(".btn");btn.disabled=true;btn.textContent="Ellenőrzöm a naptárt…";
@@ -2304,6 +2334,8 @@ if(!S.maps){S.maps=[S.blank?{id:uid(),title:"Első térképem",nodes:[{id:uid(),
 go();
 if(ctx.payResult==="ok")setTimeout(()=>toast(PRO?"Köszönjük! A Pro bekapcsolt.":"Köszönjük a fizetést! A Pro pár másodpercen belül bekapcsol, frissítsd az oldalt."),400);
 if((S.blank&&!S.onboarded&&!DEMO)||/[?&]bevezeto\b/.test(location.search))obOpen();
+// iOS-app, belépve: az emlékeztetők ütemezése (az első indításkor itt kéri az iOS az értesítési engedélyt; a bevezető után)
+if(NATIVE&&!DEMO&&ST.native&&!(S.blank&&!S.onboarded)){remindersCard();setTimeout(()=>ST.native.remindEnable(S).then(ok=>{ui.notif=ok}),2000)}
 return {render,replace(st){S=st&&st.v?st:S;migrate();render()},get state(){return S}};
 };
 })();

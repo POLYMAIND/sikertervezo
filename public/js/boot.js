@@ -5,6 +5,8 @@
 (function () {
   "use strict";
   const ST = window.ST, TH = ST.theme, store = ST.store, PX = ST.polyos;
+  // iOS-app (App Store-mód): nincs vásárlás és vásárlásra utalás, nincs PWA-telepítés (lásd js/native.js)
+  const NATIVE = !!(ST.native && ST.native.on), NOBUY = !!(ST.native && ST.native.store);
   const $ = (s) => document.querySelector(s);
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const DEMO_PLAN_KEY = "sikertervezo:demo-plan", DEMO_BRAND_KEY = "sikertervezo:demo-brand", DEMO_CHOSEN = "sikertervezo:demo";
@@ -29,7 +31,7 @@
     // Androidon / asztali Chrome-ban a böngésző saját telepítő ablaka; iPhone-on csak útmutatót tudunk adni
     // Samsung Internet: telepíthető leíróból a böngésző saját (régi Android-célú) csomagot gyárt, amit a Play Protect letilt.
     // Ott a leíró böngészős (api/manifest.js) → parancsikon kerül a kezdőképernyőre; útmutatót adunk, Chrome opcionális
-    mode: () => (isStandalone() ? "" : isSamsung() ? "samsung" : installEvt ? "prompt" : isIOS() ? "ios" : ""),
+    mode: () => (NATIVE || isStandalone() ? "" : isSamsung() ? "samsung" : installEvt ? "prompt" : isIOS() ? "ios" : ""),
     chromeUrl: () => "intent://" + location.host + location.pathname + location.search + "#Intent;scheme=https;package=com.android.chrome;end",
     prompt: async () => { if (!installEvt) return false; installEvt.prompt(); const r = await installEvt.userChoice.catch(() => null); installEvt = null; return !!(r && r.outcome === "accepted"); },
   };
@@ -39,7 +41,7 @@
 
   async function getConfig() {
     try {
-      const r = await fetch("/api/config" + location.search, { headers: { Accept: "application/json" } });
+      const r = await ST.api("/api/config" + location.search, { headers: { Accept: "application/json" } });
       if (!r.ok) throw new Error(r.status);
       return await r.json();
     } catch (e) {
@@ -120,7 +122,7 @@
       ${tab === "ujjelszo" || tab === "elfelejtett" || hideLogin ? "" : tabs}
       ${msg ? `<div class="status" role="status">${esc(msg)}</div>` : ""}
       ${body}
-      ${tab === "ujjelszo" || membersOnly() ? (membersOnly() && eb.access.shopUrl && tab !== "ujjelszo" ? `<div class="sep">még nincs előfizetésed?</div><a class="btn ghost" href="${esc(eb.access.shopUrl)}" target="_blank" rel="noopener">Előfizetek</a>` : "") : `<div class="sep">vagy</div><button type="button" class="btn ghost" data-auth-act="demo">Kipróbálom belépés nélkül</button>`}
+      ${tab === "ujjelszo" || membersOnly() ? (membersOnly() && eb.access.shopUrl && tab !== "ujjelszo" && !NOBUY ? `<div class="sep">még nincs előfizetésed?</div><a class="btn ghost" href="${esc(eb.access.shopUrl)}" target="_blank" rel="noopener">Előfizetek</a>` : "") : `<div class="sep">vagy</div><button type="button" class="btn ghost" data-auth-act="demo">Kipróbálom belépés nélkül</button>`}
     
       <p class="credit">A fejlesztést a <a href="https://polymaind.hu" target="_blank" rel="noopener">Polymaind Kft.</a> végezte.</p>
     </div>`;
@@ -137,9 +139,9 @@
     $("#boot").innerHTML = `<div class="sheet" style="width:min(440px,100%)">
       ${eb.logo ? `<img class="logo-lg" src="${esc(eb.logo)}" alt="">` : `<span class="logo-lg">${TH.svg(TH.MARK)}</span>`}
       <div><h1 style="font-size:30px">${esc(eb.productName)}</h1><p class="sub">${esc(eb.tagline)}</p></div>
-      <div class="status" role="status">${lapsed ? `Az előfizetésed lejárt (${esc(when)}). Hosszabbítsd meg, és ott folytathatod, ahol abbahagytad: a terved megvan.` : `${esc(eb.productName)}: ez a tervező előfizetéssel használható.`}</div>
+      <div class="status" role="status">${lapsed ? `Az előfizetésed lejárt (${esc(when)}).${NOBUY ? "" : " Hosszabbítsd meg, és"} ${NOBUY ? "A" : "ott folytathatod, ahol abbahagytad: a"} terved megvan.` : `${esc(eb.productName)}: ez a tervező előfizetéssel használható.`}</div>
       <p class="sub" style="margin:0">Ha már előfizettél, ugyanazzal az e-mail-címmel lépj be, amit a vásárlásnál megadtál. Most ezzel vagy bent: <b>${esc((user && user.email) || "")}</b>.</p>
-      ${shop ? `<a class="btn" href="${esc(shop)}" target="_blank" rel="noopener">${lapsed ? "Megújítom az előfizetést" : "Előfizetek"}</a>` : ""}
+      ${shop && !NOBUY ? `<a class="btn" href="${esc(shop)}" target="_blank" rel="noopener">${lapsed ? "Megújítom az előfizetést" : "Előfizetek"}</a>` : ""}
       <button type="button" class="btn ghost" data-auth-act="recheck">Már előfizettem, frissítem</button>
       <button type="button" class="chip" data-auth-act="logout" style="align-self:center">Kijelentkezés, másik e-mail-címmel lépek be</button>
       <p class="credit">A fejlesztést a <a href="https://polymaind.hu" target="_blank" rel="noopener">Polymaind Kft.</a> végezte.</p>
@@ -166,7 +168,7 @@
     const v = Object.fromEntries(new FormData(f).entries()), btn = f.querySelector(".btn"); if (btn) btn.disabled = true;
     try {
       if (f.dataset.auth === "waitlist") {
-        const r = await fetch("/api/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: (v.email || "").trim(), consent: !!v.consent, website: v.website || "", source: "app" }) });
+        const r = await ST.api("/api/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: (v.email || "").trim(), consent: !!v.consent, website: v.website || "", source: "app" }) });
         const j = await r.json().catch(() => ({}));
         if (!r.ok || !j.ok) throw new Error(j.error === "bad_email" ? "wl_email" : j.error === "rate_limited" ? "rate" : "wl_fail");
         if (!j.already && window.smTrack) window.smTrack("generate_lead", { method: "varolista", source: "app" });
@@ -193,7 +195,7 @@
   /* ---------- márka-jogosultság és PolyOS-állapot (csak belépve) ---------- */
   async function api(path, opts) {
     const tok = store.token();
-    const r = await fetch(path, Object.assign({}, opts, { headers: Object.assign({ "Content-Type": "application/json" }, tok ? { Authorization: "Bearer " + tok } : {}) }));
+    const r = await ST.api(path, Object.assign({}, opts, { headers: Object.assign({ "Content-Type": "application/json" }, tok ? { Authorization: "Bearer " + tok } : {}) }));
     const j = await r.json().catch(() => ({}));
     if (!r.ok) { const e = new Error(j.error || String(r.status)); e.status = r.status; throw e; }
     return j;
@@ -205,7 +207,7 @@
     const demo = !user;
     // white label márkánál regisztrált, de az alap (Sikermaker) felületre érkezett → vissza a saját márkájába
     const sb0 = user && user.signupBrand;
-    if (sb0 && /^[a-z0-9-]{1,40}$/.test(sb0) && sb0 !== "alap" && (brandRaw.slug || "alap") === "alap" && !new URLSearchParams(location.search).has("brand")) { location.replace("/app?brand=" + encodeURIComponent(sb0)); return; }
+    if (sb0 && /^[a-z0-9-]{1,40}$/.test(sb0) && sb0 !== "alap" && (brandRaw.slug || "alap") === "alap" && !new URLSearchParams(location.search).has("brand")) { location.replace((NATIVE ? "/" : "/app") + "?brand=" + encodeURIComponent(sb0)); return; }
     // bemutató módban a csomag kézzel váltható (csak a kinézet; a szerver semmit nem enged ezzel)
     if (demo && ls.get(DEMO_PLAN_KEY) === "whitelabel" && brandRaw.plan !== "whitelabel") {
       let saved = null; try { saved = JSON.parse(ls.get(DEMO_BRAND_KEY) || "null"); } catch (e) {}
@@ -214,6 +216,7 @@
     const loaded = await store.load();
     const st = loaded.state;
     const prefs = (st && st.prefs && st.prefs.bg) || {};
+    if (NOBUY) brandRaw = Object.assign({}, brandRaw, { upsell: false });
     TH.apply(brandRaw, prefs); paintChrome(brandRaw);
 
     let brandAdmin = false, brandSupport = false, px = Object.assign({ enabled: false }, config.polyos || {});
@@ -252,7 +255,7 @@
       calendar: async (action, payload) => api("/api/calendar", { method: "POST", body: JSON.stringify(Object.assign({ action }, payload || {})) }),
       admin: async (action, payload) => api("/api/admin", { method: "POST", body: JSON.stringify(Object.assign({ action }, payload || {})) }),
       // zárt regisztrációnál a bemutató gombjai a landing várólistájára visznek (nem a belépőképernyőre)
-      showAuth: (tab) => { if (!signupOpenNow() && !loginAllowed()) { location.href = "/#varolista"; return; } sessionStorage.removeItem(DEMO_CHOSEN); authScreen(tab === "belepes" ? "belepes" : "regisztracio"); },
+      showAuth: (tab) => { if (!signupOpenNow() && !loginAllowed()) { if (NATIVE) { authScreen("regisztracio"); return; } location.href = "/#varolista"; return; } sessionStorage.removeItem(DEMO_CHOSEN); authScreen(tab === "belepes" ? "belepes" : "regisztracio"); },
       logout: async () => { await store.signOut(); sessionStorage.removeItem(DEMO_CHOSEN); location.hash = ""; location.reload(); },
       // bemutató módban a csomag kézzel váltható: ingyenes / pro / white label (csak a kinézet és a zárolások; a szerver semmit nem enged ezzel)
       setDemoPlan: (p) => { ls.set(DEMO_PLAN_KEY, ["ingyenes", "pro", "whitelabel"].includes(p) ? p : "pro"); location.reload(); },
@@ -262,6 +265,13 @@
         try { await api("/api/brand" + location.search, { method: "PUT", body: JSON.stringify({ brand: draft }) }); }
         catch (e) { throw new Error(e.status === 403 ? "forbidden" : "save_failed"); }
       },
+      native: NATIVE, nobuy: NOBUY,
+      // saját fiók végleges törlése (App Store 5.1.1(v)): a szerver a beírt e-mail-címmel ellenőrzi
+      deleteAccount: async (confirm) => {
+        await api("/api/me", { method: "DELETE", body: JSON.stringify({ confirm }) });
+        try { Object.keys(localStorage).filter((k) => /^sikertervezo:/.test(k)).forEach((k) => localStorage.removeItem(k)); } catch (e) {}
+        await store.signOut().catch(() => {}); sessionStorage.removeItem(DEMO_CHOSEN); location.hash = ""; location.reload();
+      },
       polyosConnect: () => PX.connect().catch(() => alert("Nem sikerült elindítani az összekapcsolást. Próbáld újra később.")),
       polyosDisconnect: async () => { await PX.disconnect(); PX.init({ linked: false, modules: [] }); },
     };
@@ -269,7 +279,7 @@
     const proIntent = +(ls.get(PRO_INTENT) || 0);
     if (proIntent && !demo) {
       ls.del(PRO_INTENT);
-      if (userPlan !== "pro" && ctx.billingReady && Date.now() - proIntent < 6 * 3600e3) {
+      if (userPlan !== "pro" && ctx.billingReady && !NOBUY && Date.now() - proIntent < 6 * 3600e3) {
         try { const r = await ctx.billing("checkout"); if (r && r.url) { location.href = r.url; return; } } catch (e) { /* nem sikerült: marad az app, a Pro gomb ott is működik */ }
       }
     }

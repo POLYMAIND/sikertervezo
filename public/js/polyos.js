@@ -63,7 +63,7 @@
 
   async function call(body) {
     const tok = auth();
-    const r = await fetch("/api/polyos", {
+    const r = await ST.api("/api/polyos", {
       method: "POST",
       headers: Object.assign({ "Content-Type": "application/json" }, tok ? { Authorization: "Bearer " + tok } : {}),
       body: JSON.stringify(body),
@@ -76,7 +76,7 @@
   async function push(kind, data) { return call({ action: "push", kind, data }); }
   async function status() { return call({ action: "status" }); }
   // összekapcsolás: a szerver ad egy egyszer használatos, a felhasználóhoz kötött PolyOS-engedélykérő címet
-  async function connect() { const j = await call({ action: "connect", return_to: location.pathname }); location.href = j.url; }
+  async function connect() { const j = await call({ action: "connect", return_to: ST.native && ST.native.on ? "/app" : location.pathname }); location.href = j.url; }
   async function disconnect() { return call({ action: "disconnect" }); }
 
   ST.polyos = { MODULES, byKey, KIND_MODULE, init, has, openUrl, upsellUrl, canPush, push, status, connect, disconnect, cfg: () => cfg };
