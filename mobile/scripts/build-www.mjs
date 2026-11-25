@@ -20,6 +20,9 @@ const cdnVer = (fs.readFileSync(path.join(pub, "js/store.js"), "utf8").match(/su
 if (sbVer !== cdnVer) throw new Error(`supabase-js verzió eltér: mobile ${sbVer}, store.js ${cdnVer}`);
 fs.mkdirSync(path.join(out, "vendor"), { recursive: true });
 fs.copyFileSync(path.resolve(here, "../node_modules/@supabase/supabase-js/dist/umd/supabase.js"), path.join(out, "vendor/supabase.min.js"));
+// a Capacitor JS-magja (bundler nélküli változat): a natív híd (native-bridge.js) önmagában NEM ad registerPlugin-t,
+// ezt ez teszi a window.Capacitor-ra — enélkül a js/native.js egyetlen natív plugint (HTTP, értesítés…) sem ér el
+fs.copyFileSync(path.resolve(here, "../node_modules/@capacitor/core/dist/capacitor.js"), path.join(out, "vendor/capacitor.js"));
 
 let html = fs.readFileSync(path.join(pub, "app.html"), "utf8");
 const drop = [
@@ -32,6 +35,7 @@ for (const re of drop) {
   html = html.replace(re, "");
 }
 if (!html.includes('<script src="/js/native.js"></script>')) throw new Error("app.html: hiányzik a js/native.js");
+html = html.replace('<script src="/js/native.js"></script>', '<script src="/vendor/capacitor.js"></script>\n<script src="/js/native.js"></script>');
 // iOS: a tartalom a notch / Dynamic Island alá is kifut (viewport-fit=cover már benne van)
 fs.writeFileSync(path.join(out, "index.html"), html);
 console.log("www/ kész:", COPY.length, "elem + index.html");
