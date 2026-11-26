@@ -1,0 +1,7 @@
+Sikermaker is a daily planner for small business owners (Hungarian UI). The same account works on the web (sikermaker.hu) and in this app. The app has no in-app purchases and does not offer or mention any paid plan; users who already have access to additional features through their existing account see them after signing in. The demo account has all features enabled.
+
+Native features: local notifications (Beállítások / Settings → Emlékeztetők: morning summary and evening review), haptics, universal links for sign-in emails, password AutoFill.
+
+Account deletion: Beállítások (Settings) → Fiók → "Fiókom törlése".
+
+You can also try the app without an account: on the sign-in screen tap "Kipróbálom belépés nélkül" (demo mode with sample data).

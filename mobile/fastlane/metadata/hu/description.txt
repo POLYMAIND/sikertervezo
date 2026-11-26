@@ -1,0 +1,12 @@
+A Sikermaker a napi tervező vállalkozóknak: a napi lépéseid, teendőid, időpontjaid, céljaid és szokásaid egy helyen, minden eszközödön ugyanúgy.
+
+• Vezérlőpult: a mai lépések, teendők és időpontok egy pillantásra
+• Naptár napi, heti és havi nézettel
+• Szokás-kihívások és célok, pontrendszerrel
+• Gondolattérkép az ötleteidhez és terveidhez
+• Olvasási lista a legfontosabb gondolatokkal
+• Esti kérdések a nap zárásához, heti és havi értékelés
+• Matricák és jutalmak a kitartásért
+• Emlékeztetők: reggeli összefoglaló és esti zárás értesítésként
+
+A terved a fiókodhoz van mentve, így a telefonodon és a számítógépeden (sikermaker.hu) ugyanazt látod. Fiók nélkül is kipróbálhatod, mintaadatokkal.
