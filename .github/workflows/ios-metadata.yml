@@ -1,0 +1,40 @@
+# Sikermaker iOS-app: az App Store-adatlap feltöltése (szövegek, képernyőképek, reviewer-adatok) a mobile/fastlane/
+# metadata és screenshots mappából. Build és beküldés nélkül; Linux-gépen fut (nem fogyaszt macOS-percet).
+# Titkok: ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8_BASE64, APPLE_TEAM_ID, és opcionálisan REVIEW_FIRST_NAME,
+# REVIEW_LAST_NAME, REVIEW_DEMO_USER, REVIEW_DEMO_PASSWORD.
+name: iOS → App Store-adatlap
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Az App Store-verzió (egyezzen a beküldendő build verziójával)"
+        required: true
+        default: "1.0.3"
+
+jobs:
+  metadata:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+          working-directory: mobile
+      - name: Adatlap feltöltése
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+          REVIEW_FIRST_NAME: ${{ secrets.REVIEW_FIRST_NAME }}
+          REVIEW_LAST_NAME: ${{ secrets.REVIEW_LAST_NAME }}
+          REVIEW_DEMO_USER: ${{ secrets.REVIEW_DEMO_USER }}
+          REVIEW_DEMO_PASSWORD: ${{ secrets.REVIEW_DEMO_PASSWORD }}
+          APP_VERSION: ${{ github.event.inputs.version }}
+        run: bundle exec fastlane metadata

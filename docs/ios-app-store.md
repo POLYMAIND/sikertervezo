@@ -75,6 +75,23 @@ Helyben, Mac-en (opcionális):
 cd mobile && npm ci && npm run sync && open ios/App/App.xcodeproj
 ```
 
+## Áruházi adatlap feltöltése (automatikusan)
+
+A szövegek a `mobile/fastlane/metadata/` mappában vannak (leírás, alcím, kulcsszavak, linkek, kategória, copyright,
+reviewer-megjegyzés), a képernyőképek a `mobile/fastlane/screenshots/hu/` mappában (6 db, 1320 × 2868). A képek
+újragenerálása: `cd mobile && node scripts/build-www.mjs && node scripts/screenshots.mjs`.
+
+Feltöltés: GitHub → Actions → **„iOS → App Store-adatlap” → Run workflow** (verzió: a beküldendő build verziója).
+Build és beküldés nélkül, Linux-gépen fut. A reviewer adatai GitHub-titkokból jönnek:
+`REVIEW_FIRST_NAME`, `REVIEW_LAST_NAME`, `REVIEW_DEMO_USER`, `REVIEW_DEMO_PASSWORD`.
+
+**Ami csak az App Store Connect felületén állítható** (egyszer kell):
+1. **App Privacy** (lásd lent a válaszokat) → Publish.
+2. **Age Rating** (az app → App Information → Age Rating): minden kérdésre „No/None”.
+3. **Pricing and Availability**: Free, országok: legalább Magyarország.
+4. **DSA kereskedői adatok** (Business), ha még nincs.
+5. **Beküldés**: az App Store fülön a verziónál **Build → +** (a legfrissebb build) → **Add for Review → Submit**.
+
 ## Áruházi adatok (App Store Connect → az app → App Store fül)
 
 **Név:** Sikermaker  
