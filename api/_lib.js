@@ -46,6 +46,12 @@ function newsletterOf(u) {
 }
 
 // opts.fresh: a gyorsítótár kihagyása (pl. közvetlenül a hírlevél-beállítás módosítása után)
+// melyik márkánál regisztrált (white label márkánál a regisztráció ezt beírja; a Sikermakernél üres)
+function signupBrandOf(u) {
+  const b = String((u && u.user_metadata && u.user_metadata.signup_brand) || "").toLowerCase();
+  return /^[a-z0-9-]{1,40}$/.test(b) && b !== "alap" ? b : "";
+}
+
 async function getUser(req, opts) {
   const h = req.headers.authorization || "";
   const tok = h.startsWith("Bearer ") ? h.slice(7) : "";
@@ -56,7 +62,7 @@ async function getUser(req, opts) {
   if (!r || !r.ok) return null;
   const u = await r.json().catch(() => null);
   if (!u || !u.id) return null;
-  const user = { id: u.id, email: (u.email || "").toLowerCase(), confirmed: !!(u.email_confirmed_at || u.confirmed_at), name: String((u.user_metadata && u.user_metadata.full_name) || "").slice(0, 120), app: u.app_metadata || {}, newsletter: newsletterOf(u) };
+  const user = { id: u.id, email: (u.email || "").toLowerCase(), confirmed: !!(u.email_confirmed_at || u.confirmed_at), name: String((u.user_metadata && u.user_metadata.full_name) || "").slice(0, 120), app: u.app_metadata || {}, newsletter: newsletterOf(u), signupBrand: signupBrandOf(u) };
   _users.set(tok, { user, exp: Date.now() + 30_000 });
   if (_users.size > 500) _users.clear();
   return user;
@@ -99,4 +105,4 @@ async function authAdmin(path, opts = {}) {
   return j;
 }
 
-module.exports = { newsletterOf, authAdmin, env, isProd, supabaseReady, serviceReady, send, body, sb, getUser, encrypt, decrypt, appUrl, SB_URL, SB_ANON };
+module.exports = { newsletterOf, signupBrandOf, authAdmin, env, isProd, supabaseReady, serviceReady, send, body, sb, getUser, encrypt, decrypt, appUrl, SB_URL, SB_ANON };

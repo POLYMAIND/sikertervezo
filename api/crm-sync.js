@@ -16,7 +16,7 @@ function authorized(req) {
 module.exports = async function handler(req, res) {
   if (!authorized(req)) return L.send(res, 401, { error: "unauthorized" });
   if (!L.serviceReady() || !CRM.ready()) return L.send(res, 503, { error: "not_configured" });
-  const out = { waitlist: 0, account: 0, pro: 0, failed: 0 };
+  const out = { waitlist: 0, account: 0, pro: 0, whitelabel_skipped: 0, failed: 0 };
   const tally = (r, k) => { if (r && r.ok) out[k]++; else out.failed++; };
   const started = Date.now();
   try {
@@ -27,6 +27,14 @@ module.exports = async function handler(req, res) {
       const today = new Date().toISOString().slice(0, 10);
       (subs || []).forEach((s) => { if (P.subActive(s, today)) pro.add(s.user_id); });
     } catch (e) { /* előfizetés nélkül mindenki fiók */ }
+    // white label felhasználók kihagyása: white label márkánál regisztrált, vagy csak white label márka(k)ban van terve
+    const wlUsers = new Set();
+    try {
+      const wl = new Set(((await L.sb("sikertervezo_brands?plan=eq.whitelabel&select=slug")) || []).map((b) => b.slug));
+      const byUser = {};
+      ((await L.sb("sikertervezo_state?select=user_id,brand_slug")) || []).forEach((r) => { (byUser[r.user_id] = byUser[r.user_id] || []).push(r.brand_slug || "alap"); });
+      Object.keys(byUser).forEach((id) => { if (byUser[id].every((sl) => wl.has(sl))) wlUsers.add(id); });
+    } catch (e) { return L.send(res, 500, Object.assign({ error: "brand_lookup_failed" }, out)); } // kétség esetén inkább semmit
     const accounts = new Set();
     for (let page = 1; page <= 50 && Date.now() - started < 45000; page++) {
       const j = await L.authAdmin(`users?page=${page}&per_page=200`);
@@ -35,6 +43,7 @@ module.exports = async function handler(req, res) {
         if (!u.email) continue;
         const email = String(u.email).toLowerCase();
         accounts.add(email);
+        if (L.signupBrandOf(u) || wlUsers.has(u.id)) { out.whitelabel_skipped++; continue; }
         const status = pro.has(u.id) ? "pro" : "account";
         const nl = L.newsletterOf(u), on = !!(nl && nl.ok);
         tally(await CRM.report(status, { email, name: (u.user_metadata && u.user_metadata.full_name) || "", at: u.created_at, source: "app", consent: on, newsletter: on, newsletterAt: on ? nl.at : null }), status);

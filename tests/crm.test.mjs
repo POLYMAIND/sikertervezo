@@ -118,3 +118,24 @@ test("newsletterOf: csak a kifejezett ok:true számít feliratkozásnak", () => 
   assert.deepEqual(L.newsletterOf({ user_metadata: { newsletter: { ok: "true", at: "a" } } }), { ok: false, at: "a" });
   assert.deepEqual(L.newsletterOf({ user_metadata: { newsletter: { ok: true, at: "2026-11-27" } } }), { ok: true, at: "2026-11-27" });
 });
+
+test("white label: a márkánál regisztráltat és a white label felületen járót nem jelenti a PolyOS-nek", async () => {
+  Object.assign(process.env, { POLYOS_CRM_WEBHOOK_SECRET: "titkos-kod-1234567890", SUPABASE_URL: "https://stub.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "svc" });
+  const wlRow = [{ slug: "coachanna", plan: "whitelabel", config: {} }];
+  const calls = withFetch((url) => url.includes("sikertervezo_brands") ? Object.assign(ok(wlRow), { text: async () => JSON.stringify(wlRow) }) : ok({ ok: true }));
+  fresh("../api/_lib.js"); fresh("../api/_brands.js");
+  const CRM = fresh("../api/_crm.js");
+  await CRM.reportUser({ id: "u3", email: "wl@pelda.hu", app: {}, signupBrand: "coachanna" }, "ingyenes");
+  assert.equal(calls.filter((c) => c.url.includes("polyos.hu")).length, 0, "white label márkánál regisztrált");
+  await CRM.reportUser({ id: "u3", email: "wl@pelda.hu", app: {} }, "ingyenes", { brandSlug: "coachanna" });
+  assert.equal(calls.filter((c) => c.url.includes("polyos.hu")).length, 0, "white label felületen jár");
+  await CRM.reportUser({ id: "u4", email: "sm@pelda.hu", app: {} }, "ingyenes", { brandSlug: "alap" });
+  assert.equal(calls.filter((c) => c.url.includes("polyos.hu")).length, 1, "a Sikermaker-felhasználó továbbra is megy");
+});
+
+test("signupBrandOf: az alap és az érvénytelen érték nem white label", async () => {
+  const L = fresh("../api/_lib.js");
+  assert.equal(L.signupBrandOf({ user_metadata: { signup_brand: "alap" } }), "");
+  assert.equal(L.signupBrandOf({ user_metadata: { signup_brand: "<x>" } }), "");
+  assert.equal(L.signupBrandOf({ user_metadata: { signup_brand: "CoachAnna" } }), "coachanna");
+});
