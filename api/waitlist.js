@@ -5,6 +5,7 @@
 const L = require("./_lib");
 const W = require("./_waitlist");
 const CRM = require("./_crm");
+const B = require("./_brands");
 
 const EMAIL_RE = /^[^\s@<>"',;]+@[^\s@<>"',;]+\.[a-z]{2,}$/i;
 const HOURLY = 8;
@@ -59,7 +60,16 @@ module.exports = async function handler(req, res) {
   if (b && b.website) return L.send(res, 200, { ok: true, already: false, download: null }); // csapda: robot
   if (!EMAIL_RE.test(email) || email.length > 254) return L.send(res, 400, { error: "bad_email" });
   if (!b || b.consent !== true) return L.send(res, 400, { error: "consent_required" });
-  const source = String(b.source || "").replace(/[^a-z0-9_-]/gi, "").slice(0, 40) || null;
+  let source = String(b.source || "").replace(/[^a-z0-9_-]/gi, "").slice(0, 40) || null;
+  // White label márka felületén feliratkozott: a márka gazdájáé, nem kerül a Polymaind CRM-be (a napi szinkron sem
+  // küldi el: a forrása „marka-<slug>”). Ha a márkák listája nem olvasható, inkább nem küldjük (fail-closed).
+  const brand = B.SLUG_RE.test(String((b && b.brand) || "")) ? b.brand : B.resolveSlug(req);
+  let toCrm = brand === "alap";
+  if (!toCrm) {
+    try {
+      if ((await CRM.whitelabelSlugs()).has(brand)) source = "marka-" + brand; else toCrm = true;
+    } catch (e) { /* nem tudjuk eldönteni: most kimarad */ }
+  }
   const link = L.appUrl(req) + "/api/letoltes?t=" + encodeURIComponent(W.sign(email));
 
   try {
@@ -76,8 +86,8 @@ module.exports = async function handler(req, res) {
       return L.send(res, 200, { ok: true, already: true, download: link });
     }
     await mail(email, link, whenText((await W.signupState()).launchAt));
-    // → Polymaind PolyOS CRM, „Sikermaker regisztrálók" pipeline, Várólista szakasz (sosem blokkol).
-    await CRM.report("waitlist", { email, consent: true, at: new Date().toISOString(), source: source || "varolista" });
+    // → Polymaind PolyOS CRM, „Sikermaker regisztrálók" pipeline, Várólista szakasz (sosem blokkol; white label márkánál nem).
+    if (toCrm) await CRM.report("waitlist", { email, consent: true, at: new Date().toISOString(), source: source || "varolista" });
     return L.send(res, 200, { ok: true, already: false, download: link });
   } catch (e) {
     return L.send(res, 500, { error: "waitlist_error" });

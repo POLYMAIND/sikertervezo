@@ -49,7 +49,8 @@ async function getUser(req) {
   if (!r || !r.ok) return null;
   const u = await r.json().catch(() => null);
   if (!u || !u.id) return null;
-  const user = { id: u.id, email: (u.email || "").toLowerCase(), confirmed: !!(u.email_confirmed_at || u.confirmed_at), name: String((u.user_metadata && u.user_metadata.full_name) || "").slice(0, 120), app: u.app_metadata || {} };
+  const um = u.user_metadata || {};
+  const user = { id: u.id, email: (u.email || "").toLowerCase(), confirmed: !!(u.email_confirmed_at || u.confirmed_at), name: String(um.full_name || "").slice(0, 120), app: u.app_metadata || {}, signupBrand: typeof um.signup_brand === "string" ? um.signup_brand.slice(0, 40) : "" };
   _users.set(tok, { user, exp: Date.now() + 30_000 });
   if (_users.size > 500) _users.clear();
   return user;

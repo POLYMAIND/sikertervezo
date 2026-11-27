@@ -24,8 +24,10 @@ module.exports = async function handler(req, res) {
     await audit(user, { at: new Date().toISOString(), stripeCancelled: r.stripeCancelled });
     return L.send(res, 200, { ok: true });
   }
-  const plan = L.serviceReady() ? await P.userPlan(user, B.resolveSlug(req)) : { plan: "ingyenes", source: "none", features: [] };
+  const brand = B.resolveSlug(req);
+  const plan = L.serviceReady() ? await P.userPlan(user, brand) : { plan: "ingyenes", source: "none", features: [] };
   // Sikermaker-regisztráló → Polymaind PolyOS CRM pipeline (egyszer fiókként, egyszer Pro-ként; sosem blokkol).
-  if (user.confirmed) await CRM.reportUser(user, plan.plan).catch(() => {});
+  // White label márka felhasználója nem kerül bele (a márka gazdájáé), kivéve ha saját Sikermaker-előfizetése van.
+  if (user.confirmed) await CRM.reportUser(user, plan.plan, { brand, paying: plan.source === "subscription" }).catch(() => {});
   L.send(res, 200, Object.assign({ ok: true }, plan));
 };

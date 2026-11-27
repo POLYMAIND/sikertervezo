@@ -168,7 +168,7 @@
     const v = Object.fromEntries(new FormData(f).entries()), btn = f.querySelector(".btn"); if (btn) btn.disabled = true;
     try {
       if (f.dataset.auth === "waitlist") {
-        const r = await ST.api("/api/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: (v.email || "").trim(), consent: !!v.consent, website: v.website || "", source: "app" }) });
+        const r = await ST.api("/api/waitlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: (v.email || "").trim(), consent: !!v.consent, website: v.website || "", source: "app", brand: brandRaw.slug || "alap" }) });
         const j = await r.json().catch(() => ({}));
         if (!r.ok || !j.ok) throw new Error(j.error === "bad_email" ? "wl_email" : j.error === "rate_limited" ? "rate" : "wl_fail");
         if (!j.already && window.smTrack) window.smTrack("generate_lead", { method: "varolista", source: "app" });
