@@ -5,7 +5,7 @@ import os, html
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HATALYOS = "2026. november 24."
-HATALYOS_TOL = "2026. november 24-étől"
+HATALYOS_TOL = "2026. november 27-étől"  # ÁSZF: online fizetés (Stripe, Számlázz.hu)
 ADATKEZELES_TOL = "2026. november 27-étől"  # hírlevél-hozzájárulás bevezetése
 CEG = "polymAInd Kft. (székhely: 2013 Pomáz, Nyár utca 46/A 1. ajtó; cégjegyzékszám: 13 09 239925; adószám: 32793363-2-13)"
 EMAIL = '<a href="mailto:hello@polymaind.hu">hello@polymaind.hu</a>'
@@ -77,7 +77,9 @@ adat = [
     ("Hírlevél: név, e-mail-cím, a feliratkozás és a leiratkozás ideje", "Hírlevél küldése (tervezési tippek, újdonságok, ajánlatok a Sikermakertől és a Polymaindtól) – csak ha a regisztrációnál vagy a Beállításokban külön kéred", "Hozzájárulás (6. cikk (1) a), bármikor visszavonható", "A leiratkozásig vagy a fiók törléséig"),
     ("Fiók: név, e-mail-cím, jelszó (csak titkosított lenyomatként), regisztráció és utolsó belépés ideje", "Regisztráció, belépés, a szolgáltatás nyújtása", "Szerződés teljesítése (6. cikk (1) b)", "A fiók törléséig"),
     ("A terv tartalma: napi lépések, teendők, naptár, célok, szokások, jegyzetek, gondolattérkép, matricák", "A szolgáltatás nyújtása, felhőmentés, szinkron az eszközeid között", "Szerződés teljesítése (6. cikk (1) b)", "A fiók törléséig, illetve amíg te nem törlöd"),
-    ("Előfizetés: csomag, állapot, érvényesség", "A Pro funkciók elérhetősége, előfizetés kezelése", "Szerződés teljesítése (6. cikk (1) b)", "A fiók törléséig; a számlázási adatok a számviteli törvény szerint 8 évig"),
+    ("Előfizetés: csomag, állapot, érvényesség, a Stripe-ügyfél és -előfizetés azonosítója", "A Pro funkciók elérhetősége, előfizetés kezelése", "Szerződés teljesítése (6. cikk (1) b)", "A fiók törléséig"),
+    ("Fizetés: név, e-mail-cím, számlázási cím, cégnek adószám, a bankkártya adatai", "A Pro előfizetés díjának beszedése. A kártyaadatokat kizárólag a Stripe kezeli, mi nem látjuk és nem tároljuk őket (csak a kártya típusát és utolsó 4 számjegyét láthatjuk)", "Szerződés teljesítése (6. cikk (1) b)", "A Stripe a saját szabályzata és a jogszabályok szerint őrzi"),
+    ("Számla: vevő neve, címe, e-mail-címe, adószáma, a tétel, az összeg, a számlaszám", "Számla kiállítása és e-mailben elküldése minden kifizetett havi díjról", "Jogi kötelezettség (6. cikk (1) c), az Áfa- és a számviteli törvény", "8 év (számviteli törvény 169. §)"),
     ("White label márka: név, e-mail-cím, regisztráció és utolsó aktivitás dátuma — a márka gazdája felé", "Hogy a márka gazdája (pl. coach, oktató) lássa, kik használják az ő arculatával a tervezőt", "Hozzájárulás (6. cikk (1) a), bármikor visszavonható a Beállításokban", "A hozzájárulás visszavonásáig"),
     ("Az appból küldött e-mailek naplója: időpont, a címzett domainje (nem a teljes cím), siker", "Napi küldési korlát, visszaélés-megelőzés", "Jogos érdek (6. cikk (1) f)", "Legfeljebb 12 hónap"),
     ("Naptár-kapcsolatok: a feliratkozó link azonosítójának lenyomata, a behúzott naptárak linkje titkosítva", "Naptár-szinkron (feliratkozás Google / iPhone naptárból, más naptárak behúzása)", "Szerződés teljesítése (6. cikk (1) b)", "Amíg a kapcsolatot meg nem szünteted"),
@@ -91,6 +93,8 @@ feldolgozok = [
     ("Google", "Betűtípusok kiszolgálása (Google Fonts): a betöltéskor az IP-címed a Google-hoz kerül", "USA"),
     ("Google Ireland (Google Analytics 4)", "Látogatási statisztika – csak hozzájárulással", "EU / USA"),
     ("Meta Platforms Ireland (Meta Pixel)", "Hirdetésmérés – csak hozzájárulással", "EU / USA"),
+    ("Stripe Payments Europe Ltd.", "Bankkártyás fizetés és az előfizetés kezelése (fizetési oldal, ügyfélportál: kártyacsere, számlák, lemondás)", "EU (Írország) / USA"),
+    ("KBOSS.hu Kft. (Számlázz.hu)", "Számlák kiállítása, tárolása és e-mailben elküldése", "EU (Magyarország)"),
     ("PolyOS (polymAInd Kft.)", "A Polymaind ügyfélkezelője: a várólistára feliratkozók és a regisztrálók e-mail-címe, neve, státusza (várólista, fiók, Pro) és hírlevél-hozzájárulása; a hírlevél kiküldése. Ha összekapcsolod: az általad egyenként átküldött tételek (pl. egy kapcsolat vagy egy teendő) a PolyOS-fiókodba", "EU"),
 ]
 
@@ -122,7 +126,7 @@ adatkezeles = f"""
 {chr(10).join(f"      <tr><td>{a}</td><td>{b}</td><td>{c}</td></tr>" for a, b, c in feldolgozok)}
     </tbody>
   </table></div>
-  <p>Az USA-ba irányuló adattovábbítás megfelelő garanciák (az EU általános szerződési feltételei, illetve az EU–USA adatvédelmi keretrendszer) mellett történik. Ha a jövőben online fizetést vezetünk be a Pro csomaghoz, a fizetési és számlázási szolgáltatót itt, előre feltüntetjük.</p>
+  <p>Az USA-ba irányuló adattovábbítás megfelelő garanciák (az EU általános szerződési feltételei, illetve az EU–USA adatvédelmi keretrendszer) mellett történik.</p>
 
   <h2>6. A várólista és az ajándék</h2>
   <p>A várólistára az e-mail-címed megadásával és a hozzájárulásod bejelölésével iratkozol fel. Ekkor egy levelet küldünk a Káoszmanager letöltő linkjével (7 napig érvényes), és a Sikermaker nyitásakor egy értesítést. Más levelet a hozzájárulásod alapján nem küldünk. A hozzájárulást bármikor visszavonhatod egy, a {EMAIL} címre küldött levéllel; ekkor a címedet töröljük.</p>
@@ -172,7 +176,7 @@ aszf = f"""
     <li><b>Pro:</b> 1 990 Ft / hó. Az Ingyenes csomagon felül: Kapcsolatok, Ügyfelek, Tartalomtervező, naptár-szinkron más naptárakkal, e-mail-küldés az appból.</li>
     <li><b>White label:</b> egyedi ajánlat alapján, külön megállapodással (saját név, logó, színek a partner felhasználóinak).</li>
   </ul>
-  <p>A Pro csomag online megvásárlásának módjáról (fizetési szolgáltató, számlázás) a vásárlás előtt tájékoztatunk. A Pro előfizetés havonta előre esedékes, és bármikor lemondható a folyó időszak végére. Az árak változtatásának jogát fenntartjuk; a változásról előzetesen értesítünk, és a már kifizetett időszakra nem vonatkozik.</p>
+  <p>A Pro csomagot a weben, bankkártyával lehet megvásárolni. A fizetést a Stripe (Stripe Payments Europe Ltd.) biztonságos fizetési oldala bonyolítja; a kártyaadatokat mi nem látjuk és nem tároljuk. Minden kifizetett havi díjról elektronikus számlát állítunk ki a Számlázz.hu rendszerével, és e-mailben elküldjük. A kártya cseréje, a korábbi számlák és a lemondás a Beállításokból elérhető ügyfélportálon intézhető. Az iPhone- és Mac-alkalmazásban nem lehet vásárolni; a weben vett előfizetés ott is működik. A Pro előfizetés havonta előre esedékes, és bármikor lemondható a folyó időszak végére. Az árak változtatásának jogát fenntartjuk; a változásról előzetesen értesítünk, és a már kifizetett időszakra nem vonatkozik.</p>
 
   <h2>5. Lemondás és elállás</h2>
   <p>Az előfizetés bármikor lemondható; a lemondás a folyó számlázási időszak végén lép hatályba, a már kifizetett díjat időarányosan nem térítjük vissza, kivéve a jogszabály által kötelező eseteket. Fogyasztónak minősülő felhasználóként a szolgáltatás azonnali megkezdésébe való kifejezett beleegyezéseddel tudomásul veszed, hogy az azonnal hozzáférhető digitális szolgáltatás megkezdése után az elállási jog a jogszabályi keretek szerint korlátozott lehet.</p>
