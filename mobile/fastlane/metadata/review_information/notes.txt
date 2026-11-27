@@ -7,7 +7,7 @@ Sikermaker is a daily planner for small business owners and independent sales pe
 3. HOW TO ACCESS THE FEATURES
 Demo account (all features enabled): see Sign-In Information. Sign in on the first screen ("Belépés" tab). Without an account you can tap "Kipróbálom belépés nélkül" to try the app with sample data.
 Main areas (bottom tab bar, "Több" = More): Vezérlőpult (dashboard), Naptár (calendar), Szokások (habits), Gondolattérkép (mind map), Olvasás (reading), Kapcsolatok (contacts), Ügyfelek (clients), Tartalom (content plan), Beállítások (settings). Reminders: Beállítások → Emlékeztetők (local notifications). Account deletion: Beállítások → Fiók → "Fiókom törlése" (type your email to confirm).
-Paid content: Kapcsolatok, Ügyfelek, Tartalom, Számok and calendar sync belong to the "Pro" plan. Pro is sold only on our website as a multiplatform subscription (Guideline 3.1.3(b)); the app contains no purchase option, prices, or links to buy. Users who already have Pro on their account see these features after signing in; free users do not see them in the app at all. The demo account has Pro enabled.
+Paid content: Kapcsolatok (contacts pipeline), Ügyfelek (clients and orders), Tartalom (content calendar) and calendar sync belong to the "Pro" plan. Pro is sold only on our website as a multiplatform subscription (Guideline 3.1.3(b)); the app contains no purchase option, prices, or links to buy. Users who already have Pro on their account see these features after signing in; free users do not see them in the app at all. The demo account has Pro enabled.
 User-generated content: all content is private to the user's own account. There is no sharing, feed, chat or any content visible to other users, so no reporting/blocking is needed.
 
 4. EXTERNAL SERVICES
