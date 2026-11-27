@@ -72,19 +72,28 @@ module.exports = async function handler(req, res) {
 
   try {
     if (action === "overview") {
-      const [users, states, subs] = await Promise.all([
+      const [users, states, subs, brands] = await Promise.all([
         allUsers(),
         safe(L.sb("sikertervezo_state?select=user_id,brand_slug,updated_at"), []),
-        safe(L.sb("sikertervezo_subscriptions?select=plan,status"), []),
+        safe(L.sb("sikertervezo_subscriptions?select=user_id,plan,status"), []),
+        safe(L.sb("sikertervezo_brands?select=slug,plan"), []),
       ]);
       const now = Date.now(), d = (n) => now - n * 864e5;
-      const active7 = new Set(states.filter((s) => Date.parse(s.updated_at) > d(7)).map((s) => s.user_id)).size;
-      const byStatus = {}; subs.forEach((s) => { byStatus[s.status] = (byStatus[s.status] || 0) + 1; });
-      const byBrand = {}; states.forEach((s) => { byBrand[s.brand_slug] = (byBrand[s.brand_slug] || 0) + 1; });
+      // A white label márkák (pl. Bea) felhasználói külön számolódnak: a Sikermaker-számok csak a saját felhasználókról szólnak.
+      const wlSlugs = new Set(brands.filter((x) => x.plan === "whitelabel").map((x) => x.slug));
+      const last = {}; states.forEach((s) => { if (!last[s.user_id] || s.updated_at > last[s.user_id].updated_at) last[s.user_id] = s; });
+      const wlOf = (id) => (last[id] && wlSlugs.has(last[id].brand_slug) ? last[id].brand_slug : null);
+      const own = users.filter((u) => !wlOf(u.id));
+      const ownIds = new Set(own.map((u) => u.id));
+      const active7 = new Set(states.filter((s) => ownIds.has(s.user_id) && Date.parse(s.updated_at) > d(7)).map((s) => s.user_id)).size;
+      const byStatus = {}; subs.filter((s) => ownIds.has(s.user_id)).forEach((s) => { byStatus[s.status] = (byStatus[s.status] || 0) + 1; });
+      const wlBrands = {};
+      users.forEach((u) => { const slug = wlOf(u.id); if (!slug) return; const w = wlBrands[slug] = wlBrands[slug] || { users: 0, new7: 0, active7: 0 };
+        w.users++; if (Date.parse(u.created_at) > d(7)) w.new7++; if (Date.parse(last[u.id].updated_at) > d(7)) w.active7++; });
       return L.send(res, 200, { ok: true, overview: {
-        users: users.length, confirmed: users.filter((u) => u.email_confirmed_at || u.confirmed_at).length,
-        new7: users.filter((u) => Date.parse(u.created_at) > d(7)).length, new30: users.filter((u) => Date.parse(u.created_at) > d(30)).length,
-        active7, withPlan: states.length, byStatus, byBrand,
+        users: own.length, confirmed: own.filter((u) => u.email_confirmed_at || u.confirmed_at).length,
+        new7: own.filter((u) => Date.parse(u.created_at) > d(7)).length, new30: own.filter((u) => Date.parse(u.created_at) > d(30)).length,
+        active7, byStatus, wlBrands, allUsers: users.length,
       } });
     }
     if (action === "users") {
