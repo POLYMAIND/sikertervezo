@@ -84,6 +84,14 @@
     if (error) throw error;
     if (data && data.user && session) session.user = data.user;
   }
+  // hírlevél-feliratkozás (Sikermaker / Polymaind): user_metadata.newsletter = { ok, at }; külön, önkéntes hozzájárulás
+  async function setNewsletter(ok) {
+    need();
+    const { data, error } = await sb.auth.updateUser({ data: { newsletter: { ok: !!ok, at: new Date().toISOString() } } });
+    if (error) throw error;
+    if (data && data.user && session) session.user = data.user;
+  }
+  const newsletter = () => { const n = session && session.user && session.user.user_metadata && session.user.user_metadata.newsletter; return n && n.ok ? n : null; };
   const brandConsent = (slug) => { const c = session && session.user && session.user.user_metadata && session.user.user_metadata.brand_consent; return c && c[slug] ? c[slug] : null; };
   async function updatePassword(password) {
     need();
@@ -136,5 +144,5 @@
   function onStatus(fn) { listeners.push(fn); }
 
   const userInfo = () => (session ? { id: session.user.id, email: session.user.email, name: (session.user.user_metadata || {}).full_name || "", signupBrand: (session.user.user_metadata || {}).signup_brand || "" } : null);
-  ST.store = { init, signIn, signInPassword, signUp, setBrandConsent, brandConsent, resetPassword, updatePassword, isRecovery: () => recovery || /uj-jelszo/.test(location.hash), userInfo, signOut, token, user, load, save, flush, onStatus, mode: () => mode, cloudAvailable: () => !!sb, readLocal };
+  ST.store = { init, signIn, signInPassword, signUp, setBrandConsent, brandConsent, setNewsletter, newsletter, resetPassword, updatePassword, isRecovery: () => recovery || /uj-jelszo/.test(location.hash), userInfo, signOut, token, user, load, save, flush, onStatus, mode: () => mode, cloudAvailable: () => !!sb, readLocal };
 })();

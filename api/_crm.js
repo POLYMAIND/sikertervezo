@@ -8,7 +8,11 @@
 //  • Sosem dob, és sosem akasztja meg a felhasználót (rövid időkorlát). Ha nincs beállítva, nem csinál semmit.
 //  • A PolyOS oldal idempotens (e-mail cím = egy deal), a szakasz csak előre lép (Várólista → Regisztrált → Pro),
 //    ezért ugyanazt nyugodtan többször is elküldhetjük (a napi szinkron is erre épül).
-//  • Csak a szükséges mezők mennek át: e-mail, név, státusz, hozzájárulás ideje.
+//  • White label márkák felhasználói NEM kerülnek a PolyOS-be: ők a márka gazdájának ügyfelei, nem a Sikermakeré
+//    (white label márkánál regisztrált, vagy épp egy white label márka felületén használja az appot).
+//  • Csak a szükséges mezők mennek át: e-mail, név, státusz, hozzájárulás ideje, hírlevél-feliratkozás.
+//  • Hírlevél: newsletter=true csak annak, aki a regisztrációnál vagy a Beállításokban külön bejelölte; a várólistás
+//    hozzájárulás (consent) csak a nyitási értesítőre és az ajándékra szól, az NEM hírlevél-feliratkozás.
 const L = require("./_lib");
 
 const APP = { slug: "sikermaker", title: "Sikermaker" };
@@ -29,6 +33,7 @@ async function report(status, s, opts) {
     event: "app.signup", app: APP, status, email,
     name: String((s && s.name) || "").slice(0, 120),
     consent: !!(s && s.consent), consent_at: (s && s.at) || new Date().toISOString(),
+    newsletter: !!(s && s.newsletter === true), newsletter_at: (s && s.newsletter === true && s.newsletterAt) || null,
     source: String((s && s.source) || "sikermaker").replace(/[^a-z0-9_-]/gi, "").slice(0, 40),
   };
   const ctl = new AbortController();
@@ -48,18 +53,33 @@ async function report(status, s, opts) {
   } finally { clearTimeout(t); }
 }
 
-// A belépett felhasználó: egyszer jelentjük a fiók-regisztrációt, és még egyszer, ha Pro lesz.
-// A már jelentett szintet a felhasználó app_metadata-jában tartjuk (a felhasználó maga nem írhatja).
-async function reportUser(user, plan) {
+// A belépett felhasználó: egyszer jelentjük a fiók-regisztrációt, még egyszer, ha Pro lesz, és újra, ha a hírlevél-
+// beállítása megváltozik. A már jelentett állapotot a felhasználó app_metadata-jában tartjuk (a felhasználó maga nem
+// írhatja): polyos_crm = szint, polyos_crm_nl = "1" / "0" (utoljára jelentett hírlevél-állapot).
+// opts.brandSlug: a márka, amelynek a felületén a felhasználó épp jár (white label márkánál nem jelentünk)
+async function reportUser(user, plan, opts) {
   if (!ready() || !user || !user.id || !L.serviceReady()) return;
+  if (await isWhiteLabel(user, opts && opts.brandSlug)) return;
   const status = plan === "pro" ? "pro" : "account";
-  const done = String((user.app && user.app.polyos_crm) || "");
-  if ((RANK[done] || 0) >= RANK[status]) return;
-  const r = await report(status, { email: user.email, name: user.name, source: "app" }, { timeoutMs: 3000 });
+  const app = user.app || {};
+  const done = String(app.polyos_crm || "");
+  const nl = !!(user.newsletter && user.newsletter.ok), nlDone = String(app.polyos_crm_nl || "0") === "1";
+  const rankDone = (RANK[done] || 0) >= RANK[status];
+  if (rankDone && nl === nlDone) return;
+  // ha már előrébb jár (pl. Pro), a hírlevél-változást is azzal a szakasszal küldjük (a PolyOS úgysem lép vissza)
+  const send = rankDone ? done : status;
+  const r = await report(send, { email: user.email, name: user.name, source: "app", consent: nl, newsletter: nl, newsletterAt: nl ? user.newsletter.at : null }, { timeoutMs: 3000 });
   if (!r.ok) return; // a napi szinkron pótolja
   try {
-    await L.authAdmin("users/" + encodeURIComponent(user.id), { method: "PUT", body: JSON.stringify({ app_metadata: Object.assign({}, user.app || {}, { polyos_crm: status }) }) });
+    await L.authAdmin("users/" + encodeURIComponent(user.id), { method: "PUT", body: JSON.stringify({ app_metadata: Object.assign({}, app, { polyos_crm: send, polyos_crm_nl: nl ? "1" : "0" }) }) });
   } catch (e) { /* best-effort: legfeljebb újra elküldjük, a PolyOS oldal idempotens */ }
+}
+
+async function isWhiteLabel(user, brandSlug) {
+  if (user.signupBrand) return true;
+  const slug = String(brandSlug || "");
+  if (!slug || slug === "alap") return false;
+  try { return (await require("./_brands").loadBrand(slug)).plan === "whitelabel"; } catch (e) { return true; } // kétség esetén nem küldünk
 }
 
 // Fizetéskor (Stripe-webhook): azonnal Pro-ként jelentjük, nem várunk a következő belépésre vagy a napi szinkronra.
@@ -69,8 +89,8 @@ async function reportProById(userId) {
     if (!ready() || !L.serviceReady() || !/^[0-9a-f-]{36}$/i.test(String(userId || ""))) return;
     const u = await L.authAdmin("users/" + encodeURIComponent(userId));
     if (!u || !u.email) return;
-    await reportUser({ id: u.id, email: String(u.email).toLowerCase(), name: (u.user_metadata && u.user_metadata.full_name) || "", app: u.app_metadata || {} }, "pro");
+    await reportUser({ id: u.id, email: String(u.email).toLowerCase(), name: (u.user_metadata && u.user_metadata.full_name) || "", app: u.app_metadata || {}, newsletter: L.newsletterOf(u), signupBrand: L.signupBrandOf(u) }, "pro");
   } catch (e) { /* a napi szinkron pótolja */ }
 }
 
-module.exports = { APP, STATUSES, ready, report, reportUser, reportProById };
+module.exports = { APP, STATUSES, ready, report, reportUser, reportProById, isWhiteLabel };

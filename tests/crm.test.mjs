@@ -27,7 +27,7 @@ test("várólista: app.signup a titkos kóddal, csak a szükséges mezők", asyn
   assert.equal(r.ok, true);
   assert.equal(calls[0].url, "https://www.polyos.hu/api/newsletter/webhooks/site");
   assert.equal(calls[0].opt.headers["X-Webhook-Secret"], "titkos-kod-1234567890");
-  assert.deepEqual(calls[0].body, { event: "app.signup", app: { slug: "sikermaker", title: "Sikermaker" }, status: "waitlist", email: "bea@pelda.hu", name: "", consent: true, consent_at: "2026-11-06T10:00:00.000Z", source: "landing" });
+  assert.deepEqual(calls[0].body, { event: "app.signup", app: { slug: "sikermaker", title: "Sikermaker" }, status: "waitlist", email: "bea@pelda.hu", name: "", consent: true, consent_at: "2026-11-06T10:00:00.000Z", newsletter: false, newsletter_at: null, source: "landing" });
 });
 
 test("a PolyOS hibája vagy elérhetetlensége nem dob", async () => {
@@ -82,4 +82,60 @@ test("fizetéskor (Stripe): azonnal Pro-ként jelenti, és megjegyzi; ha már Pr
   await CRM.reportProById(UID);
   assert.equal(calls.filter((c) => c.url.includes("polyos.hu")).length, 0);
   await CRM.reportProById("nem-uuid"); // érvénytelen azonosító: néma
+});
+
+test("hírlevél: csak a külön bejelölőnek newsletter=true; változáskor újra jelent, és megjegyzi", async () => {
+  Object.assign(process.env, { POLYOS_CRM_WEBHOOK_SECRET: "titkos-kod-1234567890", SUPABASE_URL: "https://stub.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "svc" });
+  const calls = withFetch(() => ok({ ok: true }));
+  fresh("../api/_lib.js");
+  const CRM = fresh("../api/_crm.js");
+  // fiók hírlevél nélkül
+  await CRM.reportUser({ id: "u2", email: "b@c.hu", app: {}, newsletter: null }, "ingyenes");
+  assert.equal(calls[0].body.newsletter, false);
+  assert.equal(calls[0].body.consent, false);
+  assert.equal(calls[1].body.app_metadata.polyos_crm_nl, "0");
+  calls.length = 0;
+  await CRM.reportUser({ id: "u2", email: "b@c.hu", app: { polyos_crm: "account", polyos_crm_nl: "0" }, newsletter: { ok: false, at: "x" } }, "ingyenes");
+  assert.equal(calls.length, 0, "változatlan állapotot nem küld újra");
+  // feliratkozik a Beállításokban
+  await CRM.reportUser({ id: "u2", email: "b@c.hu", app: { polyos_crm: "account", polyos_crm_nl: "0" }, newsletter: { ok: true, at: "2026-11-27T09:00:00.000Z" } }, "ingyenes");
+  assert.equal(calls[0].body.status, "account");
+  assert.equal(calls[0].body.newsletter, true);
+  assert.equal(calls[0].body.newsletter_at, "2026-11-27T09:00:00.000Z");
+  assert.equal(calls[1].body.app_metadata.polyos_crm_nl, "1");
+  calls.length = 0;
+  // Pro-ként leiratkozik: a Pro szakasszal megy, newsletter=false
+  await CRM.reportUser({ id: "u2", email: "b@c.hu", app: { polyos_crm: "pro", polyos_crm_nl: "1" }, newsletter: { ok: false, at: "y" } }, "ingyenes");
+  assert.equal(calls[0].body.status, "pro");
+  assert.equal(calls[0].body.newsletter, false);
+  assert.equal(calls[1].body.app_metadata.polyos_crm, "pro");
+  assert.equal(calls[1].body.app_metadata.polyos_crm_nl, "0");
+});
+
+test("newsletterOf: csak a kifejezett ok:true számít feliratkozásnak", () => {
+  const L = fresh("../api/_lib.js");
+  assert.equal(L.newsletterOf({ user_metadata: {} }), null);
+  assert.deepEqual(L.newsletterOf({ user_metadata: { newsletter: { ok: "true", at: "a" } } }), { ok: false, at: "a" });
+  assert.deepEqual(L.newsletterOf({ user_metadata: { newsletter: { ok: true, at: "2026-11-27" } } }), { ok: true, at: "2026-11-27" });
+});
+
+test("white label: a márkánál regisztráltat és a white label felületen járót nem jelenti a PolyOS-nek", async () => {
+  Object.assign(process.env, { POLYOS_CRM_WEBHOOK_SECRET: "titkos-kod-1234567890", SUPABASE_URL: "https://stub.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "svc" });
+  const wlRow = [{ slug: "coachanna", plan: "whitelabel", config: {} }];
+  const calls = withFetch((url) => url.includes("sikertervezo_brands") ? Object.assign(ok(wlRow), { text: async () => JSON.stringify(wlRow) }) : ok({ ok: true }));
+  fresh("../api/_lib.js"); fresh("../api/_brands.js");
+  const CRM = fresh("../api/_crm.js");
+  await CRM.reportUser({ id: "u3", email: "wl@pelda.hu", app: {}, signupBrand: "coachanna" }, "ingyenes");
+  assert.equal(calls.filter((c) => c.url.includes("polyos.hu")).length, 0, "white label márkánál regisztrált");
+  await CRM.reportUser({ id: "u3", email: "wl@pelda.hu", app: {} }, "ingyenes", { brandSlug: "coachanna" });
+  assert.equal(calls.filter((c) => c.url.includes("polyos.hu")).length, 0, "white label felületen jár");
+  await CRM.reportUser({ id: "u4", email: "sm@pelda.hu", app: {} }, "ingyenes", { brandSlug: "alap" });
+  assert.equal(calls.filter((c) => c.url.includes("polyos.hu")).length, 1, "a Sikermaker-felhasználó továbbra is megy");
+});
+
+test("signupBrandOf: az alap és az érvénytelen érték nem white label", async () => {
+  const L = fresh("../api/_lib.js");
+  assert.equal(L.signupBrandOf({ user_metadata: { signup_brand: "alap" } }), "");
+  assert.equal(L.signupBrandOf({ user_metadata: { signup_brand: "<x>" } }), "");
+  assert.equal(L.signupBrandOf({ user_metadata: { signup_brand: "CoachAnna" } }), "coachanna");
 });

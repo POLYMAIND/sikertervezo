@@ -72,7 +72,12 @@ node tests/smoke.mjs http://localhost:3000
    `sikertervezo_brand_admins`-ba; saját domainhez `BRAND_HOSTS`. Az arculatot ezután az admin maga állítja be a felületen.
 4. **PolyOS-híd:** a `docs/polyos-integracio.md` szerinti végpontok a PolyOS-ben, majd a `POLYOS_*` és `LINK_ENC_KEY` változók.
 5. **Fizetés (Stripe) + számla (Számlázz.hu):** lásd `docs/fizetes-szamlazas.md`.
-6. **iPhone-app (App Store):** `mobile/` (Capacitor), build és TestFlight Mac nélkül GitHub Actionsszel — lásd `docs/ios-app-store.md`.
+6. **Regisztrálók és hírlevél:** minden feliratkozó és regisztráló a Polymaind PolyOS CRM „Sikermaker regisztrálók”
+   pipeline-jába kerül (`POLYOS_CRM_WEBHOOK_SECRET`, napi `/api/crm-sync`). Hírlevél csak annak megy, aki a regisztrációnál
+   vagy a Beállítások → Fiók részben külön kéri: `user_metadata.newsletter = { ok, at }`, a CRM-be `newsletter: true/false`
+   (+ `newsletter_at`) mezővel jut el, le- és feliratkozáskor újra. A várólistás hozzájárulás NEM hírlevél-feliratkozás.
+   Admin → Regisztrálók → „Hírlevél” szűrő, CSV-letöltéssel.
+7. **iPhone-app (App Store):** `mobile/` (Capacitor), build és TestFlight Mac nélkül GitHub Actionsszel — lásd `docs/ios-app-store.md`.
 
 ## Biztonság röviden
 
