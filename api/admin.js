@@ -56,6 +56,7 @@ const userView = (u) => ({
   id: u.id, email: u.email, name: (u.user_metadata && u.user_metadata.full_name) || "",
   created_at: u.created_at, last_sign_in_at: u.last_sign_in_at || null,
   confirmed: !!(u.email_confirmed_at || u.confirmed_at), banned: !!(u.banned_until && Date.parse(u.banned_until) > Date.now()),
+  newsletter: (() => { const n = L.newsletterOf(u); return n && n.ok ? (n.at || true) : null; })(),
 });
 
 module.exports = async function handler(req, res) {

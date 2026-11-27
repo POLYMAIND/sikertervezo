@@ -36,7 +36,8 @@ module.exports = async function handler(req, res) {
         const email = String(u.email).toLowerCase();
         accounts.add(email);
         const status = pro.has(u.id) ? "pro" : "account";
-        tally(await CRM.report(status, { email, name: (u.user_metadata && u.user_metadata.full_name) || "", at: u.created_at, source: "app" }), status);
+        const nl = L.newsletterOf(u), on = !!(nl && nl.ok);
+        tally(await CRM.report(status, { email, name: (u.user_metadata && u.user_metadata.full_name) || "", at: u.created_at, source: "app", consent: on, newsletter: on, newsletterAt: on ? nl.at : null }), status);
       }
       if (users.length < 200) break;
     }

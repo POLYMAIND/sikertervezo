@@ -105,6 +105,7 @@
         <label class="f">Jelszó (legalább 8 karakter)<input type="password" name="password" autocomplete="new-password" minlength="8" required style="width:100%;border:1px solid var(--line);border-radius:10px;padding:9px 11px"></label>
         ${eb.plan === "whitelabel" ? `<label class="row" style="gap:8px;font-size:12.5px;flex-wrap:nowrap;align-items:flex-start"><input type="checkbox" name="brandok" required style="margin-top:3px"><span>Tudomásul veszem, hogy a tervező gazdája (${esc(eb.ownerName || eb.productName)}) látja a nevemet, e-mail-címemet, a regisztrációm és az utolsó aktivitásom dátumát. A tervem tartalmát nem látja.</span></label>` : ""}
         <label class="row" style="gap:8px;font-size:12.5px;flex-wrap:nowrap;align-items:flex-start"><input type="checkbox" name="terms" required style="margin-top:3px"><span>Elfogadom az ${link(legal.terms, "Általános Szerződési Feltételeket")} és az ${link(legal.privacy, "Adatkezelési tájékoztatót")}.</span></label>
+        ${eb.plan === "whitelabel" ? "" : `<label class="row" style="gap:8px;font-size:12.5px;flex-wrap:nowrap;align-items:flex-start"><input type="checkbox" name="newsletter" style="margin-top:3px"><span>Kérek hírlevelet (nem kötelező): tervezési tippek, újdonságok és ajánlatok a Sikermakertől és a Polymaindtól. Bármikor leiratkozhatok a Beállításokban vagy a levelek alján.</span></label>`}
         <button class="btn">Fiók létrehozása</button></form>`;
     else if (tab === "elfelejtett") body = `<form class="stack" data-auth="reset" style="gap:12px"><p class="sub">Megadod az e-mail-címed, és küldünk egy linket, amivel új jelszót állíthatsz be.</p>
         <label class="f">E-mail-cím<input type="email" name="email" autocomplete="email" required></label><button class="btn">Link küldése</button>
@@ -181,7 +182,9 @@
         const eb = TH.effectiveBrand(brandRaw);
         // signup_brand: melyik márkánál regisztrált — ha a megerősítő link mégis az alap oldalra vinné, innen tudjuk visszaterelni
         const extra = eb.plan === "whitelabel" ? Object.assign({ signup_brand: eb.slug }, v.brandok ? { brand_consent: { [eb.slug]: { ok: true, at: new Date().toISOString() } } } : {}) : null;
-        const r = await store.signUp(v.email.trim(), v.password, v.name.trim(), extra);
+        // hírlevél: csak ha bejelölte (önkéntes, külön hozzájárulás; white label márkánál nem kérdezzük)
+        const nl = eb.plan !== "whitelabel" && v.newsletter ? { newsletter: { ok: true, at: new Date().toISOString() } } : null;
+        const r = await store.signUp(v.email.trim(), v.password, v.name.trim(), extra || nl ? Object.assign({}, extra, nl) : null);
         if (window.smTrack) window.smTrack("sign_up", { method: "email", brand: eb.slug });
         if (r.needsConfirm) authScreen("belepes", ls.get(PRO_INTENT) ? "Majdnem kész: küldtünk egy megerősítő e-mailt. A linkre kattintva beléptetünk, és egyből a Pro előfizetés fizetési oldalára viszünk." : "Majdnem kész: küldtünk egy megerősítő e-mailt. A linkre kattintva be is léptetünk."); else await launch(store.userInfo());
       } else if (f.dataset.auth === "reset") {
@@ -247,6 +250,9 @@
       emailReady: !!(config.email && config.email.enabled),
       brandConsent: () => store.brandConsent(TH.effectiveBrand(brandRaw).slug),
       setBrandConsent: (ok) => store.setBrandConsent(TH.effectiveBrand(brandRaw).slug, ok),
+      newsletter: () => store.newsletter(),
+      // a változást rögtön jelezzük a szervernek is (/api/me → PolyOS CRM); ha az nem sikerül, a napi szinkron pótolja
+      setNewsletter: async (ok) => { await store.setNewsletter(ok); api("/api/me" + (location.search ? location.search + "&" : "?") + "nl=1").catch(() => {}); },
       brandMembers: async () => api("/api/brand" + location.search, { method: "POST", body: JSON.stringify({ action: "members" }) }),
       brandCall: async (body) => api("/api/brand" + location.search, { method: "POST", body: JSON.stringify(body) }),
       email: async (payload) => api("/api/email" + location.search, { method: "POST", body: JSON.stringify(payload) }),

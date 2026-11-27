@@ -12,7 +12,8 @@ async function audit(user, detail) {
 
 module.exports = async function handler(req, res) {
   if (req.method !== "GET" && req.method !== "DELETE") return L.send(res, 405, { error: "method_not_allowed" });
-  const user = await L.getUser(req);
+  // ?nl=1: a kliens most módosította a hírlevél-beállítást → friss adat kell a CRM-jelentéshez
+  const user = await L.getUser(req, { fresh: /[?&]nl=1(&|$)/.test(String(req.url || "")) });
   if (!user) return L.send(res, 401, { error: "unauthorized" });
   if (req.method === "DELETE") {
     if (!L.serviceReady()) return L.send(res, 503, { error: "not_configured" });
@@ -25,7 +26,8 @@ module.exports = async function handler(req, res) {
     return L.send(res, 200, { ok: true });
   }
   const plan = L.serviceReady() ? await P.userPlan(user, B.resolveSlug(req)) : { plan: "ingyenes", source: "none", features: [] };
-  // Sikermaker-regisztráló → Polymaind PolyOS CRM pipeline (egyszer fiókként, egyszer Pro-ként; sosem blokkol).
+  // Sikermaker-regisztráló → Polymaind PolyOS CRM pipeline (egyszer fiókként, egyszer Pro-ként, és ha a hírlevél-
+  // beállítása változik; sosem blokkol).
   if (user.confirmed) await CRM.reportUser(user, plan.plan).catch(() => {});
   L.send(res, 200, Object.assign({ ok: true }, plan));
 };

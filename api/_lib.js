@@ -39,17 +39,24 @@ async function sb(path, opts = {}) {
 
 // A Bearer token ellenőrzése a Supabase Auth-nál (alg-független, nincs kézi JWT-ellenőrzés). Rövid cache.
 const _users = new Map();
-async function getUser(req) {
+// hírlevél-hozzájárulás a user_metadata-ból: { ok, at } vagy null (önkéntes, a felhasználó bármikor módosíthatja)
+function newsletterOf(u) {
+  const n = u && u.user_metadata && u.user_metadata.newsletter;
+  return n && typeof n === "object" ? { ok: n.ok === true, at: typeof n.at === "string" ? n.at.slice(0, 40) : null } : null;
+}
+
+// opts.fresh: a gyorsítótár kihagyása (pl. közvetlenül a hírlevél-beállítás módosítása után)
+async function getUser(req, opts) {
   const h = req.headers.authorization || "";
   const tok = h.startsWith("Bearer ") ? h.slice(7) : "";
   if (!tok || !supabaseReady()) return null;
   const hit = _users.get(tok);
-  if (hit && hit.exp > Date.now()) return hit.user;
+  if (hit && hit.exp > Date.now() && !(opts && opts.fresh)) return hit.user;
   const r = await fetch(SB_URL() + "/auth/v1/user", { headers: { apikey: SB_ANON(), Authorization: "Bearer " + tok } }).catch(() => null);
   if (!r || !r.ok) return null;
   const u = await r.json().catch(() => null);
   if (!u || !u.id) return null;
-  const user = { id: u.id, email: (u.email || "").toLowerCase(), confirmed: !!(u.email_confirmed_at || u.confirmed_at), name: String((u.user_metadata && u.user_metadata.full_name) || "").slice(0, 120), app: u.app_metadata || {} };
+  const user = { id: u.id, email: (u.email || "").toLowerCase(), confirmed: !!(u.email_confirmed_at || u.confirmed_at), name: String((u.user_metadata && u.user_metadata.full_name) || "").slice(0, 120), app: u.app_metadata || {}, newsletter: newsletterOf(u) };
   _users.set(tok, { user, exp: Date.now() + 30_000 });
   if (_users.size > 500) _users.clear();
   return user;
@@ -92,4 +99,4 @@ async function authAdmin(path, opts = {}) {
   return j;
 }
 
-module.exports = { authAdmin, env, isProd, supabaseReady, serviceReady, send, body, sb, getUser, encrypt, decrypt, appUrl, SB_URL, SB_ANON };
+module.exports = { newsletterOf, authAdmin, env, isProd, supabaseReady, serviceReady, send, body, sb, getUser, encrypt, decrypt, appUrl, SB_URL, SB_ANON };
