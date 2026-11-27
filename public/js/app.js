@@ -17,6 +17,8 @@ const proTag=(cls)=>SHOWPRO?`<span class="protag${cls?" "+cls:""}" title="A Pro 
 const PRO_PRICE="1 990 Ft / hó";
 // iOS-app (App Store-mód, js/native.js): nincs vásárlás és vásárlásra utalás (ár, fizetés, portál); a weben vett Pro működik
 const NATIVE=!!ctx.native,NOBUY=!!ctx.nobuy;
+// Mac-app: asztali gép — működnek a letöltések, a szövegek „gépre” szólnak
+const MAC=NATIVE&&!!(ST.native&&ST.native.mac),DLOK=!NATIVE||MAC,DEVWORD=MAC?"gépen":"telefonon";
 /* ---------- utils ---------- */
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -946,7 +948,7 @@ async function openCert(id){
   const a=id==="alapito"?FOUNDER:ACH.find(x=>x.id===id);if(!a)return;
   $("#layer").innerHTML=`<div class="modal" data-act="close"><div class="sheet certsheet" role="dialog" aria-label="Oklevél"><div class="row between"><div><div class="eyebrow">Oklevél</div><h2>${esc(a.t)}</h2></div><button type="button" class="iconbtn" data-act="close" aria-label="Bezárás">×</button></div><div class="certprev" id="certprev"><span class="muted">Készül az oklevél…</span></div><div class="row between"><span class="muted" style="font-size:12px" id="certnote">Kinyomtathatod, vagy megoszthatod a közösségi oldaladon.</span><button class="btn" id="certdl" data-act="certdl" data-id="${a.id}" hidden>Letöltés (PNG)</button></div></div></div>`;
   const c=await drawCert(a);const url=c.toDataURL("image/png");const pv=$("#certprev");if(!pv)return;pv.innerHTML=`<img src="${url}" alt="Oklevél: ${esc(a.t)}">`;
-  window.__cert=c;const btn=$("#certdl");if(btn&&!NATIVE)btn.hidden=false;
+  window.__cert=c;const btn=$("#certdl");if(btn&&DLOK)btn.hidden=false;
 }
 function downloadCert(id){
   const c=window.__cert;if(!c)return;
@@ -958,7 +960,7 @@ function downloadCert(id){
 function remindNativeNote(){
   const st=ui.notif;
   if(st===undefined&&ST.native&&ST.native.remindAvailable()){ui.notif=null;ST.native.permission().then(ok=>{ui.notif=ok;render()})}
-  return `<p class="muted" style="margin:0;font-size:12.5px">A reggeli összefoglaló, az esti zárás, az utánkövetés és a születésnap értesítésként érkezik erre a telefonra.</p>${st===false&&S.reminders&&S.reminders.push?`<div class="row"><button class="btn small" data-act="notifon">Értesítések engedélyezése</button><span class="muted" style="font-size:12px">Ha korábban letiltottad: iPhone Beállítások → Sikermaker → Értesítések.</span></div>`:""}`;
+  return `<p class="muted" style="margin:0;font-size:12.5px">A reggeli összefoglaló, az esti zárás, az utánkövetés és a születésnap értesítésként érkezik erre a ${MAC?"gépre":"telefonra"}.</p>${st===false&&S.reminders&&S.reminders.push?`<div class="row"><button class="btn small" data-act="notifon">Értesítések engedélyezése</button><span class="muted" style="font-size:12px">Ha korábban letiltottad: ${MAC?"Rendszerbeállítások → Értesítések → Sikermaker":"iPhone Beállítások → Sikermaker → Értesítések"}.</span></div>`:""}`;
 }
 const REMINDERS=[["reggel","Reggeli összefoglaló","Minden reggel: mai időpontok, kit keress meg, mai lépések."],["esti","Esti zárás","Este emlékeztet, hogy zárd le a napot."],["utan","Utánkövetés","Amikor valakit esedékes megkeresni."],["zaras","Periódus zárása","3 nappal és 1 nappal a zárás előtt, a hiányzó pontokkal."],["szulinap","Születésnap","Reggel, ha egy ügyfeled ünnepel."]];
 function remindersCard(){const r=S.reminders||(S.reminders={reggel:true,esti:true,utan:true,zaras:true,szulinap:true,reggelIdo:"07:30",estiIdo:"20:30",push:true,email:false});
@@ -1298,10 +1300,10 @@ function brandCard(){
   return `<div class="grid g2" style="align-items:start" id="arculat"><div class="card stack" style="gap:14px"><h3 style="margin:0">Háttér</h3><p class="muted" style="margin:0;font-size:12.5px">Csak nálad látszik, bármikor visszaváltható.</p><div class="bgpick">${pats}</div><div class="colorrow">${cols}<input type="color" data-bgc="1" value="${bp.bgColor}" aria-label="Saját háttérszín"></div></div>${wl}</div>`;
 }
 function accountCard(){
-  if(DEMO)return `<div class="card stack"><h3>Bemutató mód</h3><p class="muted" style="margin:0">Most belépés nélkül, mintaadatokkal próbálod a tervezőt: amit beírsz, csak ${NATIVE?"ezen a telefonon":"ebben a böngészőben"} marad meg. Fiókkal minden eszközödön ugyanazt látod.</p>
+  if(DEMO)return `<div class="card stack"><h3>Bemutató mód</h3><p class="muted" style="margin:0">Most belépés nélkül, mintaadatokkal próbálod a tervezőt: amit beírsz, csak ${NATIVE?"ezen a "+DEVWORD:"ebben a böngészőben"} marad meg. Fiókkal minden eszközödön ugyanazt látod.</p>
   <div class="row">${ctx.cloud?`<button class="btn" data-act="signup">${SIGNUP_CTA}</button>`:""}<span id="resetrow" class="row"><button class="btn ghost" data-act="resetask">Mintaadatok visszaállítása</button></span></div>
 </div>`;
-  return `<div class="card stack"><h3>Fiók</h3><div class="row between"><div><b>${esc((ctx.user&&ctx.user.email)||"")}</b><div class="muted" style="font-size:12.5px">A terved a fiókodhoz van mentve, minden eszközödön ugyanaz.</div>${consentRow()}</div><span class="row">${NATIVE?"":'<button class="btn ghost small" data-act="export">Adataim letöltése</button>'}<button class="btn ghost small" data-act="logout">Kijelentkezés</button></span></div>${delAccountBlock()}</div>`;
+  return `<div class="card stack"><h3>Fiók</h3><div class="row between"><div><b>${esc((ctx.user&&ctx.user.email)||"")}</b><div class="muted" style="font-size:12.5px">A terved a fiókodhoz van mentve, minden eszközödön ugyanaz.</div>${consentRow()}</div><span class="row">${DLOK?'<button class="btn ghost small" data-act="export">Adataim letöltése</button>':""}<button class="btn ghost small" data-act="logout">Kijelentkezés</button></span></div>${delAccountBlock()}</div>`;
 }
 
 // Fiókom törlése (App Store 5.1.1(v), GDPR): a saját e-mail-cím beírásával erősíti meg; minden adat törlődik
@@ -2006,7 +2008,7 @@ document.addEventListener("click",e=>{
     case"certdl":downloadCert(id);break;
     case"foundertoggle":S.settings.founder=!S.settings.founder;if(S.settings.founder&&!S.settings.founderSince)S.settings.founderSince=T;save();render();break;
     case"rem":{const r=S.reminders;r[b.dataset.k]=!r[b.dataset.k];save();render();if(NATIVE&&r[b.dataset.k]&&ST.native)ST.native.remindEnable(S).then(ok=>{ui.notif=ok;render()});break}
-    case"notifon":ST.native&&ST.native.remindEnable(S).then(ok=>{ui.notif=ok;render();if(!ok)toast("Az értesítéseket az iPhone Beállítások → Sikermaker → Értesítések alatt kapcsolhatod be.")});break
+    case"notifon":ST.native&&ST.native.remindEnable(S).then(ok=>{ui.notif=ok;render();if(!ok)toast(MAC?"Az értesítéseket a Rendszerbeállítások → Értesítések → Sikermaker alatt kapcsolhatod be.":"Az értesítéseket az iPhone Beállítások → Sikermaker → Értesítések alatt kapcsolhatod be.")});break
     case"toallas":{if(route==="szamok"){e.preventDefault();const el=$("#allas");el&&el.scrollIntoView({behavior:"smooth"})}else{e.preventDefault();location.hash="szamok";setTimeout(()=>{const el=$("#allas");el&&el.scrollIntoView({behavior:"smooth"});const i=$("#bp-gp");i&&i.focus()},350)}break}
     case"bprog":{const bk=(S.books||[]).find(x=>x.id===id);if(!bk)break;bk.progress=Math.max(0,Math.min(100,(bk.progress||0)+ +b.dataset.d));if(bk.progress===100){bk.status="kesz";bk.finished=T;toast("Elolvastad! Gratulálok.")}save();render();break}
     case"bdone":{const b=S.books.find(x=>x.id===id);b.status="kesz";b.progress=100;b.finished=T;save();toast("Elolvastad! Gratulálok.");render();break}

@@ -286,7 +286,7 @@
     $("#boot").hidden = true; $("#appshell").hidden = false;
     // kilépés a bemutatóból / kijelentkezés: mindig látható helyen (az app kattintás-kezelője fogja meg a data-act-et)
     setFoot(demo
-      ? `<div class="stack" style="gap:8px">Bemutató mód: amit beírsz, csak ebben a böngészőben marad meg.${store.cloudAvailable() ? `<button class="btn small footbtn" data-act="signup">${config.signup && config.signup.open ? "Regisztrálok" : "Feliratkozom a várólistára"}</button>` : ""}</div>`
+      ? `<div class="stack" style="gap:8px">Bemutató mód: amit beírsz, csak ${NATIVE ? (ST.native.mac ? "ezen a gépen" : "ezen a telefonon") : "ebben a böngészőben"} marad meg.${store.cloudAvailable() ? `<button class="btn small footbtn" data-act="signup">${config.signup && config.signup.open ? "Regisztrálok" : "Feliratkozom a várólistára"}</button>` : ""}</div>`
       : `<div class="stack" style="gap:6px"><span class="syncdot" id="sync">Mentve</span><span class="footmail">${esc((user && user.email) || "")}</span><button class="btn small footbtn ghostside" data-act="logout">Kijelentkezés</button></div>`);
     app = ST.start(ctx);
   }
