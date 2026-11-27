@@ -832,3 +832,10 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:4px 0;width:100%}
 /* kézírásos matrica: a szó közepén ne törjön („Megcsinálta / m!”) */
 .hnote,.cbtn .hnote{overflow-wrap:normal;word-break:normal;hyphens:manual}
 .cbtn .hnote{max-width:100%;font-size:calc(18px * var(--ss))}
+
+/* idézetkártya: magyar idézőjelek a szöveg körül („…”), a nagy díszjel helyén egy rövid, színes vonal
+   (a fölé tolt „ jel iPhone-on két ferde vonalnak látszott) */
+.qcard{padding-top:22px}
+.qm{top:12px;left:18px;width:22px;height:3px;border-radius:2px;background:currentColor;font-size:0}
+.cbtn .qcard{padding-top:18px}
+.cbtn .qm{top:9px;left:12px;width:18px;font-size:0}
