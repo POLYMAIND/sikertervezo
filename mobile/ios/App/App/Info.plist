@@ -66,6 +66,10 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>A kamerával fotót készíthetsz, amiből saját matrica vagy márkalogó lesz a tervezőben.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>A fotóidból választhatsz képet saját matricának vagy márkalogónak a tervezőben.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>UIViewControllerBasedStatusBarAppearance</key>

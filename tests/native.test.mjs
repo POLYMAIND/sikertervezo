@@ -8,7 +8,7 @@ import vm from "node:vm";
 const src = fs.readFileSync(new URL("../public/js/native.js", import.meta.url), "utf8");
 function load(capacitor) {
   const calls = [], replaced = [];
-  const ctx = { window: {}, document: { readyState: "complete", addEventListener() {}, querySelector: () => null }, location: { replace: (u) => replaced.push(u) },
+  const ctx = { window: {}, document: { readyState: "complete", addEventListener() {}, querySelector: () => null, documentElement: { classList: { add() {} } } }, location: { replace: (u) => replaced.push(u) },
     sessionStorage: { _s: {}, getItem(k) { return this._s[k] || null; }, setItem(k, v) { this._s[k] = v; } },
     fetch: async (u) => { calls.push(u); return { ok: true }; }, Response: class { constructor(b, o) { this.body = b; this.status = o.status; } }, URL, setTimeout, clearTimeout, console };
   ctx.window.Capacitor = capacitor;

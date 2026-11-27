@@ -34,7 +34,7 @@ test("native.js a valódi capacitor.js-sel", async () => {
       nativeCallback: () => "cb1", isNativePlatform: () => true, getPlatform: () => "ios", Plugins: {},
     },
   };
-  const ctx = { window: win, document: { readyState: "complete", addEventListener() {}, querySelector: () => null }, location: { replace() {} },
+  const ctx = { window: win, document: { readyState: "complete", addEventListener() {}, querySelector: () => null, documentElement: { classList: { add() {} } } }, location: { replace() {} },
     sessionStorage: { getItem: () => null, setItem() {} }, fetch: () => { throw new Error("weben-fetch az appban"); }, Response, URL, setTimeout, clearTimeout, console, Promise };
   win.window = win; ctx.globalThis = ctx;
   vm.createContext(ctx);

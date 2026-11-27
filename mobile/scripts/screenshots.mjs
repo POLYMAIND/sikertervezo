@@ -26,7 +26,7 @@ await p.addInitScript(() => {
   };
   // a képeken ne látszódjon a bemutató mód jelzése, a regisztrációs sáv és a tartalomra lógó lebegő gombok;
   // a könyvborító-helyőrzők egységesen világosak (a sötét változat valódi borítónak hathat)
-  document.addEventListener("DOMContentLoaded", () => { const s = document.createElement("style"); s.textContent = ".democta,.proto,#drawer{display:none!important}.bcover{background:#F6E7B8!important;color:#3A2E12!important}"; document.head.appendChild(s); });
+  document.addEventListener("DOMContentLoaded", () => { const s = document.createElement("style"); s.textContent = "html.native .main{padding-top:62px!important}.democta,.proto,#drawer{display:none!important}.bcover{background:#F6E7B8!important;color:#3A2E12!important}"; document.head.appendChild(s); });
 });
 const shots = [["1-vezerlopult", "#ma"], ["2-naptar", "#naptar"], ["3-szokasok", "#szokasok"], ["4-gondolatterkep", "#terkep"], ["5-olvasas", "#olvasas"], ["6-emlekeztetok", "#beallitasok"]];
 await p.goto("http://localhost:3126/"); await p.waitForSelector("#view .head", { timeout: 15000 });

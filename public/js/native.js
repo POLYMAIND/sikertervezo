@@ -15,6 +15,8 @@
   const C = window.Capacitor;
   const on = !!(C && typeof C.isNativePlatform === "function" && C.isNativePlatform());
   const ORIGIN = "https://sikermaker.hu";
+  // az appban a <html class="native">: a CSS ehhez igazítja a megjelenést (nincs sötét felső sáv stb.)
+  if (on) document.documentElement.classList.add("native");
   const plugin = (name) => { try { return on && C.registerPlugin ? C.registerPlugin(name) : null; } catch (e) { return null; } };
   const Http = plugin("CapacitorHttp"), App = plugin("App"), LN = plugin("LocalNotifications"), Haptics = plugin("Haptics"), Browser = plugin("Browser");
 
@@ -121,16 +123,17 @@
   // mentésenként újraütemezés (összevonva), hogy a szöveg a friss teendőket mutassa
   function reschedule(state) { if (!on || !LN) return; clearTimeout(schedTimer); schedTimer = setTimeout(() => schedule(state, false), 1500); }
 
-  // állapotsor: a felső sáv (theme-color) színéhez igazított szövegszín; a márka színe menet közben is változhat
+  // állapotsor: az appban nincs sötét felső sáv, az állapotsor az oldal háttere fölött van → a háttér
+  // világosságához igazított szövegszín (a márka háttere menet közben is változhat)
   const StatusBar = plugin("StatusBar");
   function syncStatusBar() {
-    const m = document.querySelector('meta[name="theme-color"]'), c = (m && m.getAttribute("content")) || "#1F2024";
-    const h = /^#([0-9a-f]{6})$/i.exec(c.trim()); if (!h || !StatusBar) return;
-    const n = parseInt(h[1], 16), lum = (0.299 * (n >> 16) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255;
+    if (!StatusBar || !document.body) return;
+    const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(getComputedStyle(document.body).backgroundColor || "");
+    const lum = m ? (0.299 * m[1] + 0.587 * m[2] + 0.114 * m[3]) / 255 : 1;
     StatusBar.setStyle({ style: lum < 0.6 ? "DARK" : "LIGHT" }).catch(() => {}); // DARK = világos betű sötét háttéren
   }
   if (on && StatusBar) {
-    const start = () => { syncStatusBar(); const m = document.querySelector('meta[name="theme-color"]'); if (m) new MutationObserver(syncStatusBar).observe(m, { attributes: true }); };
+    const start = () => { syncStatusBar(); if (typeof MutationObserver === "function") new MutationObserver(syncStatusBar).observe(document.documentElement, { attributes: true, attributeFilter: ["style", "class"] }); };
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
   }
 

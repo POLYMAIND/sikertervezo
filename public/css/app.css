@@ -796,3 +796,39 @@ hr.sep{border:0;border-top:1px solid var(--line);margin:4px 0;width:100%}
 .btn.danger{background:#B42318;border-color:#B42318;color:#fff}
 .btn.dangerline{color:#B42318;border-color:color-mix(in srgb,#B42318 45%,transparent)}
 .admdelc{display:block;flex:1 1 100%;background:#FDECEA;color:#7A1A12;border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.5}
+
+/* ---------- iOS-app (html.native, js/native.js) ----------
+   Nincs sötét felső sáv: az oldal címe („Szia, …”, „November 2026”) a fejléc, az állapotsor az oldal háttere fölött van.
+   A biztonsági sáv (óra, akkumulátor) mögé a görgetett tartalom elmosva látszik, ahogy az iOS-appokban szokás. */
+.native .side{display:none}
+.native body::before{content:"";display:block;position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:35;
+  background:color-mix(in srgb,var(--bg) 82%,transparent);-webkit-backdrop-filter:saturate(1.6) blur(14px);backdrop-filter:saturate(1.6) blur(14px)}
+.native .main{padding-top:calc(env(safe-area-inset-top,0px) + 14px)}
+
+/* ---------- telefon: lebegő gombok, naptár, űrlapok, táblázatok ---------- */
+@media (max-width:860px){
+  /* a lebegő gombok (értékelő, matricák) kisebbek és egymás mellett vannak; az oldal alján hely marad alattuk */
+  .drawer{flex-direction:row;align-items:flex-end;gap:10px;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(var(--tabbar-h) + 10px + env(safe-area-inset-bottom,0px))}
+  .drawer .fab,.drawer .revfab{width:44px;height:44px}
+  .drawer .fab .fi,.drawer .revfab .fi{font-size:18px}
+  .main{padding-bottom:calc(var(--tabbar-h) + 84px + env(safe-area-inset-bottom,0px))}
+  /* havi naptár: a Kezdet/Zárás jelölés rövid betű, a korona kicsi és nem lóg a dátumra */
+  .day .pmark{font-size:0;padding:0;width:16px;height:16px;border-radius:99px;display:grid;place-items:center;align-self:flex-start}
+  .day .pmark::after{content:attr(data-s);font-size:9.5px;letter-spacing:0}
+  .day{position:relative}
+  .goldmark{top:4px;right:4px}
+  .goldmark svg{width:12px;height:11px}
+  .calegend{flex-direction:column;align-items:flex-start;gap:2px}
+  .calegend .sep{display:none}
+  /* az „Indítás ma” egy sorban */
+  form[data-form="habit"] .btn{white-space:nowrap;flex:none}
+  /* széles táblázatok (Ügyfelek, Rendelések): vízszintesen görgethetők, nem nyomódnak össze */
+  .tablewrap{margin-inline:-4px;padding-inline:4px}
+  .tablewrap table{min-width:600px}
+  .tablewrap th,.tablewrap td{white-space:nowrap}
+  /* gondolattérkép: a vászon kitölti a képernyőt a menüsor fölött */
+  .mapwrap{height:calc(100dvh - var(--tabbar-h) - 150px - env(safe-area-inset-bottom,0px) - env(safe-area-inset-top,0px));min-height:360px}
+}
+/* kézírásos matrica: a szó közepén ne törjön („Megcsinálta / m!”) */
+.hnote,.cbtn .hnote{overflow-wrap:normal;word-break:normal;hyphens:manual}
+.cbtn .hnote{max-width:100%;font-size:calc(18px * var(--ss))}
