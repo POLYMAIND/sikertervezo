@@ -40,14 +40,17 @@ platform :ios do
       demo_user: ENV["REVIEW_DEMO_USER"].to_s.strip,
       demo_password: ENV["REVIEW_DEMO_PASSWORD"].to_s,
     }.reject { |_, v| v.empty? }
+    # APP_PLATFORM=osx: a Mac-app adatlapja (Mac-képernyőképek, Mac-re szabott reviewer-megjegyzés)
+    mac = ENV["APP_PLATFORM"].to_s.strip == "osx"
+    review[:notes] = File.read(File.expand_path("notes-mac.txt", __dir__)) if mac
     deliver(
       api_key: api_key,
       app_identifier: "hu.sikermaker.app",
-      app_version: (ENV["APP_VERSION"].to_s.strip.empty? ? "1.0.3" : ENV["APP_VERSION"].strip),
-      platform: "ios",
+      app_version: (ENV["APP_VERSION"].to_s.strip.empty? ? (mac ? "1.0.0" : "1.0.3") : ENV["APP_VERSION"].strip),
+      platform: mac ? "osx" : "ios",
       languages: ["hu"],
       metadata_path: File.expand_path("metadata", __dir__),
-      screenshots_path: File.expand_path("screenshots", __dir__),
+      screenshots_path: File.expand_path(mac ? "screenshots-mac" : "screenshots", __dir__),
       overwrite_screenshots: true,
       app_review_information: review,
       skip_binary_upload: true,

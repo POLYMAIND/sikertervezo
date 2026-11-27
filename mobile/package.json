@@ -7,7 +7,7 @@
     "www": "node scripts/build-www.mjs",
     "sync": "node scripts/build-www.mjs && cap sync ios",
     "icons": "capacitor-assets generate --ios --iconBackgroundColor '#1F2024' --splashBackgroundColor '#1F2024'",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test --test-concurrency=1 tests/*.test.mjs"
   },
   "dependencies": {
     "@capacitor/app": "8.1.2",

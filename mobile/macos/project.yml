@@ -1,0 +1,50 @@
+# Sikermaker macOS-app — Xcode-projekt XcodeGen-nel (a CI generálja: `xcodegen generate`; a .xcodeproj nincs a repóban).
+name: Sikermaker
+options:
+  bundleIdPrefix: hu.sikermaker
+  deploymentTarget:
+    macOS: "13.0"
+  developmentLanguage: hu
+targets:
+  Sikermaker:
+    type: application
+    platform: macOS
+    scheme: {}
+    sources:
+      - path: Sikermaker
+      # az appba csomagolt webes tervező (node scripts/build-www.mjs), mappaként a csomagban: www/
+      - path: ../www
+        type: folder
+        buildPhase: resources
+    info:
+      path: Sikermaker/Info.plist
+      properties:
+        CFBundleDisplayName: Sikermaker
+        CFBundleDevelopmentRegion: hu
+        CFBundleLocalizations: [hu]
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSApplicationCategoryType: public.app-category.productivity
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        NSHumanReadableCopyright: © 2026 polymAInd Kft.
+        ITSAppUsesNonExemptEncryption: false
+    entitlements:
+      path: Sikermaker/Sikermaker.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.network.client: true
+        com.apple.security.files.user-selected.read-write: true
+        com.apple.developer.associated-domains:
+          - applinks:sikermaker.hu
+          - webcredentials:sikermaker.hu
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: hu.sikermaker.app
+        PRODUCT_NAME: Sikermaker
+        MARKETING_VERSION: "1.0.0"
+        CURRENT_PROJECT_VERSION: "1"
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_HARDENED_RUNTIME: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_VERSION: "5.0"
+        COMBINE_HIDPI_IMAGES: YES

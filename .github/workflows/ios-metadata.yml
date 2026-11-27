@@ -2,13 +2,19 @@
 # metadata és screenshots mappából. Build és beküldés nélkül; Linux-gépen fut (nem fogyaszt macOS-percet).
 # Titkok: ASC_KEY_ID, ASC_ISSUER_ID, ASC_KEY_P8_BASE64, APPLE_TEAM_ID, és opcionálisan REVIEW_FIRST_NAME,
 # REVIEW_LAST_NAME, REVIEW_DEMO_USER, REVIEW_DEMO_PASSWORD.
-name: iOS → App Store-adatlap
+name: App Store-adatlap (iPhone / Mac)
 
 on:
   workflow_dispatch:
     inputs:
+      platform:
+        description: "Melyik app adatlapja"
+        required: true
+        default: ios
+        type: choice
+        options: [ios, osx]
       version:
-        description: "Az App Store-verzió (egyezzen a beküldendő build verziójával)"
+        description: "Az App Store-verzió (egyezzen a beküldendő build verziójával; Mac: 1.0.0)"
         required: true
         default: "1.0.3"
 
@@ -37,4 +43,5 @@ jobs:
           REVIEW_DEMO_USER: ${{ secrets.REVIEW_DEMO_USER }}
           REVIEW_DEMO_PASSWORD: ${{ secrets.REVIEW_DEMO_PASSWORD }}
           APP_VERSION: ${{ github.event.inputs.version }}
+          APP_PLATFORM: ${{ github.event.inputs.platform }}
         run: bundle exec fastlane metadata

@@ -14,9 +14,12 @@
   const ST = (window.ST = window.ST || {});
   const C = window.Capacitor;
   const on = !!(C && typeof C.isNativePlatform === "function" && C.isNativePlatform());
+  // a Mac-app (mobile/macos) saját hídja jelöli magát: ott van asztali elrendezés és működnek a letöltések
+  const mac = on && !!(C && C.__mac);
   const ORIGIN = "https://sikermaker.hu";
   // az appban a <html class="native">: a CSS ehhez igazítja a megjelenést (nincs sötét felső sáv stb.)
   if (on) document.documentElement.classList.add("native");
+  if (mac) document.documentElement.classList.add("mac");
   const plugin = (name) => { try { return on && C.registerPlugin ? C.registerPlugin(name) : null; } catch (e) { return null; } };
   const Http = plugin("CapacitorHttp"), App = plugin("App"), LN = plugin("LocalNotifications"), Haptics = plugin("Haptics"), Browser = plugin("Browser");
 
@@ -141,6 +144,7 @@
 
   ST.native = {
     on,
+    mac,                    // Mac-app: asztali gép (letöltés, „ezen a gépen”)
     store: on,              // App Store-mód: vásárlás és vásárlásra utalás nélkül
     authReturn,
     remindAvailable: () => !!(on && LN),
