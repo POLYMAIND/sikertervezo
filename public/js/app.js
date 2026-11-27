@@ -1039,7 +1039,7 @@ const QUOTES=BR.quotes.length?BR.quotes:QUOTES_DEFAULT;
 function quoteHTML(t,col,sig){
   const P=TH.palette();let bg=P.paper,fg=P.ink,mk=P.accent;
   if(col){if(col.ivory){bg=P.paper;fg=P.ink;mk=P.accent}else if(col.pale){bg=col.main;fg=P.ink;mk=P.accentDeep}else{bg=col.main;fg=col.fg;mk=P.hlBright}}
-  return `<span class="qcard" style="background:${bg};color:${fg}"><span class="qm" style="color:${mk}">„</span>${esc(t)}${sig?`<span class="qsig" style="color:${mk}">${esc(sig)}</span>`:""}</span>`;
+  return `<span class="qcard" style="background:${bg};color:${fg}"><span class="qm" style="color:${mk}" aria-hidden="true"></span>„${esc(String(t).replace(/^[„"“]+|[”"“]+$/g,""))}”${sig?`<span class="qsig" style="color:${mk}">${esc(sig)}</span>`:""}</span>`;
 }
 const dayOfYear=()=>Math.floor((TODAY-new Date(TODAY.getFullYear(),0,0))/864e5);
 function quotePool(){return QUOTES.map(t=>({t,a:BR.ownerName})).concat((S.myquotes||[]).map(q=>({t:q.t,a:q.a})))}
